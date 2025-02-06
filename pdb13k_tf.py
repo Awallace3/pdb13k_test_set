@@ -6,6 +6,7 @@ from pprint import pprint as pp
 from pathlib import Path
 import os
 from apnet import predict_sapt
+import numpy as np
 
 mol_dimer = qcel.models.Molecule.from_data("""
 0 1
@@ -18,17 +19,6 @@ O 3.000000 0.500000  0.000000
 H 3.758602 0.500000  0.504284
 H 3.260455 0.500000 -0.872893
 """)
-
-
-def example_ensemble():
-    mols = [mol_dimer for _ in range(3)]
-    interaction_energies = apnet2_model_predict(
-        mols,
-        compile=False,
-        batch_size=2,
-    )
-    print()
-    return
 
 
 def pdb13k_df_og():
@@ -70,10 +60,37 @@ def pdb13k_df_og():
     return
 
 
+elem_to_z = {
+    'H': 1,
+    'B': 3,
+    'C': 6,
+    'N': 7,
+    'O': 8,
+    'F': 9,
+    'NA': 11,
+    'Na': 11,
+    'P': 15,
+    'S': 16,
+    'CL': 17,
+    'Cl': 17,
+    'BR': 35,
+    'Br': 35,
+}
+
+
 def psi4_output_to_qcel_mol(file):
     with open(f"./data/2021-bms-drugdimer/{file}", "r") as f:
         xyz_data = f.read().split("mol {")[-1].split("}")[0]
-    return qcel.models.Molecule.from_data(xyz_data)
+    xyz_data = xyz_data.replace("0 0 0 1", "0 1")
+    mol = qcel.models.Molecule.from_data(xyz_data)
+    ZA = mol.symbols[mol.fragments[0]]
+    ZB = mol.symbols[mol.fragments[1]]
+    try:
+        ZA = np.array([elem_to_z[za] for za in ZA])
+        ZB = np.array([elem_to_z[zb] for zb in ZB])
+    except KeyError:
+        print(f"Error: {file}\n{xyz_data}\n{ZA} {ZB}")
+    return mol
 
 
 def pdb13k_df():
@@ -93,8 +110,8 @@ def pdb13k_errors():
         df = pd.read_pickle("pdb13k_errors-1-tf.pkl")
         print(df)
         mols = df['qcel_molecule'].tolist()
-        print(mols[:10])
-        interaction_energies = predict_sapt(
+        print("Predicting...")
+        interaction_energies, _ = predict_sapt(
             mols,
             batch_size=200,
         )
@@ -118,7 +135,8 @@ def pdb13k_errors():
     mae_exch = df['exch error'].abs().mean()
     mae_ind = df['ind error'].abs().mean()
     mae_disp = df['disp error'].abs().mean()
-    print(df[['total error', 'elst error', 'exch error', 'ind error', 'disp error']].describe())
+    print(df[['total error', 'elst error', 'exch error',
+          'ind error', 'disp error']].describe())
     print(f"MAE Total: {mae_total}")
     print(f"MAE Elst: {mae_elst}")
     print(f"MAE Exch: {mae_exch}")

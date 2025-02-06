@@ -172,3 +172,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+*prot.pkl
+data/2021-bms-drugdimer/*.xyz
+data/2021-bms-drugdimer/*.out
+data/2021-bms-drugdimer/*.pkl

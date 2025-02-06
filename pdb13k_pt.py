@@ -73,6 +73,7 @@ def pdb13k_df_og():
 def psi4_output_to_qcel_mol(file):
     with open(f"./data/2021-bms-drugdimer/{file}", "r") as f:
         xyz_data = f.read().split("mol {")[-1].split("}")[0]
+    xyz_data.replace("0 0 0 1", "0 1")
     return qcel.models.Molecule.from_data(xyz_data)
 
 
@@ -107,6 +108,7 @@ def pdb13k_errors():
         df.to_pickle(pkl_fn)
     else:
         df = pd.read_pickle(pkl_fn)
+    print(df.isna().sum())
 
     df['total error'] = df['Total(kcal)'] - df['PT-AP2 TOTAL']
     df['elst error'] = df['Electrostatic'] - df['PT-AP2 ELST']
