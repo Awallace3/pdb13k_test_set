@@ -107,11 +107,17 @@ def pdb13k_errors():
         df.to_pickle(pkl_fn)
     else:
         df = pd.read_pickle(pkl_fn)
-    mae_total = (df['Total(kcal)'] - df['PT-AP2 TOTAL']).abs().mean()
-    mae_elst = (df['Electrostatic'] - df['PT-AP2 ELST']).abs().mean()
-    mae_exch = (df['Exchange'] - df['PT-AP2 EXCH']).abs().mean()
-    mae_ind = (df['Induction'] - df['PT-AP2 IND']).abs().mean()
-    mae_disp = (df['Dispersion'] - df['PT-AP2 DISP']).abs().mean()
+    df['total error'] = df['Total(kcal)'] - df['PT-AP2 TOTAL']
+    df['elst error'] = df['Electrostatic'] - df['PT-AP2 ELST']
+    df['exch error'] = df['Exchange'] - df['PT-AP2 EXCH']
+    df['ind error'] = df['Induction'] - df['PT-AP2 IND']
+    df['disp error'] = df['Dispersion'] - df['PT-AP2 DISP']
+    mae_total = df['total error'].abs().mean()
+    mae_elst = df['elst error'].abs().mean()
+    mae_exch = df['exch error'].abs().mean()
+    mae_ind = df['ind error'].abs().mean()
+    mae_disp = df['disp error'].abs().mean()
+    print(df[['total error', 'elst error', 'exch error', 'ind error', 'disp error']].describe())
     print(f"MAE Total: {mae_total}")
     print(f"MAE Elst: {mae_elst}")
     print(f"MAE Exch: {mae_exch}")
