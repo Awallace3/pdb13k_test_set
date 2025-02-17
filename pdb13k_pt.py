@@ -6,6 +6,7 @@ import pandas as pd
 from pprint import pprint as pp
 from pathlib import Path
 import os
+import numpy as np
 
 mol_dimer = qcel.models.Molecule.from_data("""
 0 1
@@ -70,6 +71,39 @@ def pdb13k_df_og():
     return
 
 
+elem_to_z = {
+    'H': 1,
+    'B': 3,
+    'C': 6,
+    'N': 7,
+    'O': 8,
+    'F': 9,
+    'NA': 11,
+    'Na': 11,
+    'P': 15,
+    'S': 16,
+    'CL': 17,
+    'Cl': 17,
+    'BR': 35,
+    'Br': 35,
+}
+
+
+def psi4_output_to_qcel_mol(file):
+    with open(f"./data/2021-bms-drugdimer/{file}", "r") as f:
+        xyz_data = f.read().split("mol {")[-1].split("}")[0]
+    xyz_data = xyz_data.replace("0 0 0 1", "0 1")
+    mol = qcel.models.Molecule.from_data(xyz_data)
+    ZA = mol.symbols[mol.fragments[0]]
+    ZB = mol.symbols[mol.fragments[1]]
+    try:
+        ZA = np.array([elem_to_z[za] for za in ZA])
+        ZB = np.array([elem_to_z[zb] for zb in ZB])
+    except KeyError:
+        print(f"Error: {file}\n{xyz_data}\n{ZA} {ZB}")
+    return mol
+
+
 def psi4_output_to_qcel_mol(file):
     with open(f"./data/2021-bms-drugdimer/{file}", "r") as f:
         xyz_data = f.read().split("mol {")[-1].split("}")[0]
@@ -89,7 +123,7 @@ def pdb13k_df():
 
 
 def pdb13k_errors():
-    pkl_fn = "pdb13k_errors_ap2.pkl"
+    pkl_fn = "pdb13k_errors_pt-ap2.pkl"
     if not os.path.exists(pkl_fn):
         df = pd.read_pickle("pdb13k_errors-1.pkl")
         print(df)
@@ -130,7 +164,7 @@ def pdb13k_errors():
 
 
 def main():
-    # pdb13k_df()
+    pdb13k_df()
     pdb13k_errors()
     return
 
