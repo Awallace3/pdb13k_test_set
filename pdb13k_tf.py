@@ -146,7 +146,7 @@ def pdb13k_errors():
 
 
 def main():
-    pdb13k_df()
+    # pdb13k_df()
     pdb13k_errors()
     return
 
