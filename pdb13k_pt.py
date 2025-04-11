@@ -1,4 +1,6 @@
 from apnet_pt.pretrained_models import apnet2_model_predict
+from apnet_pt.AtomPairwiseModels.apnet2 import APNet2Model
+from apnet_pt.AtomModels.ap2_atom_model import AtomModel
 import qcelemental as qcel
 from glob import glob
 import pickle
@@ -122,7 +124,7 @@ def pdb13k_df():
     return
 
 
-def pdb13k_errors():
+def pdb13k_errors_ensemble():
     pkl_fn = "pdb13k_errors_pt-ap2.pkl"
     if not os.path.exists(pkl_fn):
         df = pd.read_pickle("pdb13k_errors-1.pkl")
@@ -162,10 +164,57 @@ def pdb13k_errors():
     print(f"MAE Disp: {mae_disp}")
     return
 
+def pdb13k_errors_single_model():
+    pkl_fn = "pdb13k_errors_pt-ap2_single.pkl"
+    if not os.path.exists(pkl_fn):
+        df = pd.read_pickle("pdb13k_errors-1.pkl")
+        ap2 = APNet2Model(
+            atom_model=AtomModel(
+                pre_trained_model_path="../../gits/qcmlforge/models/am_ensemble/am_0.pt",
+            ).model,
+            pre_trained_model_path="../../gits/qcmlforge/models/ap2_ensemble/ap2_t1_0.pt",
+        )
+        ap2.compile_model()
+        print(df)
+        mols = df['qcel_molecule'].tolist()
+        interaction_energies = ap2.predict_qcel_mols(
+            mols,
+            batch_size=200,
+        )
+        df['pt-ap2'] = [ie for ie in interaction_energies]
+        df['PT-AP2 TOTAL'] = df['pt-ap2'].apply(lambda x: x[0])
+        df['PT-AP2 ELST'] = df['pt-ap2'].apply(lambda x: x[1])
+        df['PT-AP2 EXCH'] = df['pt-ap2'].apply(lambda x: x[2])
+        df['PT-AP2 IND'] = df['pt-ap2'].apply(lambda x:  x[3])
+        df['PT-AP2 DISP'] = df['pt-ap2'].apply(lambda x: x[4])
+        df.to_pickle(pkl_fn)
+    else:
+        df = pd.read_pickle(pkl_fn)
+    print(df.isna().sum())
+
+    df['total error'] = df['Total(kcal)'] - df['PT-AP2 TOTAL']
+    df['elst error'] = df['Electrostatic'] - df['PT-AP2 ELST']
+    df['exch error'] = df['Exchange'] - df['PT-AP2 EXCH']
+    df['ind error'] = df['Induction'] - df['PT-AP2 IND']
+    df['disp error'] = df['Dispersion'] - df['PT-AP2 DISP']
+    mae_total = df['total error'].abs().mean()
+    mae_elst = df['elst error'].abs().mean()
+    mae_exch = df['exch error'].abs().mean()
+    mae_ind = df['ind error'].abs().mean()
+    mae_disp = df['disp error'].abs().mean()
+    print(df[['total error', 'elst error', 'exch error', 'ind error', 'disp error']].describe())
+    print(f"MAE Total: {mae_total}")
+    print(f"MAE Elst: {mae_elst}")
+    print(f"MAE Exch: {mae_exch}")
+    print(f"MAE Ind: {mae_ind}")
+    print(f"MAE Disp: {mae_disp}")
+    return
+
 
 def main():
-    pdb13k_df()
-    pdb13k_errors()
+    # pdb13k_df()
+    # pdb13k_errors_ensemble()
+    pdb13k_errors_single_model()
     return
 
 
