@@ -170,9 +170,9 @@ def pdb13k_errors_single_model():
         df = pd.read_pickle("pdb13k_errors-1.pkl")
         ap2 = APNet2Model(
             atom_model=AtomModel(
-                pre_trained_model_path="/home/awallace43/gits/qcmlforge/models/am_ensemble/am_0.pt",
+                pre_trained_model_path="/home/amwalla3/gits/qcmlforge/models/am_ensemble/am_0.pt",
             ).model,
-            pre_trained_model_path="/home/awallace43/gits/qcmlforge/models/ap2_ensemble/ap2_t1_0.pt",
+            pre_trained_model_path="/home/amwalla3/gits/qcmlforge/models/ap2_ensemble/ap2_t1_0.pt",
         )
         ap2.compile_model()
         print(df)
