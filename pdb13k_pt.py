@@ -170,9 +170,9 @@ def pdb13k_errors_single_model():
         df = pd.read_pickle("pdb13k_errors-1.pkl")
         ap2 = APNet2Model(
             atom_model=AtomModel(
-                pre_trained_model_path="../../gits/qcmlforge/models/am_ensemble/am_0.pt",
+                pre_trained_model_path="/home/awallace43/gits/qcmlforge/models/am_ensemble/am_0.pt",
             ).model,
-            pre_trained_model_path="../../gits/qcmlforge/models/ap2_ensemble/ap2_t1_0.pt",
+            pre_trained_model_path="/home/awallace43/gits/qcmlforge/models/ap2_ensemble/ap2_t1_0.pt",
         )
         ap2.compile_model()
         print(df)
@@ -180,13 +180,15 @@ def pdb13k_errors_single_model():
         interaction_energies = ap2.predict_qcel_mols(
             mols,
             batch_size=200,
+            verbose=True,
         )
+        print(interaction_energies)
         df['pt-ap2'] = [ie for ie in interaction_energies]
-        df['PT-AP2 TOTAL'] = df['pt-ap2'].apply(lambda x: x[0])
-        df['PT-AP2 ELST'] = df['pt-ap2'].apply(lambda x: x[1])
-        df['PT-AP2 EXCH'] = df['pt-ap2'].apply(lambda x: x[2])
-        df['PT-AP2 IND'] = df['pt-ap2'].apply(lambda x:  x[3])
-        df['PT-AP2 DISP'] = df['pt-ap2'].apply(lambda x: x[4])
+        df['PT-AP2 ELST'] = df['pt-ap2'].apply(lambda x: x[0])
+        df['PT-AP2 EXCH'] = df['pt-ap2'].apply(lambda x: x[1])
+        df['PT-AP2 IND'] = df['pt-ap2'].apply(lambda x:  x[2])
+        df['PT-AP2 DISP'] = df['pt-ap2'].apply(lambda x: x[3])
+        df['PT-AP2 TOTAL'] = df.apply(lambda x: x['PT-AP2 ELST'] + x['PT-AP2 EXCH'] + x['PT-AP2 IND'] + x['PT-AP2 DISP'], axis=1)
         df.to_pickle(pkl_fn)
     else:
         df = pd.read_pickle(pkl_fn)
