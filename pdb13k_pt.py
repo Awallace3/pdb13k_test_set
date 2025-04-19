@@ -125,7 +125,7 @@ def pdb13k_df():
 
 
 def pdb13k_errors_ensemble():
-    pkl_fn = "pdb13k_errors_pt-ap2.pkl"
+    pkl_fn = "pdb13k_errors_pt-ap2-t2.pkl"
     if not os.path.exists(pkl_fn):
         df = pd.read_pickle("pdb13k_errors-1.pkl")
         print(df)
@@ -134,6 +134,7 @@ def pdb13k_errors_ensemble():
             mols,
             compile=True,
             batch_size=1000,
+            ensemble_model_dir="./models/"
         )
         df['pt-ap2'] = [ie for ie in interaction_energies]
         df['PT-AP2 TOTAL'] = df['pt-ap2'].apply(lambda x: x[0])
@@ -215,8 +216,8 @@ def pdb13k_errors_single_model():
 
 def main():
     # pdb13k_df()
-    # pdb13k_errors_ensemble()
-    pdb13k_errors_single_model()
+    pdb13k_errors_ensemble()
+    # pdb13k_errors_single_model()
     return
 
 
