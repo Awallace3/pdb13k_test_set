@@ -1,5 +1,8 @@
 import pandas as pd
 
+# Using
+#   ==> F-ISAPT: Links 50-50 <==
+#    => Reduced Analysis <=
 fsapt_data = """
 Frag1     Frag2         Elst     Exch    IndAB    IndBA     Disp    EDisp    Total 
 A:203     A:7:ARG   -140.728   18.406   -4.160   -7.047   -7.339    0.000 -140.867 
@@ -52,32 +55,29 @@ A:203     C:236:HOH    1.763    0.000    0.079   -0.104   -0.031    0.000    1.7
 A:203     cap_ats     -4.806   -0.000    0.017   -0.539   -0.108    0.000   -5.435 
 """
 
+
 def parse_fsapt_data(data):
     """Parse the fsapt data from a string."""
-    lines = data.strip().split('\n')
+    lines = data.strip().split("\n")
     header = lines[0].split()
     records = [line.split() for line in lines[1:]]
-    
+
     # Convert to DataFrame
     df = pd.DataFrame(records, columns=header)
-    
+
     # Convert numeric columns to appropriate types
-    numeric_cols = ['Elst', 'Exch', 'IndAB', 'IndBA', 'Disp', 'EDisp', 'Total']
-    df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
+    numeric_cols = ["Elst", "Exch", "IndAB", "IndBA", "Disp", "EDisp", "Total"]
+    df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors="coerce")
     return df
 
 
 def main():
-    # Parse the fsapt data
-    # sleep 2 seaonds
-    import time
-    time.sleep(2)
     df = parse_fsapt_data(fsapt_data)
-    df['source'] = 'fsapt'
-    df['abs(total)'] = df['Total'].abs()
-    df.sort_values(by='abs(total)', ascending=False, inplace=True)
-    df['fA-fB'] = df['Frag1'] + '-' + df['Frag2']
-    pd.set_option('display.max_rows', None)  # Show all rows
+    df["source"] = "fsapt"
+    df["abs(total)"] = df["Total"].abs()
+    df.sort_values(by="abs(total)", ascending=False, inplace=True)
+    df["fA-fB"] = df["Frag1"] + "-" + df["Frag2"]
+    pd.set_option("display.max_rows", None)  # Show all rows
     # Display the DataFrame
     print("FSAPT DataFrame:")
     print(df)
@@ -87,12 +87,14 @@ def main():
     print(df_ap2)
     # The 'fA-fB' column is used for merging; however, not exactly the same
     # across both DataFrames...
-    df_merged = pd.merge(df, df_ap2, on='fA-fB', how='outer', suffixes=('_fsapt', '_ap2'))
+    df_merged = pd.merge(
+        df, df_ap2, on="fA-fB", how="outer", suffixes=("_fsapt", "_ap2")
+    )
     print("\nMerged DataFrame (Limited):")
-    df_merged['Total_diff'] = df_merged['total'] - df_merged['Total']
-    print(df_merged[['fA-fB', 'total', 'Total', 'Total_diff', 'source']])
+    df_merged["Total_diff"] = df_merged["total"] - df_merged["Total"]
+    print(df_merged[["fA-fB", "total", "Total", "Total_diff", "source"]])
     return
+
 
 if __name__ == "__main__":
     main()
-
