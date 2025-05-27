@@ -176,3 +176,12 @@ cython_debug/
 data/2021-bms-drugdimer/*.xyz
 data/2021-bms-drugdimer/*.out
 data/2021-bms-drugdimer/*.pkl
+data/2021-03-12-13333-S0-ADZ-drug-aapairs.tar.gz
+data/2021-03-21-13Kset-pkl-xyz-out.tar.gz
+data/SAPT0-ADZ-NRGS-COMPONENTS.txt
+data/aryl-interactions-xyz-out-pkl-in.tar.gz
+data/h-bonds-interactions-xyz-out-pkl-in.tar.gz
+pdb13k_errors_pt-ap2-t2.pkl
+pdb13k_errors_pt-ap2-t2.pkl.bak
+pdb13k_errors_pt-ap2_single.pkl
+t2_0.pkl

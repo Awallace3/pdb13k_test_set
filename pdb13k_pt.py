@@ -163,6 +163,7 @@ def pdb13k_errors_ensemble():
     print(f"MAE Exch: {mae_exch}")
     print(f"MAE Ind: {mae_ind}")
     print(f"MAE Disp: {mae_disp}")
+    print(df[['Total(kcal)', 'Electrostatic', 'Exchange', 'Induction', 'Dispersion']].describe())
     return
 
 def pdb13k_errors_single_model():
@@ -211,6 +212,8 @@ def pdb13k_errors_single_model():
     print(f"MAE Exch: {mae_exch}")
     print(f"MAE Ind: {mae_ind}")
     print(f"MAE Disp: {mae_disp}")
+
+    print(df[['Total(kcal)', 'Electrostatic', 'Exchange', 'Induction', 'Dipsersion']].describe())
     return
 
 
