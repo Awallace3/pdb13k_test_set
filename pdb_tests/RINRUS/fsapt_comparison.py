@@ -90,9 +90,32 @@ def main():
     df_merged = pd.merge(
         df, df_ap2, on="fA-fB", how="outer", suffixes=("_fsapt", "_ap2")
     )
-    print("\nMerged DataFrame (Limited):")
+    df_merged['FSAPT Total'] = df_merged['Total']
+    df_merged['abs(FSAPT Total)'] = df_merged['FSAPT Total'].abs()
+    df_merged['AP2 Total'] = df_merged['total']
+    df_merged['abs(AP2 Total)'] = df_merged['AP2 Total'].abs()
     df_merged["Total_diff"] = df_merged["total"] - df_merged["Total"]
-    print(df_merged[["fA-fB", "total", "Total", "Total_diff", "source"]])
+
+    # Indexing and sorting
+    df_merged.sort_values(by="abs(FSAPT Total)", ascending=False, inplace=True)
+    df_merged.reset_index(inplace=True, drop=True)
+    df_merged['FSAPT index'] = df_merged.index
+
+    df_merged.sort_values(by="abs(AP2 Total)", ascending=False, inplace=True)
+    df_merged.reset_index(inplace=True, drop=True)
+    df_merged["AP2 index"] = df_merged.index
+
+    df_merged.sort_values(by="abs(FSAPT Total)", ascending=False, inplace=True)
+    df_merged.reset_index(inplace=True, drop=True)
+
+    print("\nFull, sorted by abs(FSAPT Total):")
+    print(df_merged[["fA-fB", "AP2 Total", "FSAPT Total", "Total_diff", "AP2 index", "FSAPT index"]])
+
+    df_merged.sort_values(by="abs(AP2 Total)", ascending=False, inplace=True)
+    df_merged.reset_index(inplace=True, drop=True)
+    print("\nFull, sorted by abs(AP2 Total):")
+    print(df_merged[["fA-fB", "AP2 Total", "FSAPT Total", "Total_diff", "AP2 index", "FSAPT index"]])
+
     return
 
 
