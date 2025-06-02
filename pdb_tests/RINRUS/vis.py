@@ -1,4 +1,4 @@
-import apnet_pt
+import qm_tools_aw
 import qcelemental as qcel
 
 mol_fsapt = qcel.models.Molecule.from_data("""
@@ -450,35 +450,7 @@ units angstrom
 no_reorient
 symmetry c1
 """)
-
-
-def read_fA_fB_data(filename):
-    with open(filename, "r") as f:
-        data = f.readlines()
-    f = {}
-    for line in data:
-        line = line.strip().split()
-        f[line[0]] = [int(x) for x in line[1:]]
-    return f
-
-
-IE, pairs, df = apnet_pt.pretrained_models.apnet2_model_predict_pairs(
-    [mol_fsapt],
-    compile=False,
-    print_results=True,
-    fAs=[read_fA_fB_data("fA.dat")],
-    fBs=[read_fA_fB_data("fB.dat")],
+qm_tools_aw.molecular_visualization.visualize_molecule(
+    mol_fsapt,
+    temp_filename="tmp.html"
 )
-print("\ntotal predicted dimer IE:\n", IE)
-print('Sorted by Total Interaction Energy (kcal/mol):')
-df['abs(total)'] = df['total'].abs()
-df = df.sort_values(by='abs(total)', ascending=False)
-print(df)
-# df.to_pickle("apnet2_results.pkl")
-
-# FSAPT0
-# ALL ALL -384.000   91.485  -13.321  -61.698  -61.298    0.000 -428.832
-# elst = -384.000
-# exch = 91.485
-# ind = -13.321 + -61.698 = -75.019
-# disp = -61.298

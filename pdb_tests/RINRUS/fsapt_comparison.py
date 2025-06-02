@@ -1,4 +1,5 @@
 import pandas as pd
+from pprint import pprint as pp
 
 # Using
 #   ==> F-ISAPT: Links 50-50 <==
@@ -90,6 +91,7 @@ def main():
     df_merged = pd.merge(
         df, df_ap2, on="fA-fB", how="outer", suffixes=("_fsapt", "_ap2")
     )
+    pp(df_merged.columns.tolist())
     df_merged['FSAPT Total'] = df_merged['Total']
     df_merged['abs(FSAPT Total)'] = df_merged['FSAPT Total'].abs()
     df_merged['AP2 Total'] = df_merged['total']
@@ -116,6 +118,37 @@ def main():
     print("\nFull, sorted by abs(AP2 Total):")
     print(df_merged[["fA-fB", "AP2 Total", "FSAPT Total", "Total_diff", "AP2 index", "FSAPT index"]])
 
+    mae_elst = (df_merged["elst"] - df_merged["Elst"]).abs().mean()
+    mae_exch = (df_merged["exch"] - df_merged["Exch"]).abs().mean()
+    df_merged['Indu'] = df_merged['IndAB'] + df_merged['IndBA']
+    mae_indu = (df_merged["indu"] - df_merged["Indu"]).abs().mean()
+    mae_disp = (df_merged["disp"] - df_merged["Disp"]).abs().mean()
+    mae_total = (df_merged["total"] - df_merged["Total"]).abs().mean()
+
+    me_elst = (df_merged["elst"] - df_merged["Elst"]).mean()
+    me_exch = (df_merged["exch"] - df_merged["Exch"]).mean()
+    me_indu = (df_merged["indu"] - df_merged["Indu"]).mean()
+    me_disp = (df_merged["disp"] - df_merged["Disp"]).mean()
+    me_total = (df_merged["total"] - df_merged["Total"]).mean()
+
+    df_merged.sort_values(by="abs(FSAPT Total)", ascending=False, inplace=True)
+
+    print(df_merged[["fA-fB", "elst", "Elst", "AP2 index", "FSAPT index"]])
+    print(df_merged[["fA-fB", "exch", "Exch", "AP2 index", "FSAPT index"]])
+    print(df_merged[["fA-fB", "indu", "Indu", "AP2 index", "FSAPT index"]])
+    print(df_merged[["fA-fB", "disp", "Disp", "AP2 index", "FSAPT index"]])
+
+    print(f"MAE totl: {mae_total:.3f}")
+    print(f"MAE Elst: {mae_elst:.3f}")
+    print(f"MAE Exch: {mae_exch:.3f}")
+    print(f"MAE Indu: {mae_indu:.3f}")
+    print(f"MAE Disp: {mae_disp:.3f}")
+
+    print(f"ME totl: {me_total:.3f}")
+    print(f"ME Elst: {me_elst:.3f}")
+    print(f"ME Exch: {me_exch:.3f}")
+    print(f"ME Indu: {me_indu:.3f}")
+    print(f"ME Disp: {me_disp:.3f}")
     return
 
 
