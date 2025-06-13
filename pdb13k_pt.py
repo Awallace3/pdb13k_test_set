@@ -9,6 +9,7 @@ from pprint import pprint as pp
 from pathlib import Path
 import os
 import numpy as np
+from qm_tools_aw.molecular_visualization import visualize_molecule
 
 mol_dimer = qcel.models.Molecule.from_data("""
 0 1
@@ -206,6 +207,7 @@ def pdb13k_errors_single_model():
     mae_exch = df['exch error'].abs().mean()
     mae_ind = df['ind error'].abs().mean()
     mae_disp = df['disp error'].abs().mean()
+    print(df[['total error', 'elst error', 'Electrostatic', 'PT-AP2 ELST']])
     print(df[['total error', 'elst error', 'exch error', 'ind error', 'disp error']].describe())
     print(f"MAE Total: {mae_total}")
     print(f"MAE Elst: {mae_elst}")
@@ -213,14 +215,47 @@ def pdb13k_errors_single_model():
     print(f"MAE Ind: {mae_ind}")
     print(f"MAE Disp: {mae_disp}")
 
-    print(df[['Total(kcal)', 'Electrostatic', 'Exchange', 'Induction', 'Dipsersion']].describe())
+    print(df[['Total(kcal)', 'Electrostatic', 'Exchange', 'Induction', 'Dispersion']].describe())
+    return
+
+def isolate_pt_top_errors_compared_to_tf():
+    df_tf = pd.read_pickle("pdb13k_errors_tf-ap2.pkl")
+    df_pt = pd.read_pickle("pdb13k_errors_pt-ap2_single.pkl")
+    df = pd.merge(df_tf, df_pt, on='Jobname', suffixes=('_tf', '_pt'))
+    df['TF-AP2 ELST'] = df['PT-AP2 ELST_tf']
+    df['PT-AP2 ELST'] = df['PT-AP2 ELST_pt']
+    pp(df.columns.tolist())
+    df['PT elst error'] = abs(df['PT-AP2 ELST_pt'] - df['Electrostatic_pt'])
+    df['TF elst error'] = abs(df['PT-AP2 ELST_tf'] - df['Electrostatic_tf'])
+    df.sort_values(by='PT elst error', ascending=False, inplace=True)
+    print(df[['Jobname', 'PT elst error', 'TF elst error']])
+    print(df[['Jobname', 'Electrostatic_pt', 'PT-AP2 ELST', 'TF-AP2 ELST']])
+    df.reset_index(inplace=True, drop=True)
+    for n, i in df.iterrows():
+        if n > 50:
+            break
+        mol = i['qcel_molecule_pt']
+        monA = mol.get_fragment(0)
+        monB = mol.get_fragment(1)
+        print(n, i['Jobname'], f"\n   PT-AP2={i['PT-AP2 ELST']:.2f}, TF-AP2={i['TF-AP2 ELST']:.2f}, PT error={i['PT elst error']:.2f}, TF error={i['TF elst error']:.2f}")
+        print(f"   {monA.molecular_charge}, {monB.molecular_charge}")
+        # continue
+        visualize_molecule(
+            i['qcel_molecule_pt'],
+            # title=f"{i['Jobname']}\nPT-AP2={i['PT-AP2 ELST']:.2f}, TF-AP2={i['TF-AP2 ELST']:.2f}, PT error={i['PT elst error']:.2f}, TF error={i['TF elst error']:.2f}",
+            title=f"{monA.molecular_charge}::{monB.molecular_charge}, PT:{i['PT-AP2 ELST']:.2f} TF:{i['TF-AP2 ELST']:.2f},Elst:{i['Electrostatic_pt']:.2f}",
+            temp_filename=f"./mol_viz/{n}.html"
+                )
+
+
     return
 
 
 def main():
     # pdb13k_df()
     # pdb13k_errors_ensemble()
-    pdb13k_errors_single_model()
+    # pdb13k_errors_single_model()
+    isolate_pt_top_errors_compared_to_tf()
     return
 
 
