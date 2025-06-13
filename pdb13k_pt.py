@@ -232,22 +232,24 @@ def isolate_pt_top_errors_compared_to_tf():
     print(df[['Jobname', 'Electrostatic_pt', 'PT-AP2 ELST', 'TF-AP2 ELST']])
     df.reset_index(inplace=True, drop=True)
     for n, i in df.iterrows():
-        if n > 50:
+        if n > 1000:
             break
         mol = i['qcel_molecule_pt']
         monA = mol.get_fragment(0)
         monB = mol.get_fragment(1)
         print(n, i['Jobname'], f"\n   PT-AP2={i['PT-AP2 ELST']:.2f}, TF-AP2={i['TF-AP2 ELST']:.2f}, PT error={i['PT elst error']:.2f}, TF error={i['TF elst error']:.2f}")
-        print(f"   {monA.molecular_charge}, {monB.molecular_charge}")
+        print(f"\n   {monA.molecular_charge}, {monB.molecular_charge}")
         # continue
-        visualize_molecule(
-            i['qcel_molecule_pt'],
-            # title=f"{i['Jobname']}\nPT-AP2={i['PT-AP2 ELST']:.2f}, TF-AP2={i['TF-AP2 ELST']:.2f}, PT error={i['PT elst error']:.2f}, TF error={i['TF elst error']:.2f}",
-            title=f"{monA.molecular_charge}::{monB.molecular_charge}, PT:{i['PT-AP2 ELST']:.2f} TF:{i['TF-AP2 ELST']:.2f},Elst:{i['Electrostatic_pt']:.2f}",
-            temp_filename=f"./mol_viz/{n}.html"
-                )
-
-
+        # if n > 10:
+        #     continue
+        if False:
+            visualize_molecule(
+                i['qcel_molecule_pt'],
+                # title=f"{i['Jobname']}\nPT-AP2={i['PT-AP2 ELST']:.2f}, TF-AP2={i['TF-AP2 ELST']:.2f}, PT error={i['PT elst error']:.2f}, TF error={i['TF elst error']:.2f}",
+                title=f"{monA.molecular_charge}::{monB.molecular_charge}, PT:{i['PT-AP2 ELST']:.2f} TF:{i['TF-AP2 ELST']:.2f},Elst:{i['Electrostatic_pt']:.2f}",
+                temp_filename=f"./mol_viz/{n}.html"
+            )
+    df.head(1000).to_pickle("pdb13k_errors_pt_top_1000_errors.pkl")
     return
 
 
