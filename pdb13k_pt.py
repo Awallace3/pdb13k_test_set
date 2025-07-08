@@ -1,5 +1,6 @@
 from apnet_pt.pretrained_models import apnet2_model_predict
 from apnet_pt.AtomPairwiseModels.apnet2 import APNet2Model
+from apnet_pt.AtomPairwiseModels.apnet2_fused import APNet2_AM_Model
 from apnet_pt.AtomModels.ap2_atom_model import AtomModel
 import qcelemental as qcel
 from glob import glob
@@ -168,15 +169,21 @@ def pdb13k_errors_ensemble():
     return
 
 def pdb13k_errors_single_model():
-    pkl_fn = "pdb13k_errors_pt-ap2_single.pkl"
+    pkl_fn = "pdb13k_errors_pt-ap2_single-t5.pkl"
     if not os.path.exists(pkl_fn):
         df = pd.read_pickle("pdb13k_errors-1.pkl")
-        ap2 = APNet2Model(
+        ap2 = APNet2_AM_Model(
             atom_model=AtomModel(
-                pre_trained_model_path="/home/amwalla3/gits/qcmlforge/models/am_pbe0_ensemble/am_0.pt",
+                pre_trained_model_path="/home/amwalla3/gits/qcmlforge/models/am_ensemble/am_1.pt",
             ).model,
-            pre_trained_model_path="/home/amwalla3/gits/qcmlforge/models/ap2_pbe0_ensemble/ap2_t2_0.pt",
+            pre_trained_model_path="/home/amwalla3/gits/qcmlforge/models/ap2-fused_ensemble/ap2_1.pt",
         )
+        # ap2 = APNet2Model(
+        #     atom_model=AtomModel(
+        #         pre_trained_model_path="/home/amwalla3/gits/qcmlforge/models/am_pbe0_ensemble/am_0.pt",
+        #     ).model,
+        #     pre_trained_model_path="/home/amwalla3/gits/qcmlforge/models/ap2_pbe0_ensemble/ap2_t2_0.pt",
+        # )
         ap2.compile_model()
         print(df)
         mols = df['qcel_molecule'].tolist()
@@ -237,8 +244,8 @@ def isolate_pt_top_errors_compared_to_tf():
         mol = i['qcel_molecule_pt']
         monA = mol.get_fragment(0)
         monB = mol.get_fragment(1)
-        print(n, i['Jobname'], f"\n   PT-AP2={i['PT-AP2 ELST']:.2f}, TF-AP2={i['TF-AP2 ELST']:.2f}, PT error={i['PT elst error']:.2f}, TF error={i['TF elst error']:.2f}")
-        print(f"\n   {monA.molecular_charge}, {monB.molecular_charge}")
+        # print(n, i['Jobname'], f"\n   PT-AP2={i['PT-AP2 ELST']:.2f}, TF-AP2={i['TF-AP2 ELST']:.2f}, PT error={i['PT elst error']:.2f}, TF error={i['TF elst error']:.2f}")
+        # print(f"\n   {monA.molecular_charge}, {monB.molecular_charge}")
         # continue
         # if n > 10:
         #     continue
@@ -249,6 +256,9 @@ def isolate_pt_top_errors_compared_to_tf():
                 title=f"{monA.molecular_charge}::{monB.molecular_charge}, PT:{i['PT-AP2 ELST']:.2f} TF:{i['TF-AP2 ELST']:.2f},Elst:{i['Electrostatic_pt']:.2f}",
                 temp_filename=f"./mol_viz/{n}.html"
             )
+    pd.set_option('display.max_rows', None)
+    print(df[['Electrostatic_pt']].head(1000))
+    df.to_pickle("pdb13k_errors_pt_top_errors.pkl")
     df.head(1000).to_pickle("pdb13k_errors_pt_top_1000_errors.pkl")
     return
 
@@ -256,8 +266,8 @@ def isolate_pt_top_errors_compared_to_tf():
 def main():
     # pdb13k_df()
     # pdb13k_errors_ensemble()
-    # pdb13k_errors_single_model()
-    isolate_pt_top_errors_compared_to_tf()
+    pdb13k_errors_single_model()
+    # isolate_pt_top_errors_compared_to_tf()
     return
 
 
