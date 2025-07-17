@@ -82,7 +82,8 @@ def main():
     # Display the DataFrame
     print("FSAPT DataFrame:")
     print(df)
-    df_ap2 = pd.read_pickle("./apnet2_results.pkl")
+    # df_ap2 = pd.read_pickle("./apnet2_results.pkl")
+    df_ap2 = pd.read_pickle("./apnet2_results_fused.pkl")
     # df_ap2['source'] = 'ap2'
     print("\nAPNet2 DataFrame:")
     print(df_ap2)

@@ -468,13 +468,14 @@ IE, pairs, df = apnet_pt.pretrained_models.apnet2_model_predict_pairs(
     print_results=True,
     fAs=[read_fA_fB_data("fA.dat")],
     fBs=[read_fA_fB_data("fB.dat")],
+    ap2_fused=True,
 )
 print("\ntotal predicted dimer IE:\n", IE)
 print('Sorted by Total Interaction Energy (kcal/mol):')
 df['abs(total)'] = df['total'].abs()
 df = df.sort_values(by='abs(total)', ascending=False)
 print(df)
-# df.to_pickle("apnet2_results.pkl")
+df.to_pickle("apnet2_results_fused.pkl")
 
 # FSAPT0
 # ALL ALL -384.000   91.485  -13.321  -61.698  -61.298    0.000 -428.832
