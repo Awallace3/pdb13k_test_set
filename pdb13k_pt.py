@@ -288,18 +288,18 @@ def ap3_d_elst_classical_energies(mols):
         # pre_trained_model_path=at_elst_path_mpnn,
         pre_trained_model_path=at_elst_path,
     )
-    atom_type_elst_undamped_model = (
-        apnet_pt.AtomPairwiseModels.mtp_mtp.AM_DimerParam_Model(
-            use_GPU=False,
-            n_neuron=64,
-            n_params=1,
-            ignore_database_null=True,
-            atom_model=atom_type_hf_vw_model.model,
-            atom_model_type="AtomTypeParamNN",
-            pre_trained_model_path=at_elst_path,
-            dimer_eval_type="elst",
-        )
-    )
+    # atom_type_elst_undamped_model = (
+    #     apnet_pt.AtomPairwiseModels.mtp_mtp.AM_DimerParam_Model(
+    #         use_GPU=False,
+    #         n_neuron=64,
+    #         n_params=1,
+    #         ignore_database_null=True,
+    #         atom_model=atom_type_hf_vw_model.model,
+    #         atom_model_type="AtomTypeParamNN",
+    #         pre_trained_model_path=at_elst_path,
+    #         dimer_eval_type="elst",
+    #     )
+    # )
     ap3 = apnet_pt.AtomPairwiseModels.apnet3_fused.APNet3_AtomType_Model(
         ds_root=None,
         atom_type_model=atom_type_hf_vw_model.model,
@@ -309,10 +309,10 @@ def ap3_d_elst_classical_energies(mols):
     pred, pair_elst, pair_ind = ap3.predict_qcel_mols(
         mols, batch_size=16, return_classical_pairs=True
     )
-    elst_undamped = atom_type_elst_undamped_model.predict_qcel_mols_dimer(
-        mols, batch_size=16
-    )
-    return pred, pair_elst, pair_ind, elst_undamped
+    # elst_undamped = atom_type_elst_undamped_model.predict_qcel_mols_dimer(
+    #     mols, batch_size=16
+    # )
+    return pred, pair_elst, pair_ind
 
 
 def pdb13k_errors_single_model_ap3():
@@ -321,14 +321,13 @@ def pdb13k_errors_single_model_ap3():
         df = pd.read_pickle("pdb13k_errors-1.pkl")
 
         print("AP3 start")
-        pred, pair_elst, pair_ind, elst_undamped = ap3_d_elst_classical_energies(
+        pred, pair_elst, pair_ind = ap3_d_elst_classical_energies(
             df["qcel_molecule"].tolist()
         )
         elst_energies = [np.sum(e) for e in pair_elst]
         ind_energies = [np.sum(e) for e in pair_ind]
-        df["mtp_elst_energies"] = elst_undamped
+        # df["mtp_elst_energies"] = elst_undamped
         df["ap3_d_elst"] = elst_energies
-        df["undamped_elst"] = elst_undamped
         df["ap3_classical_ind_energy"] = ind_energies
         df["AP3 TOTAL"] = np.sum(pred[:, 0:4], axis=1)
         df["AP3 ELST"] = pred[:, 0]
@@ -343,15 +342,14 @@ def pdb13k_errors_single_model_ap3():
     df['AP3 total error'] = df['Total(kcal)'] - df['AP3 TOTAL']
     df['AP3 elst error'] = df['Electrostatic'] - df['AP3 ELST']
     df['AP3 exch error'] = df['Exchange'] - df['AP3 EXCH']
-    df['AP3 ind error'] = df['Induction'] - df['AP3 IND']
+    df['AP3 ind error'] = df['Induction'] - df['AP3 INDU']
     df['AP3 disp error'] = df['Dispersion'] - df['AP3 DISP']
     mae_total = df['AP3 total error'].abs().mean()
     mae_elst = df['AP3 elst error'].abs().mean()
     mae_exch = df['AP3 exch error'].abs().mean()
     mae_ind = df['AP3 ind error'].abs().mean()
     mae_disp = df['AP3 disp error'].abs().mean()
-    print(df[['AP3 total error', 'AP3 elst error', 'AP3 Electrostatic', ' AP3 ELST']])
-    print(df[['AP3 total error', 'AP3 elst error', 'AP3 exch error', 'ind error', 'AP3 disp error']].describe())
+    print(df[['AP3 total error', 'AP3 elst error', 'AP3 exch error', 'AP3 ind error', 'AP3 disp error']].describe())
     print(f"MAE Total: {mae_total}")
     print(f"MAE Elst: {mae_elst}")
     print(f"MAE Exch: {mae_exch}")
