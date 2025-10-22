@@ -240,6 +240,7 @@ def isolate_pt_top_errors_compared_to_tf():
     df['PT-AP2 EXCH'] = df['PT-AP2 EXCH_pt']
     df['TF-AP2 DISP'] = df['PT-AP2 DISP_tf']
     df['PT-AP2 DISP'] = df['PT-AP2 DISP_pt']
+    df.drop(columns=['qcel_molecule_tf', 'qcel_molecule_pt'], inplace=True)
     pp(df.columns.tolist())
     # ELST
     df['PT elst error'] = abs(df['PT-AP2 ELST_pt'] - df['Electrostatic_pt'])
@@ -260,7 +261,7 @@ def isolate_pt_top_errors_compared_to_tf():
     for n, i in df.iterrows():
         if n > 1000:
             break
-        mol = i['qcel_molecule_pt']
+        mol = i['qcel_molecule']
         monA = mol.get_fragment(0)
         monB = mol.get_fragment(1)
         # print(n, i['Jobname'], f"\n   PT-AP2={i['PT-AP2 ELST']:.2f}, TF-AP2={i['TF-AP2 ELST']:.2f}, PT error={i['PT elst error']:.2f}, TF error={i['TF elst error']:.2f}")
@@ -270,7 +271,7 @@ def isolate_pt_top_errors_compared_to_tf():
         #     continue
         if False:
             visualize_molecule(
-                i['qcel_molecule_pt'],
+                i['qcel_molecule'],
                 # title=f"{i['Jobname']}\nPT-AP2={i['PT-AP2 ELST']:.2f}, TF-AP2={i['TF-AP2 ELST']:.2f}, PT error={i['PT elst error']:.2f}, TF error={i['TF elst error']:.2f}",
                 title=f"{monA.molecular_charge}::{monB.molecular_charge}, PT:{i['PT-AP2 ELST']:.2f} TF:{i['TF-AP2 ELST']:.2f},Elst:{i['Electrostatic_pt']:.2f}",
                 temp_filename=f"./mol_viz/{n}.html"
@@ -279,6 +280,7 @@ def isolate_pt_top_errors_compared_to_tf():
     print(df[['Electrostatic_pt']].head(1000))
     df.to_pickle("pdb13k_errors_pt_top_errors.pkl")
     df.head(1000).to_pickle("pdb13k_errors_pt_top_1000_errors.pkl")
+    df.to_pickle("pdb13k_errors_ap2_ap3.pkl")
     return
 
 def ap3_d_elst_classical_energies(mols):
