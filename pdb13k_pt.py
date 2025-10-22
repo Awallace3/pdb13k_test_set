@@ -384,7 +384,7 @@ def main():
     # pdb13k_df()
     # pdb13k_errors_ensemble()
     # pdb13k_errors_single_model()
-    # pdb13k_errors_single_model_ap3()
+    pdb13k_errors_single_model_ap3()
     isolate_pt_top_errors_compared_to_tf()
     return
 
