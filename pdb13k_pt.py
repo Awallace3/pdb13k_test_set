@@ -229,15 +229,33 @@ def pdb13k_errors_single_model():
 def isolate_pt_top_errors_compared_to_tf():
     df_tf = pd.read_pickle("pdb13k_errors_tf-ap2.pkl")
     df_pt = pd.read_pickle("pdb13k_errors_pt-ap2_single.pkl")
+    df_ap3 = pd.read_pickle("pdb13k_errors_pt-ap3_single.pkl")
     df = pd.merge(df_tf, df_pt, on='Jobname', suffixes=('_tf', '_pt'))
+    df = pd.merge(df, df_ap3, on='Jobname', suffixes=('', '_ap3'))
     df['TF-AP2 ELST'] = df['PT-AP2 ELST_tf']
     df['PT-AP2 ELST'] = df['PT-AP2 ELST_pt']
+    df['TF-AP2 IND'] = df['PT-AP2 IND_tf']
+    df['PT-AP2 IND'] = df['PT-AP2 IND_pt']
+    df['TF-AP2 EXCH'] = df['PT-AP2 EXCH_tf']
+    df['PT-AP2 EXCH'] = df['PT-AP2 EXCH_pt']
+    df['TF-AP2 DISP'] = df['PT-AP2 DISP_tf']
+    df['PT-AP2 DISP'] = df['PT-AP2 DISP_pt']
     pp(df.columns.tolist())
+    # ELST
     df['PT elst error'] = abs(df['PT-AP2 ELST_pt'] - df['Electrostatic_pt'])
     df['TF elst error'] = abs(df['PT-AP2 ELST_tf'] - df['Electrostatic_tf'])
+    df['AP3 elst error'] = abs(df['AP3 ELST'] - df['Electrostatic_pt'])
     df.sort_values(by='PT elst error', ascending=False, inplace=True)
-    print(df[['Jobname', 'PT elst error', 'TF elst error']])
-    print(df[['Jobname', 'Electrostatic_pt', 'PT-AP2 ELST', 'TF-AP2 ELST']])
+    print(df[['Jobname', 'PT elst error', 'TF elst error', 'AP3 elst error']])
+    print(df[['Jobname', 'Electrostatic_pt', 'PT-AP2 ELST', 'TF-AP2 ELST', 'AP3 ELST']])
+    # IND
+    df['PT ind error'] = abs(df['PT-AP2 IND_pt'] - df['Induction_pt'])
+    df['TF ind error'] = abs(df['PT-AP2 IND_tf'] - df['Induction_tf'])
+    df['AP3 ind error'] = abs(df['AP3 INDU'] - df['Induction_pt'])
+    df.sort_values(by='PT ind error', ascending=False, inplace=True)
+    print(df[['Jobname', 'Induction_pt', 'PT-AP2 IND', 'TF-AP2 IND', 'AP3 INDU']]);
+    pd.set_option('display.max_rows', None)
+    print(df[['Jobname', 'PT ind error', 'TF ind error', 'AP3 ind error']])
     df.reset_index(inplace=True, drop=True)
     for n, i in df.iterrows():
         if n > 1000:
@@ -364,8 +382,8 @@ def main():
     # pdb13k_df()
     # pdb13k_errors_ensemble()
     # pdb13k_errors_single_model()
-    # isolate_pt_top_errors_compared_to_tf()
-    pdb13k_errors_single_model_ap3()
+    # pdb13k_errors_single_model_ap3()
+    isolate_pt_top_errors_compared_to_tf()
     return
 
 
