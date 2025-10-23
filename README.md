@@ -67,7 +67,7 @@ min     -397.337811    -359.700569     -0.000002   -104.425031 -3.573555e+01
 max      227.389268     240.462967    121.295473     -0.000212 -8.500000e-07
 ```
 
-## PT AP3
+## PT AP3 - lr=5e-4, 10 epochs
 ```
        AP3 total error  AP3 elst error  AP3 exch error  AP3 ind error  AP3 disp error
 count     13324.000000    13324.000000    13324.000000   13324.000000    13324.000000
@@ -85,6 +85,25 @@ MAE Ind: 0.201256894221773
 MAE Disp: 0.08812766101784288
 ```
 
+## PT AP3 - lr=5e-4, 10 epochs + lr=5e-5, 15 epochs
+```
+
+       AP3 total error  AP3 elst error  AP3 exch error  AP3 ind error  AP3 disp error
+count     13324.000000    13324.000000    13324.000000   13324.000000    13324.000000
+mean         -0.273428       -0.211846        0.061566      -0.063799       -0.059348
+std           1.725121        1.722611        1.351156       1.012938        0.401788
+min         -32.298300      -49.826900       -6.863751     -99.146750      -14.156430
+25%          -0.362837       -0.261561       -0.069760      -0.076328       -0.079391
+50%          -0.047392       -0.024986       -0.001128       0.001385       -0.029965
+75%           0.145283        0.128427        0.116689       0.054583       -0.002249
+max          47.854992       59.981494       48.789794      18.848977        3.129259
+MAE Total: 0.7042822541792632
+MAE Elst: 0.6002049144965941
+MAE Exch: 0.26805190606079166
+MAE Ind: 0.19727975486410335
+MAE Disp: 0.08509762453622846
+```
+Showing signs of now overfitting. Probably best to revert and keep more generalized model. Beter Exch+Ind+Disp at the cost of Elst
 
 ## Comparisons
 

@@ -288,7 +288,7 @@ def ap3_d_elst_classical_energies(mols):
     am_path = f"{path_to_qcml}/../models/ap3_ensemble/1/am_3.pt"
     at_hf_vw_path = f"{path_to_qcml}/../models/ap3_ensemble/1/am_h+1_3.pt"
     at_elst_path = f"{path_to_qcml}/../models/ap3_ensemble/1/am_elst_h+1_3.pt"
-    ap3_path = f"{path_to_qcml}/../models/ap3_ensemble/3/ap3_.pt"
+    ap3_path = f"{path_to_qcml}/../models/ap3_ensemble/0/ap3_.pt"
     atom_type_hf_vw_model = apnet_pt.AtomPairwiseModels.mtp_mtp.AtomTypeParamModel(
         ds_root=None,
         use_GPU=False,
