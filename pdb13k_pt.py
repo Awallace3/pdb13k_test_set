@@ -12,6 +12,7 @@ from pathlib import Path
 import os
 import numpy as np
 from qm_tools_aw.molecular_visualization import visualize_molecule
+from cdsg_plot import error_statistics
 
 mol_dimer = qcel.models.Molecule.from_data("""
 0 1
@@ -49,11 +50,11 @@ def pdb13k_df_og():
         "SAPT0 DISP ENERGY": [],
     }
     cols = [
-        'SAPT0 TOTAL ENERGY',
-        'SAPT0 ELST ENERGY',
-        'SAPT0 EXCH ENERGY',
-        'SAPT0 IND ENERGY',
-        'SAPT0 DISP ENERGY',
+        "SAPT0 TOTAL ENERGY",
+        "SAPT0 ELST ENERGY",
+        "SAPT0 EXCH ENERGY",
+        "SAPT0 IND ENERGY",
+        "SAPT0 DISP ENERGY",
     ]
     for n, file in enumerate(data):
         with open(file, "rb") as f:
@@ -64,8 +65,8 @@ def pdb13k_df_og():
             xyz_data = f.read().split("mol {")[-1].split("}")[0]
         mol = qcel.models.Molecule.from_data(xyz_data)
         print(mol)
-        df_data['system_id'].append(fn)
-        df_data['qcel_molecule'].append(mol)
+        df_data["system_id"].append(fn)
+        df_data["qcel_molecule"].append(mol)
         for key in cols:
             df_data[key].append(row[key])
         if n == 10:
@@ -77,20 +78,20 @@ def pdb13k_df_og():
 
 
 elem_to_z = {
-    'H': 1,
-    'B': 3,
-    'C': 6,
-    'N': 7,
-    'O': 8,
-    'F': 9,
-    'NA': 11,
-    'Na': 11,
-    'P': 15,
-    'S': 16,
-    'CL': 17,
-    'Cl': 17,
-    'BR': 35,
-    'Br': 35,
+    "H": 1,
+    "B": 3,
+    "C": 6,
+    "N": 7,
+    "O": 8,
+    "F": 9,
+    "NA": 11,
+    "Na": 11,
+    "P": 15,
+    "S": 16,
+    "CL": 17,
+    "Cl": 17,
+    "BR": 35,
+    "Br": 35,
 }
 
 
@@ -117,12 +118,9 @@ def psi4_output_to_qcel_mol(file):
 
 
 def pdb13k_df():
-    df = pd.read_csv(
-        "./data/2021-bms-drugdimer/SAPT0-ADZ-NRGS-COMPONENTS.txt",
-        sep=","
-    )
+    df = pd.read_csv("./data/2021-bms-drugdimer/SAPT0-ADZ-NRGS-COMPONENTS.txt", sep=",")
     # df = df.head()
-    df['qcel_molecule'] = df['Jobname'].apply(psi4_output_to_qcel_mol)
+    df["qcel_molecule"] = df["Jobname"].apply(psi4_output_to_qcel_mol)
     df.to_pickle("pdb13k_errors-1.pkl")
     return
 
@@ -132,42 +130,48 @@ def pdb13k_errors_ensemble():
     if not os.path.exists(pkl_fn):
         df = pd.read_pickle("pdb13k_errors-1.pkl")
         print(df)
-        mols = df['qcel_molecule'].tolist()
+        mols = df["qcel_molecule"].tolist()
         interaction_energies = apnet2_model_predict(
-            mols,
-            compile=True,
-            batch_size=1000,
-            ensemble_model_dir="./models/"
+            mols, compile=True, batch_size=1000, ensemble_model_dir="./models/"
         )
-        df['pt-ap2'] = [ie for ie in interaction_energies]
-        df['PT-AP2 TOTAL'] = df['pt-ap2'].apply(lambda x: x[0])
-        df['PT-AP2 ELST'] = df['pt-ap2'].apply(lambda x: x[1])
-        df['PT-AP2 EXCH'] = df['pt-ap2'].apply(lambda x: x[2])
-        df['PT-AP2 IND'] = df['pt-ap2'].apply(lambda x:  x[3])
-        df['PT-AP2 DISP'] = df['pt-ap2'].apply(lambda x: x[4])
+        df["pt-ap2"] = [ie for ie in interaction_energies]
+        df["PT-AP2 TOTAL"] = df["pt-ap2"].apply(lambda x: x[0])
+        df["PT-AP2 ELST"] = df["pt-ap2"].apply(lambda x: x[1])
+        df["PT-AP2 EXCH"] = df["pt-ap2"].apply(lambda x: x[2])
+        df["PT-AP2 IND"] = df["pt-ap2"].apply(lambda x: x[3])
+        df["PT-AP2 DISP"] = df["pt-ap2"].apply(lambda x: x[4])
         df.to_pickle(pkl_fn)
     else:
         df = pd.read_pickle(pkl_fn)
     print(df.isna().sum())
 
-    df['total error'] = df['Total(kcal)'] - df['PT-AP2 TOTAL']
-    df['elst error'] = df['Electrostatic'] - df['PT-AP2 ELST']
-    df['exch error'] = df['Exchange'] - df['PT-AP2 EXCH']
-    df['ind error'] = df['Induction'] - df['PT-AP2 IND']
-    df['disp error'] = df['Dispersion'] - df['PT-AP2 DISP']
-    mae_total = df['total error'].abs().mean()
-    mae_elst = df['elst error'].abs().mean()
-    mae_exch = df['exch error'].abs().mean()
-    mae_ind = df['ind error'].abs().mean()
-    mae_disp = df['disp error'].abs().mean()
-    print(df[['total error', 'elst error', 'exch error', 'ind error', 'disp error']].describe())
+    df["total error"] = df["Total(kcal)"] - df["PT-AP2 TOTAL"]
+    df["elst error"] = df["Electrostatic"] - df["PT-AP2 ELST"]
+    df["exch error"] = df["Exchange"] - df["PT-AP2 EXCH"]
+    df["ind error"] = df["Induction"] - df["PT-AP2 IND"]
+    df["disp error"] = df["Dispersion"] - df["PT-AP2 DISP"]
+    mae_total = df["total error"].abs().mean()
+    mae_elst = df["elst error"].abs().mean()
+    mae_exch = df["exch error"].abs().mean()
+    mae_ind = df["ind error"].abs().mean()
+    mae_disp = df["disp error"].abs().mean()
+    print(
+        df[
+            ["total error", "elst error", "exch error", "ind error", "disp error"]
+        ].describe()
+    )
     print(f"MAE Total: {mae_total}")
     print(f"MAE Elst: {mae_elst}")
     print(f"MAE Exch: {mae_exch}")
     print(f"MAE Ind: {mae_ind}")
     print(f"MAE Disp: {mae_disp}")
-    print(df[['Total(kcal)', 'Electrostatic', 'Exchange', 'Induction', 'Dispersion']].describe())
+    print(
+        df[
+            ["Total(kcal)", "Electrostatic", "Exchange", "Induction", "Dispersion"]
+        ].describe()
+    )
     return
+
 
 def pdb13k_errors_single_model():
     pkl_fn = "pdb13k_errors_pt-ap2_single-t5.pkl"
@@ -187,81 +191,97 @@ def pdb13k_errors_single_model():
         # )
         ap2.compile_model()
         print(df)
-        mols = df['qcel_molecule'].tolist()
+        mols = df["qcel_molecule"].tolist()
         interaction_energies = ap2.predict_qcel_mols(
             mols,
             batch_size=200,
             verbose=True,
         )
         print(interaction_energies)
-        df['pt-ap2'] = [ie for ie in interaction_energies]
-        df['PT-AP2 ELST'] = df['pt-ap2'].apply(lambda x: x[0])
-        df['PT-AP2 EXCH'] = df['pt-ap2'].apply(lambda x: x[1])
-        df['PT-AP2 IND'] = df['pt-ap2'].apply(lambda x:  x[2])
-        df['PT-AP2 DISP'] = df['pt-ap2'].apply(lambda x: x[3])
-        df['PT-AP2 TOTAL'] = df.apply(lambda x: x['PT-AP2 ELST'] + x['PT-AP2 EXCH'] + x['PT-AP2 IND'] + x['PT-AP2 DISP'], axis=1)
+        df["pt-ap2"] = [ie for ie in interaction_energies]
+        df["PT-AP2 ELST"] = df["pt-ap2"].apply(lambda x: x[0])
+        df["PT-AP2 EXCH"] = df["pt-ap2"].apply(lambda x: x[1])
+        df["PT-AP2 IND"] = df["pt-ap2"].apply(lambda x: x[2])
+        df["PT-AP2 DISP"] = df["pt-ap2"].apply(lambda x: x[3])
+        df["PT-AP2 TOTAL"] = df.apply(
+            lambda x: x["PT-AP2 ELST"]
+            + x["PT-AP2 EXCH"]
+            + x["PT-AP2 IND"]
+            + x["PT-AP2 DISP"],
+            axis=1,
+        )
         df.to_pickle(pkl_fn)
     else:
         df = pd.read_pickle(pkl_fn)
     print(df.isna().sum())
 
-    df['total error'] = df['Total(kcal)'] - df['PT-AP2 TOTAL']
-    df['elst error'] = df['Electrostatic'] - df['PT-AP2 ELST']
-    df['exch error'] = df['Exchange'] - df['PT-AP2 EXCH']
-    df['ind error'] = df['Induction'] - df['PT-AP2 IND']
-    df['disp error'] = df['Dispersion'] - df['PT-AP2 DISP']
-    mae_total = df['total error'].abs().mean()
-    mae_elst = df['elst error'].abs().mean()
-    mae_exch = df['exch error'].abs().mean()
-    mae_ind = df['ind error'].abs().mean()
-    mae_disp = df['disp error'].abs().mean()
-    print(df[['total error', 'elst error', 'Electrostatic', 'PT-AP2 ELST']])
-    print(df[['total error', 'elst error', 'exch error', 'ind error', 'disp error']].describe())
+    df["total error"] = df["Total(kcal)"] - df["PT-AP2 TOTAL"]
+    df["elst error"] = df["Electrostatic"] - df["PT-AP2 ELST"]
+    df["exch error"] = df["Exchange"] - df["PT-AP2 EXCH"]
+    df["ind error"] = df["Induction"] - df["PT-AP2 IND"]
+    df["disp error"] = df["Dispersion"] - df["PT-AP2 DISP"]
+    mae_total = df["total error"].abs().mean()
+    mae_elst = df["elst error"].abs().mean()
+    mae_exch = df["exch error"].abs().mean()
+    mae_ind = df["ind error"].abs().mean()
+    mae_disp = df["disp error"].abs().mean()
+    print(df[["total error", "elst error", "Electrostatic", "PT-AP2 ELST"]])
+    print(
+        df[
+            ["total error", "elst error", "exch error", "ind error", "disp error"]
+        ].describe()
+    )
     print(f"MAE Total: {mae_total}")
     print(f"MAE Elst: {mae_elst}")
     print(f"MAE Exch: {mae_exch}")
     print(f"MAE Ind: {mae_ind}")
     print(f"MAE Disp: {mae_disp}")
 
-    print(df[['Total(kcal)', 'Electrostatic', 'Exchange', 'Induction', 'Dispersion']].describe())
+    print(
+        df[
+            ["Total(kcal)", "Electrostatic", "Exchange", "Induction", "Dispersion"]
+        ].describe()
+    )
     return
+
 
 def isolate_pt_top_errors_compared_to_tf():
     df_tf = pd.read_pickle("pdb13k_errors_tf-ap2.pkl")
     df_pt = pd.read_pickle("pdb13k_errors_pt-ap2_single.pkl")
-    df_ap3 = pd.read_pickle("pdb13k_errors_pt-ap3_single.pkl")
-    df = pd.merge(df_tf, df_pt, on='Jobname', suffixes=('_tf', '_pt'))
-    df = pd.merge(df, df_ap3, on='Jobname', suffixes=('', '_ap3'))
-    df['TF-AP2 ELST'] = df['PT-AP2 ELST_tf']
-    df['PT-AP2 ELST'] = df['PT-AP2 ELST_pt']
-    df['TF-AP2 IND'] = df['PT-AP2 IND_tf']
-    df['PT-AP2 IND'] = df['PT-AP2 IND_pt']
-    df['TF-AP2 EXCH'] = df['PT-AP2 EXCH_tf']
-    df['PT-AP2 EXCH'] = df['PT-AP2 EXCH_pt']
-    df['TF-AP2 DISP'] = df['PT-AP2 DISP_tf']
-    df['PT-AP2 DISP'] = df['PT-AP2 DISP_pt']
-    df.drop(columns=['qcel_molecule_tf', 'qcel_molecule_pt'], inplace=True)
+    # df_ap3 = pd.read_pickle("pdb13k_errors_pt-ap3_single.pkl")
+    df_ap3 = pd.read_pickle("./pdb13k_errors_pt-ap3_single_10epoch.pkl")
+    df = pd.merge(df_tf, df_pt, on="Jobname", suffixes=("_tf", "_pt"))
+    df = pd.merge(df, df_ap3, on="Jobname", suffixes=("", "_ap3"))
+    df["TF-AP2 ELST"] = df["PT-AP2 ELST_tf"]
+    df["PT-AP2 ELST"] = df["PT-AP2 ELST_pt"]
+    df["TF-AP2 IND"] = df["PT-AP2 IND_tf"]
+    df["PT-AP2 IND"] = df["PT-AP2 IND_pt"]
+    df["TF-AP2 EXCH"] = df["PT-AP2 EXCH_tf"]
+    df["PT-AP2 EXCH"] = df["PT-AP2 EXCH_pt"]
+    df["TF-AP2 DISP"] = df["PT-AP2 DISP_tf"]
+    df["PT-AP2 DISP"] = df["PT-AP2 DISP_pt"]
+    df.drop(columns=["qcel_molecule_tf", "qcel_molecule_pt"], inplace=True)
     pp(df.columns.tolist())
     # ELST
-    df['PT elst error'] = abs(df['PT-AP2 ELST_pt'] - df['Electrostatic_pt'])
-    df['TF elst error'] = abs(df['PT-AP2 ELST_tf'] - df['Electrostatic_tf'])
-    df['AP3 elst error'] = abs(df['AP3 ELST'] - df['Electrostatic_pt'])
-    df.sort_values(by='PT elst error', ascending=False, inplace=True)
-    print(df[['Jobname', 'PT elst error', 'TF elst error', 'AP3 elst error']])
-    print(df[['Jobname', 'Electrostatic_pt', 'PT-AP2 ELST', 'TF-AP2 ELST', 'AP3 ELST']])
+    df["PT elst error"] = abs(df["PT-AP2 ELST_pt"] - df["Electrostatic_pt"])
+    df["TF elst error"] = abs(df["PT-AP2 ELST_tf"] - df["Electrostatic_tf"])
+    df["AP3 elst error"] = abs(df["AP3 ELST"] - df["Electrostatic_pt"])
+    df.sort_values(by="PT elst error", ascending=False, inplace=True)
+    print(df[["Jobname", "PT elst error", "TF elst error", "AP3 elst error"]])
+    print(df[["Jobname", "Electrostatic_pt", "PT-AP2 ELST", "TF-AP2 ELST", "AP3 ELST"]])
     # IND
-    df['PT ind error'] = abs(df['PT-AP2 IND_pt'] - df['Induction_pt'])
-    df['TF ind error'] = abs(df['PT-AP2 IND_tf'] - df['Induction_tf'])
-    df['AP3 ind error'] = abs(df['AP3 INDU'] - df['Induction_pt'])
-    df.sort_values(by='PT ind error', ascending=False, inplace=True)
-    print(df[['Jobname', 'Induction_pt', 'PT-AP2 IND', 'TF-AP2 IND', 'AP3 INDU']]);
-    pd.set_option('display.max_rows', None)
-    print(df[['Jobname', 'PT ind error', 'TF ind error', 'AP3 ind error']])
+    df["PT ind error"] = abs(df["PT-AP2 IND_pt"] - df["Induction_pt"])
+    df["TF ind error"] = abs(df["PT-AP2 IND_tf"] - df["Induction_tf"])
+    df["AP3 ind error"] = abs(df["AP3 INDU"] - df["Induction_pt"])
+    df.sort_values(by="PT ind error", ascending=False, inplace=True)
+    print(df[["Jobname", "Induction_pt", "PT-AP2 IND", "TF-AP2 IND", "AP3 INDU"]])
+    pd.set_option("display.max_rows", None)
+    print(df[["Jobname", "PT ind error", "TF ind error", "AP3 ind error"]])
     df.reset_index(inplace=True, drop=True)
     for n, i in df.iterrows():
         if n > 1000:
             break
-        mol = i['qcel_molecule']
+        mol = i["qcel_molecule"]
         monA = mol.get_fragment(0)
         monB = mol.get_fragment(1)
         # print(n, i['Jobname'], f"\n   PT-AP2={i['PT-AP2 ELST']:.2f}, TF-AP2={i['TF-AP2 ELST']:.2f}, PT error={i['PT elst error']:.2f}, TF error={i['TF elst error']:.2f}")
@@ -271,17 +291,18 @@ def isolate_pt_top_errors_compared_to_tf():
         #     continue
         if False:
             visualize_molecule(
-                i['qcel_molecule'],
+                i["qcel_molecule"],
                 # title=f"{i['Jobname']}\nPT-AP2={i['PT-AP2 ELST']:.2f}, TF-AP2={i['TF-AP2 ELST']:.2f}, PT error={i['PT elst error']:.2f}, TF error={i['TF elst error']:.2f}",
                 title=f"{monA.molecular_charge}::{monB.molecular_charge}, PT:{i['PT-AP2 ELST']:.2f} TF:{i['TF-AP2 ELST']:.2f},Elst:{i['Electrostatic_pt']:.2f}",
-                temp_filename=f"./mol_viz/{n}.html"
+                temp_filename=f"./mol_viz/{n}.html",
             )
-    pd.set_option('display.max_rows', None)
-    print(df[['Electrostatic_pt']].head(1000))
+    pd.set_option("display.max_rows", None)
+    print(df[["Electrostatic_pt"]].head(1000))
     df.to_pickle("pdb13k_errors_pt_top_errors.pkl")
     df.head(1000).to_pickle("pdb13k_errors_pt_top_1000_errors.pkl")
     df.to_pickle("pdb13k_errors_ap2_ap3.pkl")
     return
+
 
 def ap3_d_elst_classical_energies(mols):
     path_to_qcml = os.path.join(os.path.expanduser("~"), "gits/qcmlforge/models")
@@ -359,24 +380,199 @@ def pdb13k_errors_single_model_ap3():
         df = pd.read_pickle(pkl_fn)
     print(df.isna().sum())
 
-    df['AP3 total error'] = df['Total(kcal)'] - df['AP3 TOTAL']
-    df['AP3 elst error'] = df['Electrostatic'] - df['AP3 ELST']
-    df['AP3 exch error'] = df['Exchange'] - df['AP3 EXCH']
-    df['AP3 ind error'] = df['Induction'] - df['AP3 INDU']
-    df['AP3 disp error'] = df['Dispersion'] - df['AP3 DISP']
-    mae_total = df['AP3 total error'].abs().mean()
-    mae_elst = df['AP3 elst error'].abs().mean()
-    mae_exch = df['AP3 exch error'].abs().mean()
-    mae_ind = df['AP3 ind error'].abs().mean()
-    mae_disp = df['AP3 disp error'].abs().mean()
-    print(df[['AP3 total error', 'AP3 elst error', 'AP3 exch error', 'AP3 ind error', 'AP3 disp error']].describe())
+    df["AP3 total error"] = df["Total(kcal)"] - df["AP3 TOTAL"]
+    df["AP3 elst error"] = df["Electrostatic"] - df["AP3 ELST"]
+    df["AP3 exch error"] = df["Exchange"] - df["AP3 EXCH"]
+    df["AP3 ind error"] = df["Induction"] - df["AP3 INDU"]
+    df["AP3 disp error"] = df["Dispersion"] - df["AP3 DISP"]
+    mae_total = df["AP3 total error"].abs().mean()
+    mae_elst = df["AP3 elst error"].abs().mean()
+    mae_exch = df["AP3 exch error"].abs().mean()
+    mae_ind = df["AP3 ind error"].abs().mean()
+    mae_disp = df["AP3 disp error"].abs().mean()
+    print(
+        df[
+            [
+                "AP3 total error",
+                "AP3 elst error",
+                "AP3 exch error",
+                "AP3 ind error",
+                "AP3 disp error",
+            ]
+        ].describe()
+    )
     print(f"MAE Total: {mae_total}")
     print(f"MAE Elst: {mae_elst}")
     print(f"MAE Exch: {mae_exch}")
     print(f"MAE Ind: {mae_ind}")
     print(f"MAE Disp: {mae_disp}")
 
-    print(df[['Total(kcal)', 'Electrostatic', 'Exchange', 'Induction', 'Dispersion']].describe())
+    print(
+        df[
+            ["Total(kcal)", "Electrostatic", "Exchange", "Induction", "Dispersion"]
+        ].describe()
+    )
+    return
+
+
+def violin_plot_errors():
+    df = pd.read_pickle("pdb13k_errors_ap2_ap3.pkl")
+    d = {
+        "ELST": "Electrostatic",
+        "IND": "Induction",
+        "EXCH": "Exchange",
+        "DISP": "Dispersion",
+        "TOTAL": "Total(kcal)",
+    }
+    df.rename(
+        columns={
+            "AP3 INDU": "AP3 IND",
+        }, inplace=True
+    )
+    df['TF-AP2 TOTAL'] = df['TF-AP2 ELST'] + df['TF-AP2 EXCH'] + df['TF-AP2 IND'] + df['TF-AP2 DISP']
+    df['PT-AP2 TOTAL'] = df['PT-AP2 ELST'] + df['PT-AP2 EXCH'] + df['PT-AP2 IND'] + df['PT-AP2 DISP']
+    df['AP3 TOTAL'] = df['AP3 ELST'] + df['AP3 EXCH'] + df['AP3 IND'] + df['AP3 DISP']
+    for col, ref in d.items():
+        df[f"AP2-TF {col} ENERGY Error"] = df[f"TF-AP2 {col}"] - df[ref]
+        df[f"AP2-PT {col} ENERGY Error"] = df[f"PT-AP2 {col}"] - df[ref]
+        df[f"AP3 {col} ENERGY Error"] = df[f"AP3 {col}"] - df[ref]
+        df[f"None {col} error"] = 0.0 - df[ref]
+
+    df['AP3 MTP ELST'] = df['ap3_d_elst']
+    df['AP3 MTP IND'] = df['ap3_classical_ind_energy']
+    df['AP3 MTP ELST ENERGY Error'] = df['AP3 MTP ELST'] - df['Electrostatic']
+    df['AP3 MTP IND ENERGY Error'] = df['AP3 MTP IND'] - df['Induction']
+    pp(df.columns.tolist())
+    dfs = [
+        {
+            "df": df,
+            "label": "",
+            "ylim": [[-5.0, 5.0] for i in range(5)],
+        }
+    ]
+
+    BLUE = "#1F77B4"  # BLUE
+    TEAL = "#17BECF"  # TEAL
+    LIGHT_PURPLE = "#7F7FFF"  # LIGHT BLUE
+    GREEN = "#2CA02C"  # GREEN
+    LIME_GREEN = "#8CA83C"  # LIME GREEN
+    Aquamarine = "#7FFFD4"  # Aquamarine
+    Slate_Blue = "#6A5ACD"  # Slate Blue
+    Medium_Sea_Green = "#3CB371"  # Medium Sea Green
+    INDIGO = "#7057FF"  # INDIGO
+    PURPLE = "#643B9F"
+    GREY = "#808080"
+    colors = [
+        [
+            PURPLE,
+            INDIGO,
+            TEAL,
+            TEAL,
+        ] for i in range(5)
+
+    ]
+    error_statistics.violin_plot_table_multi_SAPT_components(
+        dfs,
+        colors=colors,
+        violin_alphas=0.9,
+        df_labels_and_columns_total={
+            "AP2-TF": "AP2-TF TOTAL ENERGY Error",
+            "AP2-PT": "AP2-PT TOTAL ENERGY Error",
+            # "AP3": "AP3 TOTAL ENERGY Error",
+            # "None": "None TOTAL error",
+        },
+        df_labels_and_columns_elst={
+            "AP2-TF": "AP2-TF ELST ENERGY Error",
+            "AP2-PT": "AP2-PT ELST ENERGY Error",
+            # "AP3": "AP3 ELST ENERGY Error",
+            # "AP3 MTP": "AP3 MTP ELST ENERGY Error",
+            # "None": "None ELST error",
+        },
+        df_labels_and_columns_indu={
+            "AP2-TF": "AP2-TF IND ENERGY Error",
+            "AP2-PT": "AP2-PT IND ENERGY Error",
+            # "AP3": "AP3 IND ENERGY Error",
+            # "AP3 MTP": "AP3 MTP IND ENERGY Error",
+            # "None": "None IND error",
+        },
+        df_labels_and_columns_exch={
+            "AP2-TF": "AP2-TF EXCH ENERGY Error",
+            "AP2-PT": "AP2-PT EXCH ENERGY Error",
+            # "AP3": "AP3 EXCH ENERGY Error",
+            # "None": "None EXCH error",
+        },
+        df_labels_and_columns_disp={
+            "AP2-TF": "AP2-TF DISP ENERGY Error",
+            "AP2-PT": "AP2-PT DISP ENERGY Error",
+            # "AP3": "AP3 DISP ENERGY Error",
+            # "None": "None DISP error",
+        },
+        figure_size=(9, 3),
+        ylabel=r"SAPT0/aDZ Error (kcal/mol)",
+        grid_heights=[0.04, 1],
+        add_title=False,
+        output_filename=f"./plots/pdb13k_ap2.jpg",
+        usetex=True,
+        table_fontsize=11,
+        x_label_fontsize=14,
+        y_label_fontsize=12,
+        legend_loc="lower right",
+        share_y_axis=True,
+        grid_widths=[3, 3, 3, 3, 3],
+        MaxE=None,
+        MinE=None,
+    )
+    error_statistics.violin_plot_table_multi_SAPT_components(
+        dfs,
+        colors=colors,
+        violin_alphas=0.9,
+        df_labels_and_columns_total={
+            "AP2-TF": "AP2-TF TOTAL ENERGY Error",
+            "AP2-PT": "AP2-PT TOTAL ENERGY Error",
+            "AP3": "AP3 TOTAL ENERGY Error",
+            # "None": "None TOTAL error",
+        },
+        df_labels_and_columns_elst={
+            "AP2-TF": "AP2-TF ELST ENERGY Error",
+            "AP2-PT": "AP2-PT ELST ENERGY Error",
+            "AP3": "AP3 ELST ENERGY Error",
+            "AP3 MTP": "AP3 MTP ELST ENERGY Error",
+            # "None": "None ELST error",
+        },
+        df_labels_and_columns_indu={
+            "AP2-TF": "AP2-TF IND ENERGY Error",
+            "AP2-PT": "AP2-PT IND ENERGY Error",
+            "AP3": "AP3 IND ENERGY Error",
+            "AP3 MTP": "AP3 MTP IND ENERGY Error",
+            # "None": "None IND error",
+        },
+        df_labels_and_columns_exch={
+            "AP2-TF": "AP2-TF EXCH ENERGY Error",
+            "AP2-PT": "AP2-PT EXCH ENERGY Error",
+            "AP3": "AP3 EXCH ENERGY Error",
+            # "None": "None EXCH error",
+        },
+        df_labels_and_columns_disp={
+            "AP2-TF": "AP2-TF DISP ENERGY Error",
+            "AP2-PT": "AP2-PT DISP ENERGY Error",
+            "AP3": "AP3 DISP ENERGY Error",
+            # "None": "None DISP error",
+        },
+        figure_size=(11, 3),
+        ylabel=r"SAPT0/aDZ Error (kcal/mol)",
+        grid_heights=[0.04, 1],
+        add_title=False,
+        output_filename=f"./plots/pdb13k_ap2_ap3.jpg",
+        usetex=True,
+        table_fontsize=11,
+        x_label_fontsize=14,
+        y_label_fontsize=12,
+        legend_loc="lower right",
+        share_y_axis=True,
+        grid_widths=[4, 3, 4, 3, 3],
+        MaxE=None,
+        MinE=None,
+    )
     return
 
 
@@ -384,8 +580,9 @@ def main():
     # pdb13k_df()
     # pdb13k_errors_ensemble()
     # pdb13k_errors_single_model()
-    pdb13k_errors_single_model_ap3()
-    isolate_pt_top_errors_compared_to_tf()
+    # pdb13k_errors_single_model_ap3()
+    # isolate_pt_top_errors_compared_to_tf()
+    violin_plot_errors()
     return
 
 
