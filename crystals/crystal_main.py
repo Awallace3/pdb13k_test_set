@@ -7,15 +7,16 @@ import subprocess
 import numpy as np
 from qm_tools_aw import tools
 import apnet_pt
+import os
 
 
-apnet2_model = apnet_pt.AtomPairwiseModels.apnet2.APNet2Model().set_pretrained_model(model_id=0)
-apnet2_model.model.return_hidden_states = True
-dapnet2 = apnet_pt.AtomPairwiseModels.dapnet2.dAPNet2Model(
-    apnet2_model,
-    pre_trained_model_path="/home/awallace43/gits/qcmlforge/models/dapnet2/B3LYP-D3_aug-cc-pVDZ_CP_to_CCSD_LP_T_RP_CBS_CP_0.pt",
-)
-
+# apnet2_model = apnet_pt.AtomPairwiseModels.apnet2.APNet2Model().set_pretrained_model(model_id=0)
+# apnet2_model.model.return_hidden_states = True
+# dapnet2 = apnet_pt.AtomPairwiseModels.dapnet2.dAPNet2Model(
+#     apnet2_model,
+#     pre_trained_model_path="/home/awallace43/gits/qcmlforge/models/dapnet2/B3LYP-D3_aug-cc-pVDZ_CP_to_CCSD_LP_T_RP_CBS_CP_0.pt",
+# )
+#
 
 kcalmol_to_kjmol = qcel.constants.conversion_factor("kcal/mol", "kJ/mol")
 
@@ -646,6 +647,139 @@ def collect_crystal_data(generate=False):
     return
 
 
+def ap2_energies(mols, compile=True):
+    ap2 = apnet_pt.AtomPairwiseModels.apnet2_fused.APNet2_AM_Model(
+        atom_model=apnet_pt.AtomModels.ap2_atom_model.AtomModel(
+            pre_trained_model_path="/home/awallace43/gits/qcmlforge/models/am_ensemble/am_1.pt",
+        ).model,
+        pre_trained_model_path="/home/awallace43/gits/qcmlforge/models/ap2-fused_ensemble/ap2_1.pt"
+    )
+    if compile:
+        ap2.compile_model()
+    pred = ap2.predict_qcel_mols(
+        mols, batch_size=64
+    )
+    return pred
+
+
+def ap3_d_elst_classical_energies(mols):
+    path_to_qcml = os.path.join(os.path.expanduser("~"), "gits/qcmlforge/models")
+    am_path = f"{path_to_qcml}/../models/ap3_ensemble/1/am_3.pt"
+    at_hf_vw_path = f"{path_to_qcml}/../models/ap3_ensemble/1/am_h+1_3.pt"
+    at_elst_path = f"{path_to_qcml}/../models/ap3_ensemble/1/am_elst_h+1_3.pt"
+    ap3_path = f"{path_to_qcml}/../models/ap3_ensemble/0/ap3_.pt"
+    atom_type_hf_vw_model = apnet_pt.AtomPairwiseModels.mtp_mtp.AtomTypeParamModel(
+        ds_root=None,
+        use_GPU=False,
+        ignore_database_null=True,
+        atom_model_pre_trained_path=am_path,
+        pre_trained_model_path=at_hf_vw_path,
+    )
+    atom_type_elst_model = apnet_pt.AtomPairwiseModels.mtp_mtp.AM_DimerParam_Model(
+        use_GPU=False,
+        n_neuron=64,
+        n_params=1,
+        ignore_database_null=True,
+        atom_model=atom_type_hf_vw_model.model,
+        atom_model_type="AtomTypeParamNN",
+        model_type="AtomTypeParamNN",
+        pre_trained_model_path=at_elst_path,
+    )
+    ap3 = apnet_pt.AtomPairwiseModels.apnet3_fused.APNet3_AtomType_Model(
+        ds_root=None,
+        atom_type_model=atom_type_hf_vw_model.model,
+        dimer_prop_model=atom_type_elst_model.dimer_model,
+        pre_trained_model_path=ap3_path,
+    )
+    pred, pair_elst, pair_ind = ap3.predict_qcel_mols(
+        mols, batch_size=64, return_classical_pairs=True
+    )
+    return pred, pair_elst, pair_ind
+
+
+def ap2_ap3_df_energies(generate=True):
+    v = "apprx"
+    v = "bm"
+    mol_str = "mol " + v
+    pkl_fn = f"crystals_ap2_ap3_results_{mol_str.replace(" ", "_")}.pkl"
+    if not os.path.exists(pkl_fn) or generate:
+        df = pd.read_pickle("./x23_dfs/main_df.pkl")
+        print(df)
+        df = df.dropna(subset=[mol_str])
+        # df = df.dropna(subset=["mol bm"])
+        print(df)
+        # df = df.head()
+        pp(df.columns.tolist())
+        print("AP2 start")
+        mols = df[mol_str].tolist()
+        pred_ap2 = ap2_energies(mols)
+        pred_ap2 *= kcalmol_to_kjmol
+        df["AP2 TOTAL"] = np.sum(pred_ap2[:, 0:4], axis=1)
+        df["AP2 ELST"] = pred_ap2[:, 0]
+        df["AP2 EXCH"] = pred_ap2[:, 1]
+        df["AP2 INDU"] = pred_ap2[:, 2]
+        df["AP2 DISP"] = pred_ap2[:, 3]
+        df.to_pickle(pkl_fn)
+        print("AP3 start")
+        pred_ap3, pair_elst, pair_ind = ap3_d_elst_classical_energies(
+            mols
+        )
+        pred_ap3 *= kcalmol_to_kjmol
+        elst_energies = [np.sum(e) * kcalmol_to_kjmol for e in pair_elst]
+        ind_energies = [np.sum(e) * kcalmol_to_kjmol for e in pair_ind]
+        # df["mtp_elst_energies"] = elst_undamped
+        df["ap3_d_elst"] = elst_energies
+        df["ap3_classical_ind_energy"] = ind_energies
+        df["AP3 TOTAL"] = np.sum(pred_ap3[:, 0:4], axis=1)
+        df["AP3 ELST"] = pred_ap3[:, 0]
+        df["AP3 EXCH"] = pred_ap3[:, 1]
+        df["AP3 INDU"] = pred_ap3[:, 2]
+        df["AP3 DISP"] = pred_ap3[:, 3]
+        # LE
+        non_additive_cols = [i for i in df.columns if "Non-Additive MB Energy (kJ/mol)" in i]
+        for c in non_additive_cols:
+            label = c.split()[-1]
+            df[f"{label}_le_contribution"] = df.apply(
+                lambda r: r[c]
+                * r[f"Num. Rep. (#) {label}"]
+                / int(r[f"N-mer Name {v}"][0]),
+                axis=1,
+            )
+        df['ap3_le_contribution'] = df.apply(
+            lambda r: r["AP3 TOTAL"]
+            * r["Num. Rep. (#) sapt0-dz-aug"]
+            / int(r[f"N-mer Name {v}"][0]),
+            axis=1,
+        )
+        df['ap2_le_contribution'] = df.apply(
+            lambda r: r["AP2 TOTAL"]
+            * r["Num. Rep. (#) sapt0-dz-aug"]
+            / int(r[f"N-mer Name {v}"][0]),
+            axis=1,
+        )
+        df.to_pickle(pkl_fn)
+    else:
+        df = pd.read_pickle(pkl_fn)
+
+    if v == "apprx":
+        pp(df.columns.tolist())
+        print("\nResults\n")
+        df["AP3 total error"] = df["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"] - df["AP3 TOTAL"]
+        df["AP2 total error"] = df["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"] - df["AP2 TOTAL"]
+        mae_total_ap3 = df["AP3 total error"].abs().mean()
+        print(f"MAE AP3 Total: {mae_total_ap3:.4f} kJ/mol")
+        mae_total_ap2 = df["AP2 total error"].abs().mean()
+        print(f"MAE AP2 Total: {mae_total_ap2:.4f} kJ/mol")
+        print(
+            df[
+                [
+                    "AP3 total error",
+                    "AP2 total error",
+                ]
+            ].describe()
+        )
+    return df
+
 def dapnet_main_df_crystals(
     delta_model_paths={
         # "b3lyp": "../../dapnet_models/delta_correction_B3LYP-D3_aug-cc-pVDZ_CP_to_CCSDT_CBS_CP_limit_B2PLYP-D3_aug-cc-pVTZ_CP",
@@ -887,13 +1021,12 @@ def plot_crystal_errors(
     )
     return
 
-
-def main():
+def main_og():
     # ammonia()
     # hexamine(True)
     # imidazole()
     # process_all_crystals(True)
-    # collect_crystal_data(True)
+    collect_crystal_data(generate=False)
     plot_crystal_errors(compute_delta=False)
 
     df, ci = dapnet_main_df_crystals()
@@ -928,6 +1061,10 @@ def main():
             data_path=f"/theoryfs2/ds/csargent/chem/x23-crystals/{i}/sapt0-dz-aug/{i}/*.out",
             output_csv=f"./sapt0_induction/{i}_sapt0adz.pkl",
         )
+
+
+def main():
+    ap2_ap3_df_energies()
     return
 
 
