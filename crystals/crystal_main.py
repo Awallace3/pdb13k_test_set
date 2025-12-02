@@ -8,6 +8,7 @@ import numpy as np
 from qm_tools_aw import tools
 import apnet_pt
 import os
+from cdsg_plot import error_statistics
 
 
 # apnet2_model = apnet_pt.AtomPairwiseModels.apnet2.APNet2Model().set_pretrained_model(model_id=0)
@@ -697,7 +698,7 @@ def ap3_d_elst_classical_energies(mols):
     return pred, pair_elst, pair_ind
 
 
-def ap2_ap3_df_energies(generate=True):
+def ap2_ap3_df_energies(generate=False):
     v = "apprx"
     v = "bm"
     mol_str = "mol " + v
@@ -1062,9 +1063,314 @@ def main_og():
             output_csv=f"./sapt0_induction/{i}_sapt0adz.pkl",
         )
 
+def plot_full_crystal_errors():
+    """
+    Create violin plots for full crystal lattice energy errors.
+    Similar to dapnet_main_df_crystals, this sums up contributions per crystal
+    and compares AP2/AP3 against reference methods.
+    """
+    from cdsg_plot import error_statistics
+    
+    # Load dataframes
+    df1 = pd.read_pickle('./crystals_ap2_ap3_results_mol_apprx.pkl')
+    df2 = pd.read_pickle('./crystals_ap2_ap3_results_mol_bm.pkl')
+    
+    print("Processing df1 (approximate methods)...")
+    print(f"Total rows in df1: {len(df1)}")
+    print(f"Crystals in df1: {df1['crystal apprx'].unique()}")
+    
+    print("\nProcessing df2 (benchmark)...")
+    print(f"Total rows in df2: {len(df2)}")
+    print(f"Crystals in df2: {df2['crystal bm'].unique()}")
+    
+    # Calculate crystal lattice energies for df1 (comparing against SAPT0)
+    crystal_data_df1 = {}
+    for crystal in df1['crystal apprx'].dropna().unique():
+        df_c = df1[df1['crystal apprx'] == crystal].copy()
+        
+        # Sum up lattice energy contributions for SAPT0 reference
+        sapt0_le = df_c.apply(
+            lambda r: r["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"]
+            * r["Num. Rep. (#) sapt0-dz-aug"]
+            / int(r["N-mer Name apprx"][0])
+            if pd.notnull(r["N-mer Name apprx"])
+            else 0,
+            axis=1,
+        ).sum()
+        
+        # Sum up lattice energy contributions for AP2
+        ap2_le = df_c.apply(
+            lambda r: r["AP2 TOTAL"]
+            * r["Num. Rep. (#) sapt0-dz-aug"]
+            / int(r["N-mer Name apprx"][0])
+            if pd.notnull(r["N-mer Name apprx"])
+            else 0,
+            axis=1,
+        ).sum()
+        
+        # Sum up lattice energy contributions for AP3
+        ap3_le = df_c.apply(
+            lambda r: r["AP3 TOTAL"]
+            * r["Num. Rep. (#) sapt0-dz-aug"]
+            / int(r["N-mer Name apprx"][0])
+            if pd.notnull(r["N-mer Name apprx"])
+            else 0,
+            axis=1,
+        ).sum()
+        
+        # Calculate errors
+        crystal_data_df1[crystal] = {
+            'sapt0_le': sapt0_le,
+            'ap2_le': ap2_le,
+            'ap3_le': ap3_le,
+            'AP2 error': ap2_le - sapt0_le,
+            'AP3 error': ap3_le - sapt0_le,
+        }
+    
+    # Calculate crystal lattice energies for df2 (comparing against CCSD(T)/CBS)
+    crystal_data_df2 = {}
+    for crystal in df2['crystal bm'].dropna().unique():
+        df_c = df2[df2['crystal bm'] == crystal].copy()
+        
+        # Sum up lattice energy contributions for CCSD(T)/CBS reference
+        ccsdt_le = df_c.apply(
+            lambda r: r["Non-Additive MB Energy (kJ/mol) CCSD(T)/CBS"]
+            * r["Num. Rep. (#) CCSD(T)/CBS"]
+            / int(r["N-mer Name bm"][0])
+            if pd.notnull(r["N-mer Name bm"])
+            else 0,
+            axis=1,
+        ).sum()
+        
+        # Sum up lattice energy contributions for AP2
+        ap2_le = df_c.apply(
+            lambda r: r["AP2 TOTAL"]
+            * r["Num. Rep. (#) CCSD(T)/CBS"]
+            / int(r["N-mer Name bm"][0])
+            if pd.notnull(r["N-mer Name bm"])
+            else 0,
+            axis=1,
+        ).sum()
+        
+        # Sum up lattice energy contributions for AP3
+        ap3_le = df_c.apply(
+            lambda r: r["AP3 TOTAL"]
+            * r["Num. Rep. (#) CCSD(T)/CBS"]
+            / int(r["N-mer Name bm"][0])
+            if pd.notnull(r["N-mer Name bm"])
+            else 0,
+            axis=1,
+        ).sum()
+        
+        # Calculate errors
+        crystal_data_df2[crystal] = {
+            'ccsdt_le': ccsdt_le,
+            'ap2_le': ap2_le,
+            'ap3_le': ap3_le,
+            'AP2 error': ap2_le - ccsdt_le,
+            'AP3 error': ap3_le - ccsdt_le,
+        }
+    
+    # Convert to DataFrames
+    df1_crystal_errors = pd.DataFrame(crystal_data_df1).T
+    df2_crystal_errors = pd.DataFrame(crystal_data_df2).T
+    
+    print("\n=== df1 Crystal Lattice Energy Errors (vs SAPT0) ===")
+    print(df1_crystal_errors[['AP2 error', 'AP3 error']])
+    print("\nStatistics:")
+    print(df1_crystal_errors[['AP2 error', 'AP3 error']].describe())
+    
+    print("\n=== df2 Crystal Lattice Energy Errors (vs CCSD(T)/CBS) ===")
+    print(df2_crystal_errors[['AP2 error', 'AP3 error']])
+    print("\nStatistics:")
+    print(df2_crystal_errors[['AP2 error', 'AP3 error']].describe())
+    
+    # Prepare data for violin plots
+    dfs1 = [{
+        "df": df1_crystal_errors,
+        "basis": "",
+        "label": "SAPT0/aDZ Reference",
+        "ylim": [[-30, 30]],
+    }]
+    
+    dfs2 = [{
+        "df": df2_crystal_errors,
+        "basis": "",
+        "label": "CCSD(T)/CBS Reference",
+        "ylim": [[-30, 30]],
+    }]
+    
+    # Create violin plot for df1 (approximate methods)
+    print("\nCreating violin plot for df1 crystal errors...")
+    error_statistics.violin_plot_table_multi_SAPT_components(
+        dfs1,
+        df_labels_and_columns_total={
+            "AP2": "AP2 error",
+            "AP3": "AP3 error",
+        },
+        output_filename="./x23_plots/ap2_ap3_errors_vs_sapt0_violin.png",
+        grid_heights=[0.3, 1.0],
+        grid_widths=[1],
+        legend_loc="upper left",
+        annotations_texty=0.3,
+        figure_size=(4, 2.5),
+        add_title=False,
+    )
+    print("Saved plot to ./x23_plots/ap2_ap3_errors_vs_sapt0_violin.png")
+    
+    # Create violin plot for df2 (benchmark comparison)
+    print("\nCreating violin plot for df2 crystal errors...")
+    error_statistics.violin_plot_table_multi_SAPT_components(
+        dfs2,
+        df_labels_and_columns_total={
+            "AP2": "AP2 error",
+            "AP3": "AP3 error",
+        },
+        output_filename="./x23_plots/ap2_ap3_errors_vs_ccsdt_cbs_violin.png",
+        grid_heights=[0.3, 1.0],
+        grid_widths=[1],
+        legend_loc="upper left",
+        annotations_texty=0.3,
+        figure_size=(4, 2.5),
+        add_title=False,
+    )
+    print("Saved plot to ./x23_plots/ap2_ap3_errors_vs_ccsdt_cbs_violin.png")
+    
+    # Print summary statistics
+    print("\n=== Summary Statistics (Crystal Lattice Energies) ===")
+    print("\ndf1 (vs SAPT0/aDZ):")
+    for col in ['AP2 error', 'AP3 error']:
+        mae = df1_crystal_errors[col].abs().mean()
+        rmse = np.sqrt((df1_crystal_errors[col]**2).mean())
+        mean = df1_crystal_errors[col].mean()
+        print(f"  {col}:")
+        print(f"    MAE: {mae:.4f} kJ/mol")
+        print(f"    RMSE: {rmse:.4f} kJ/mol")
+        print(f"    Mean: {mean:.4f} kJ/mol")
+    
+    print("\ndf2 (vs CCSD(T)/CBS):")
+    for col in ['AP2 error', 'AP3 error']:
+        mae = df2_crystal_errors[col].abs().mean()
+        rmse = np.sqrt((df2_crystal_errors[col]**2).mean())
+        mean = df2_crystal_errors[col].mean()
+        print(f"  {col}:")
+        print(f"    MAE: {mae:.4f} kJ/mol")
+        print(f"    RMSE: {rmse:.4f} kJ/mol")
+        print(f"    Mean: {mean:.4f} kJ/mol")
+    
+    return df1_crystal_errors, df2_crystal_errors
+
+
+def plot_all_systems():
+    # Load dataframes
+    df1 = pd.read_pickle('./crystals_ap2_ap3_results_mol_apprx.pkl')
+    df2 = pd.read_pickle('./crystals_ap2_ap3_results_mol_bm.pkl')
+    
+    # Print columns to understand available data
+    print("df1 columns:")
+    pp([col for col in df1.columns if any(x in col for x in ['AP2', 'AP3', 'CCSD', 'Non-Additive', 'sapt'])])
+    print("\ndf2 columns:")
+    pp([col for col in df2.columns if any(x in col for x in ['AP2', 'AP3', 'CCSD', 'Non-Additive'])])
+    
+    # Create error columns for df1 (approximate methods vs SAPT0)
+    # df1 has multiple methods to compare against SAPT0
+    df1["AP2 vs SAPT0 error"] = df1["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"] - df1["AP2 TOTAL"]
+    df1["AP3 vs SAPT0 error"] = df1["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"] - df1["AP3 TOTAL"]
+    
+    # Add other method errors if available
+    method_cols = [col for col in df1.columns if "Non-Additive MB Energy (kJ/mol)" in col and "sapt0-dz-aug" not in col]
+    for method_col in method_cols[:3]:  # Limit to first 3 additional methods
+        method_name = method_col.replace("Non-Additive MB Energy (kJ/mol) ", "")
+        df1[f"{method_name} error"] = df1[method_col] - df1["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"]
+    
+    # Create error columns for df2 (comparing against CCSD(T)/CBS)
+    df2["AP2 vs CCSD(T)/CBS error"] = df2["Non-Additive MB Energy (kJ/mol) CCSD(T)/CBS"] - df2["AP2 TOTAL"]
+    df2["AP3 vs CCSD(T)/CBS error"] = df2["Non-Additive MB Energy (kJ/mol) CCSD(T)/CBS"] - df2["AP3 TOTAL"]
+    
+    # Prepare df1 for violin plot
+    dfs1 = [{
+        "df": df1,
+        "basis": "",
+        "label": "SAPT0/aDZ Reference",
+        "ylim": [[-4, 4]],
+    }]
+    
+    # Labels and columns for df1 (multiple methods)
+    df1_labels = {
+        "AP2": "AP2 vs SAPT0 error",
+        "AP3": "AP3 vs SAPT0 error",
+    }
+    
+    # Add other methods if available
+    for method_col in method_cols[:3]:
+        method_name = method_col.replace("Non-Additive MB Energy (kJ/mol) ", "")
+        if f"{method_name} error" in df1.columns:
+            df1_labels[method_name] = f"{method_name} error"
+    
+    # Prepare df2 for violin plot
+    dfs2 = [{
+        "df": df2,
+        "basis": "",
+        "label": "CCSD(T)/CBS Reference",
+        "ylim": [[-4, 4]],
+    }]
+    
+    # Labels and columns for df2 (only AP2 and AP3 vs CCSD(T)/CBS)
+    df2_labels = {
+        "AP2": "AP2 vs CCSD(T)/CBS error",
+        "AP3": "AP3 vs CCSD(T)/CBS error",
+    }
+    
+    # Create violin plot for df1
+    print("\nCreating violin plot for df1 (approximate methods)...")
+    error_statistics.violin_plot_table_multi_SAPT_components(
+        dfs1,
+        df_labels_and_columns_total=df1_labels,
+        output_filename="./x23_plots/ap2_ap3_errors_vs_sapt0.png",
+        grid_heights=[0.3, 1.0],
+        grid_widths=[1],
+        legend_loc="upper left",
+        annotations_texty=0.3,
+        figure_size=(6, 2.5),
+        add_title=False,
+    )
+    print("Saved plot to ./x23_plots/ap2_ap3_errors_vs_sapt0.png")
+    
+    # Create violin plot for df2
+    print("\nCreating violin plot for df2 (benchmark comparison)...")
+    error_statistics.violin_plot_table_multi_SAPT_components(
+        dfs2,
+        df_labels_and_columns_total=df2_labels,
+        output_filename="./x23_plots/ap2_ap3_errors_vs_ccsdt_cbs.png",
+        grid_heights=[0.3, 1.0],
+        grid_widths=[1],
+        legend_loc="upper left",
+        annotations_texty=0.3,
+        figure_size=(4, 2.5),
+        add_title=False,
+    )
+    print("Saved plot to ./x23_plots/ap2_ap3_errors_vs_ccsdt_cbs.png")
+    
+    # Print summary statistics
+    print("\n=== df1 Summary Statistics ===")
+    for label, col in df1_labels.items():
+        if col in df1.columns:
+            print(f"\n{label}:")
+            print(f"  MAE: {df1[col].abs().mean():.4f} kJ/mol")
+            print(f"  RMSE: {np.sqrt((df1[col]**2).mean()):.4f} kJ/mol")
+            print(f"  Mean: {df1[col].mean():.4f} kJ/mol")
+    
+    print("\n=== df2 Summary Statistics ===")
+    for label, col in df2_labels.items():
+        if col in df2.columns:
+            print(f"\n{label}:")
+            print(f"  MAE: {df2[col].abs().mean():.4f} kJ/mol")
+            print(f"  RMSE: {np.sqrt((df2[col]**2).mean()):.4f} kJ/mol")
+            print(f"  Mean: {df2[col].mean():.4f} kJ/mol")
+    
 
 def main():
-    ap2_ap3_df_energies()
+    plot_full_crystal_errors()
     return
 
 
