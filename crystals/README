@@ -1,0 +1,22 @@
+Testing different methods on different x23 crystals.
+
+Used make_cles.py to generate cles for the following methods:
+HF-3c, PBEh-3c, 
+SAPT0/jun-cc-pvdz, SAPT0/aug-cc-pvdz,
+MP2/jun-cc-pvdz, MP2/aug-cc-pvdz, 
+MP2-D/jun-cc-pvdz, MP2-D/aug-cc-pvdz,
+MP2.5/jun-cc-pvdz, MP2.5/jun-cc-pvdz,
+PBE-D3/def2-tzvp, PBE-D3/aug-cc-pvdz,
+B97-D/aug-cc-pvdz, B97-D3BJ/aug-cc-pvdz
+
+
+benzene data is stored in ../benzene-crystal/
+--15 A dimer cutoff
+
+all molecules here are done with 20 A dimer cutoff
+ammonia
+ice
+cyanamide
+
+analysis is done in [molecule]/analysis
+

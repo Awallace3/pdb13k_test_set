@@ -187,3 +187,5 @@ pdb13k_errors_pt-ap2_single.pkl
 t2_0.pkl
 mol_viz
 pdb13k_errors_pt_top_errors.pkl
+*.pkl
+*.zip
