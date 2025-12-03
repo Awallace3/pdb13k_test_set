@@ -1922,7 +1922,7 @@ def plot_crystal_lattice_energies():
     return fig, axes
 
 
-def plot_crystal_lattice_energies_with_switchover(switchover=2.0):
+def plot_crystal_lattice_energies_with_switchover(switchover=2.5):
     """
     For each crystal, plot rolling sum of CLE energy errors from all points
     above X. Creates subplots showing AP2/AP3
@@ -1959,6 +1959,11 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.0):
     # Define separation distance range
     increment = 0.25
     sep_distances = np.arange(1.0, 15.0 + 0.05, increment)
+
+    ap2_full_cle_errors_sapt0_aDZ = []
+    ap3_full_cle_errors_sapt0_aDZ = []
+    ap2_full_cle_errors_ccsd_t_CBS = []
+    ap3_full_cle_errors_ccsd_t_CBS = []
 
     # Process each crystal
     for idx, crystal in enumerate(all_crystals):
@@ -2049,6 +2054,8 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.0):
                 if idx == 0:
                     ax_apprx.legend(loc="best", fontsize=8)
 
+                ap2_full_cle_errors_sapt0_aDZ.append(ap2_2b_energies[-1] - ref_2b_energies[-1])
+                ap3_full_cle_errors_sapt0_aDZ.append(ap3_2b_energies[-1] - ref_2b_energies[-1])
                 # ax_apprx.set_ylim(-5, 5)
 
         # Right plot: bm (vs CCSD(T)/CBS)
@@ -2087,6 +2094,7 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.0):
                 ap2_2b_energies = []
                 ap3_2b_energies = []
                 ref_2b_energies = []
+                print(f"{crystal = }, cnt below SO: {len(df_c[(df_c[mms_col] < switchover)])}/{len(df_c)}")
                 for d in sep_distances:
                     ap2_below = df_c[(df_c[mms_col] >= switchover) & (df_c[mms_col] < d)]["ap2_cle"].sum()
                     ap2_above = df_c[(df_c[mms_col] < switchover) & (df_c[mms_col] < d)]["ref_cle"].sum()
@@ -2136,6 +2144,8 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.0):
                 if idx == 0:
                     ax_bm.legend(loc="best", fontsize=8)
 
+                ap2_full_cle_errors_ccsd_t_CBS.append(ap2_2b_energies[-1] - ref_2b_energies[-1])
+                ap3_full_cle_errors_ccsd_t_CBS.append(ap3_2b_energies[-1] - ref_2b_energies[-1])
                 # ax_bm.set_ylim(-5, 5)
 
         # Style axes
@@ -2151,9 +2161,282 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.0):
 
     # Adjust layout
     plt.tight_layout()
+    print("Error CLE statistics")
+    mae_ap2_sapt = np.sum(np.array(ap2_full_cle_errors_sapt0_aDZ)) / len(ap2_full_cle_errors_sapt0_aDZ)
+    mae_ap3_sapt = np.sum(np.array(ap3_full_cle_errors_sapt0_aDZ)) / len(ap3_full_cle_errors_sapt0_aDZ)
+    mae_ap2_ccsd = np.sum(np.array(ap2_full_cle_errors_ccsd_t_CBS)) / len(ap2_full_cle_errors_ccsd_t_CBS)
+    mae_ap3_ccsd = np.sum(np.array(ap3_full_cle_errors_ccsd_t_CBS)) / len(ap3_full_cle_errors_ccsd_t_CBS)
+    print(f"{mae_ap2_sapt=:.4f} kJ/mol")
+    print(f"{mae_ap3_sapt=:.4f} kJ/mol")
+    print(f"{mae_ap2_ccsd=:.4f} kJ/mol")
+    print(f"{mae_ap3_ccsd=:.4f} kJ/mol")
 
     # Save figure
     output_path = "./x23_plots/CLE_all_crystals_switchover.png"
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    print(f"\nFigure saved to: {output_path}")
+    return fig, axes
+
+
+def plot_crystal_lattice_energies_with_N(N=1):
+    """
+    For each crystal, plot rolling sum of CLE energy errors from all points
+    above X. Creates subplots showing AP2/AP3
+    """
+    # Set up plot styling
+    mpl.rcParams["figure.figsize"] = (10, 6)
+    mpl.rcParams["font.size"] = 10
+    mpl.rcParams["axes.labelsize"] = 12
+    mpl.rcParams["xtick.labelsize"] = 10
+    mpl.rcParams["ytick.labelsize"] = 10
+    mpl.rcParams["legend.fontsize"] = 10
+    mpl.rcParams["lines.linewidth"] = 2.0
+    mpl.rcParams["lines.markersize"] = 6
+
+    # Load dataframes
+    df_apprx = pd.read_pickle("./crystals_ap2_ap3_results_mol_apprx.pkl")
+    df_bm = pd.read_pickle("./crystals_ap2_ap3_results_mol_bm.pkl")
+
+    # Get unique crystals
+    crystals_apprx = sorted(df_apprx["crystal apprx"].dropna().unique())
+    crystals_bm = sorted(df_bm["crystal bm"].dropna().unique())
+
+    # Combine and get all unique crystals
+    all_crystals = sorted(list(set(crystals_apprx) | set(crystals_bm)))
+    N = len(all_crystals)
+
+    print(f"Processing {N} crystals for switchover error plots")
+
+    # Create figure with subplots (2 columns: apprx and bm)
+    fig, axes = plt.subplots(N, 2, figsize=(12, N * 2 + 2))
+    if N == 1:
+        axes = axes.reshape(1, -1)
+
+    # Define separation distance range
+    increment = 0.25
+    sep_distances = np.arange(1.0, 15.0 + 0.05, increment)
+
+    ap2_full_cle_errors_sapt0_aDZ = []
+    ap3_full_cle_errors_sapt0_aDZ = []
+    ap2_full_cle_errors_ccsd_t_CBS = []
+    ap3_full_cle_errors_ccsd_t_CBS = []
+
+    # Process each crystal
+    for idx, crystal in enumerate(all_crystals):
+        print(f"\nProcessing crystal {idx + 1}/{N}: {crystal}")
+
+        # Left plot: apprx (vs SAPT0/aDZ)
+        ax_apprx = axes[idx, 0]
+        if crystal in crystals_apprx:
+            df_c = df_apprx[df_apprx["crystal apprx"] == crystal].copy()
+
+            # Reference method
+            ref_col = "Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"
+            num_rep_col = "Num. Rep. (#) sapt0-dz-aug"
+            nmer_col = "N-mer Name apprx"
+            mms_col = "Minimum Monomer Separations (A) sapt0-dz-aug"
+
+            if ref_col in df_c.columns and "AP2 TOTAL" in df_c.columns:
+                # Calculate CLE contributions
+                df_c["ref_cle"] = df_c.apply(
+                    lambda r: r[ref_col] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col])
+                    else 0,
+                    axis=1,
+                )
+                df_c["ap2_cle"] = df_c.apply(
+                    lambda r: r["AP2 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col])
+                    else 0,
+                    axis=1,
+                )
+                df_c["ap3_cle"] = df_c.apply(
+                    lambda r: r["AP3 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col])
+                    else 0,
+                    axis=1,
+                )
+
+                ap2_2b_energies = []
+                ap3_2b_energies = []
+                ref_2b_energies = []
+                df_c = df_c.sort_values(by=mms_col, ascending=True)
+                df_c_N = df_c.iloc[:N]
+                df_c_above = df_c.iloc[N:]
+                for d in sep_distances:
+                    ap2_below = df_c_above[df_c_above[mms_col] > d]["ap2_cle"].sum()
+                    ap2_above = df_c_N[df_c_N[mms_col] < d]["ref_cle"].sum()
+                    ap2_hybrid_total = ap2_below + ap2_above
+
+                    ap3_below = df_c_above[df_c_above[mms_col] > d]["ap3_cle"].sum()
+                    ap3_above = df_c_N[df_c_N[mms_col] < d]["ref_cle"].sum()
+                    ap3_hybrid_total = ap3_below + ap3_above
+
+                    ref_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
+                    ap3_hybrid_total = ap3_below + ap3_above
+                    ap2_2b_energies.append(ap2_hybrid_total)
+                    ap3_2b_energies.append(ap3_hybrid_total)
+                    ref_2b_energies.append(ref_below)
+
+                # Plot
+                ax_apprx.plot(
+                    sep_distances,
+                    ap2_2b_energies,
+                    "o-",
+                    label="AP2",
+                    markersize=4,
+                    linewidth=1.5,
+                    alpha=0.8,
+                )
+                ax_apprx.plot(
+                    sep_distances,
+                    ap3_2b_energies,
+                    "s-",
+                    label="AP3",
+                    markersize=4,
+                    linewidth=1.5,
+                    alpha=0.8,
+                )
+                ax_apprx.plot(
+                    sep_distances,
+                    ref_2b_energies,
+                    "-",
+                    color='red',
+                    label="SAPT0/aDZ",
+                    markersize=4,
+                    linewidth=1.5,
+                    alpha=0.8,
+                )
+                ax_apprx.axhline(
+                    y=0, color="black", linestyle="--", linewidth=1.0, alpha=0.5
+                )
+                ax_apprx.set_ylabel("CLE Error (kJ/mol)", fontsize=10)
+                ax_apprx.set_title(f"{crystal}\nvs SAPT0/aDZ", fontsize=10)
+
+                if idx == 0:
+                    ax_apprx.legend(loc="best", fontsize=8)
+
+                ap2_full_cle_errors_sapt0_aDZ.append(ap2_2b_energies[-1] - ref_2b_energies[-1])
+                ap3_full_cle_errors_sapt0_aDZ.append(ap3_2b_energies[-1] - ref_2b_energies[-1])
+                # ax_apprx.set_ylim(-5, 5)
+
+        # Right plot: bm (vs CCSD(T)/CBS)
+        ax_bm = axes[idx, 1]
+        if crystal in crystals_bm:
+            df_c = df_bm[df_bm["crystal bm"] == crystal].copy()
+
+            # Reference method
+            ref_col = "Non-Additive MB Energy (kJ/mol) CCSD(T)/CBS"
+            num_rep_col = "Num. Rep. (#) CCSD(T)/CBS"
+            nmer_col = "N-mer Name bm"
+            mms_col = "Minimum Monomer Separations (A) CCSD(T)/CBS"
+            df_c.sort_values(by=mms_col, inplace=True)
+
+            if ref_col in df_c.columns and "AP2 TOTAL" in df_c.columns:
+                # Calculate CLE contributions
+                df_c["ref_cle"] = df_c.apply(
+                    lambda r: r[ref_col] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col])
+                    else 0,
+                    axis=1,
+                )
+                df_c["ap2_cle"] = df_c.apply(
+                    lambda r: r["AP2 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col])
+                    else 0,
+                    axis=1,
+                )
+                df_c["ap3_cle"] = df_c.apply(
+                    lambda r: r["AP3 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col])
+                    else 0,
+                    axis=1,
+                )
+
+                ap2_2b_energies = []
+                ap3_2b_energies = []
+                ref_2b_energies = []
+                for d in sep_distances:
+                    ap2_below = df_c_above[df_c_above[mms_col] > d]["ap2_cle"].sum()
+                    ap2_above = df_c_N[df_c_N[mms_col] < d]["ref_cle"].sum()
+                    ap2_hybrid_total = ap2_below + ap2_above
+
+                    ap3_below = df_c_above[df_c_above[mms_col] > d]["ap3_cle"].sum()
+                    ap3_above = df_c_N[df_c_N[mms_col] < d]["ref_cle"].sum()
+                    ap3_hybrid_total = ap3_below + ap3_above
+
+                    ref_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
+                    ap3_hybrid_total = ap3_below + ap3_above
+                    ap2_2b_energies.append(ap2_hybrid_total)
+                    ap3_2b_energies.append(ap3_hybrid_total)
+                    ref_2b_energies.append(ref_below)
+
+                # Plot
+                ax_bm.plot(
+                    sep_distances,
+                    ap2_2b_energies,
+                    "o-",
+                    label="AP2",
+                    markersize=4,
+                    linewidth=1.5,
+                    alpha=0.8,
+                )
+                ax_bm.plot(
+                    sep_distances,
+                    ap3_2b_energies,
+                    "s-",
+                    label="AP3",
+                    markersize=4,
+                    linewidth=1.5,
+                    alpha=0.8,
+                )
+                ax_bm.plot(
+                    sep_distances,
+                    ref_2b_energies,
+                    "k-",
+                    label="CCSD(T)/CBS",
+                    markersize=4,
+                    linewidth=1.5,
+                    alpha=0.8,
+                )
+                ax_bm.axhline(
+                    y=0, color="black", linestyle="--", linewidth=1.0, alpha=0.5
+                )
+                ax_bm.set_ylabel("CLE Error (kJ/mol)", fontsize=10)
+                ax_bm.set_title(f"{crystal}\nvs CCSD(T)/CBS", fontsize=10)
+
+                if idx == 0:
+                    ax_bm.legend(loc="best", fontsize=8)
+
+                ap2_full_cle_errors_ccsd_t_CBS.append(ap2_2b_energies[-1] - ref_2b_energies[-1])
+                ap3_full_cle_errors_ccsd_t_CBS.append(ap3_2b_energies[-1] - ref_2b_energies[-1])
+                # ax_bm.set_ylim(-5, 5)
+
+        # Style axes
+        for ax in [ax_apprx, ax_bm]:
+            ax.grid(True, alpha=0.3, linestyle=":")
+            ax.tick_params(which="major", direction="in", top=True, right=True)
+
+            # Only show x-label on bottom row
+            if idx == N - 1:
+                ax.set_xlabel("Min. Mon. Sep. (Å)", fontsize=11)
+            else:
+                ax.tick_params(axis="x", labelbottom=False)
+
+    # Adjust layout
+    plt.tight_layout()
+    print("Error CLE statistics")
+    mae_ap2_sapt = np.sum(np.array(ap2_full_cle_errors_sapt0_aDZ)) / len(ap2_full_cle_errors_sapt0_aDZ)
+    mae_ap3_sapt = np.sum(np.array(ap3_full_cle_errors_sapt0_aDZ)) / len(ap3_full_cle_errors_sapt0_aDZ)
+    mae_ap2_ccsd = np.sum(np.array(ap2_full_cle_errors_ccsd_t_CBS)) / len(ap2_full_cle_errors_ccsd_t_CBS)
+    mae_ap3_ccsd = np.sum(np.array(ap3_full_cle_errors_ccsd_t_CBS)) / len(ap3_full_cle_errors_ccsd_t_CBS)
+    print(f"{mae_ap2_sapt=:.4f} kJ/mol")
+    print(f"{mae_ap3_sapt=:.4f} kJ/mol")
+    print(f"{mae_ap2_ccsd=:.4f} kJ/mol")
+    print(f"{mae_ap3_ccsd=:.4f} kJ/mol")
+
+    # Save figure
+    output_path = "./x23_plots/CLE_all_crystals_N.png"
     plt.savefig(output_path, dpi=300, bbox_inches="tight")
     print(f"\nFigure saved to: {output_path}")
     return fig, axes
@@ -2163,7 +2446,8 @@ def main():
     # plot_full_crystal_errors()
     # plot_switchover_errors()
     # plot_crystal_lattice_energies()
-    plot_crystal_lattice_energies_with_switchover()
+    # plot_crystal_lattice_energies_with_switchover(2.9)
+    plot_crystal_lattice_energies_with_N(1)
     return
 
 
