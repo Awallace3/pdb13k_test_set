@@ -1543,13 +1543,13 @@ def plot_switchover_errors():
 
                 for d in sep_distances:
                     # Hybrid: use ML method above d, reference method above d
-                    ap2_below = df_c[df_c[mms_col] >= d]["ap2_cle"].sum()
-                    ap2_above = df_c[df_c[mms_col] < d]["ref_cle"].sum()
-                    ap2_hybrid_total = ap2_below + ap2_above
+                    ap2_above = df_c[df_c[mms_col] >= d]["ap2_cle"].sum()
+                    ap2_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
+                    ap2_hybrid_total = ap2_above + ap2_below
 
-                    ap3_below = df_c[df_c[mms_col] >= d]["ap3_cle"].sum()
-                    ap3_above = df_c[df_c[mms_col] < d]["ref_cle"].sum()
-                    ap3_hybrid_total = ap3_below + ap3_above
+                    ap3_above = df_c[df_c[mms_col] >= d]["ap3_cle"].sum()
+                    ap3_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
+                    ap3_hybrid_total = ap3_above + ap3_below
 
                     # Reference total (all ref)
                     ref_total = df_c["ref_cle"].sum()
@@ -1632,13 +1632,13 @@ def plot_switchover_errors():
 
                 for d in sep_distances:
                     # Hybrid: use ML method above d, reference method above d
-                    ap2_below = df_c[df_c[mms_col] >= d]["ap2_cle"].sum()
-                    ap2_above = df_c[df_c[mms_col] < d]["ref_cle"].sum()
-                    ap2_hybrid_total = ap2_below + ap2_above
+                    ap2_above = df_c[df_c[mms_col] >= d]["ap2_cle"].sum()
+                    ap2_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
+                    ap2_hybrid_total = ap2_above + ap2_below
 
-                    ap3_below = df_c[df_c[mms_col] >= d]["ap3_cle"].sum()
-                    ap3_above = df_c[df_c[mms_col] < d]["ref_cle"].sum()
-                    ap3_hybrid_total = ap3_below + ap3_above
+                    ap3_above = df_c[df_c[mms_col] >= d]["ap3_cle"].sum()
+                    ap3_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
+                    ap3_hybrid_total = ap3_above + ap3_below
 
                     # Reference total
                     ref_total = df_c["ref_cle"].sum()
@@ -2005,13 +2005,13 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.5):
                 ap3_2b_energies = []
                 ref_2b_energies = []
                 for d in sep_distances:
-                    ap2_below = df_c[(df_c[mms_col] >= switchover) & (df_c[mms_col] < d)]["ap2_cle"].sum()
-                    ap2_above = df_c[(df_c[mms_col] < switchover) & (df_c[mms_col] < d)]["ref_cle"].sum()
-                    ap2_hybrid_total = ap2_below + ap2_above
-                    ap3_below = df_c[(df_c[mms_col] >= switchover) & (df_c[mms_col] < d)]["ap3_cle"].sum()
-                    ap3_above = df_c[(df_c[mms_col] < switchover) & (df_c[mms_col] < d)]["ref_cle"].sum()
+                    ap2_above = df_c[(df_c[mms_col] >= switchover) & (df_c[mms_col] < d)]["ap2_cle"].sum()
+                    ap2_below = df_c[(df_c[mms_col] < switchover) & (df_c[mms_col] < d)]["ref_cle"].sum()
+                    ap2_hybrid_total = ap2_above + ap2_below
+                    ap3_above = df_c[(df_c[mms_col] >= switchover) & (df_c[mms_col] < d)]["ap3_cle"].sum()
+                    ap3_below = df_c[(df_c[mms_col] < switchover) & (df_c[mms_col] < d)]["ref_cle"].sum()
                     ref_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
-                    ap3_hybrid_total = ap3_below + ap3_above
+                    ap3_hybrid_total = ap3_above + ap3_below
                     ap2_2b_energies.append(ap2_hybrid_total)
                     ap3_2b_energies.append(ap3_hybrid_total)
                     ref_2b_energies.append(ref_below)
@@ -2096,12 +2096,12 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.5):
                 ref_2b_energies = []
                 print(f"{crystal = }, cnt below SO: {len(df_c[(df_c[mms_col] < switchover)])}/{len(df_c)}")
                 for d in sep_distances:
-                    ap2_below = df_c[(df_c[mms_col] >= switchover) & (df_c[mms_col] < d)]["ap2_cle"].sum()
-                    ap2_above = df_c[(df_c[mms_col] < switchover) & (df_c[mms_col] < d)]["ref_cle"].sum()
-                    ap2_hybrid_total = ap2_below + ap2_above
-                    ap3_below = df_c[(df_c[mms_col] >= switchover) & (df_c[mms_col] < d)]["ap3_cle"].sum()
-                    ap3_above = df_c[(df_c[mms_col] < switchover) & (df_c[mms_col] < d)]["ref_cle"].sum()
-                    ap3_hybrid_total = ap3_below + ap3_above
+                    ap2_above = df_c[(df_c[mms_col] >= switchover) & (df_c[mms_col] < d)]["ap2_cle"].sum()
+                    ap2_below = df_c[(df_c[mms_col] < switchover) & (df_c[mms_col] < d)]["ref_cle"].sum()
+                    ap2_hybrid_total = ap2_above + ap2_below
+                    ap3_above = df_c[(df_c[mms_col] >= switchover) & (df_c[mms_col] < d)]["ap3_cle"].sum()
+                    ap3_below = df_c[(df_c[mms_col] < switchover) & (df_c[mms_col] < d)]["ref_cle"].sum()
+                    ap3_hybrid_total = ap3_above + ap3_below
                     ref_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
                     ap2_2b_energies.append(ap2_hybrid_total)
                     ap3_2b_energies.append(ap3_hybrid_total)
@@ -2264,16 +2264,16 @@ def plot_crystal_lattice_energies_with_N(N=1):
                 df_c_N = df_c.iloc[:N]
                 df_c_above = df_c.iloc[N:]
                 for d in sep_distances:
-                    ap2_below = df_c_above[df_c_above[mms_col] > d]["ap2_cle"].sum()
-                    ap2_above = df_c_N[df_c_N[mms_col] < d]["ref_cle"].sum()
-                    ap2_hybrid_total = ap2_below + ap2_above
+                    ap2_above = df_c_above[df_c_above[mms_col] > d]["ap2_cle"].sum()
+                    ap2_below = df_c_N[df_c_N[mms_col] < d]["ref_cle"].sum()
+                    ap2_hybrid_total = ap2_above + ap2_below
 
-                    ap3_below = df_c_above[df_c_above[mms_col] > d]["ap3_cle"].sum()
-                    ap3_above = df_c_N[df_c_N[mms_col] < d]["ref_cle"].sum()
-                    ap3_hybrid_total = ap3_below + ap3_above
+                    ap3_above = df_c_above[df_c_above[mms_col] > d]["ap3_cle"].sum()
+                    ap3_below = df_c_N[df_c_N[mms_col] < d]["ref_cle"].sum()
+                    ap3_hybrid_total = ap3_above + ap3_below
 
                     ref_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
-                    ap3_hybrid_total = ap3_below + ap3_above
+                    ap3_hybrid_total = ap3_above + ap3_below
                     ap2_2b_energies.append(ap2_hybrid_total)
                     ap3_2b_energies.append(ap3_hybrid_total)
                     ref_2b_energies.append(ref_below)
@@ -2356,17 +2356,20 @@ def plot_crystal_lattice_energies_with_N(N=1):
                 ap2_2b_energies = []
                 ap3_2b_energies = []
                 ref_2b_energies = []
+                df_c = df_c.sort_values(by=mms_col, ascending=True)
+                df_c_N = df_c.iloc[:N]
+                df_c_above = df_c.iloc[N:]
                 for d in sep_distances:
-                    ap2_below = df_c_above[df_c_above[mms_col] > d]["ap2_cle"].sum()
-                    ap2_above = df_c_N[df_c_N[mms_col] < d]["ref_cle"].sum()
-                    ap2_hybrid_total = ap2_below + ap2_above
+                    ap2_above = df_c_above[df_c_above[mms_col] > d]["ap2_cle"].sum()
+                    ap2_below = df_c_N[df_c_N[mms_col] < d]["ref_cle"].sum()
+                    ap2_hybrid_total = ap2_above + ap2_below
 
-                    ap3_below = df_c_above[df_c_above[mms_col] > d]["ap3_cle"].sum()
-                    ap3_above = df_c_N[df_c_N[mms_col] < d]["ref_cle"].sum()
-                    ap3_hybrid_total = ap3_below + ap3_above
+                    ap3_above = df_c_above[df_c_above[mms_col] > d]["ap3_cle"].sum()
+                    ap3_below = df_c_N[df_c_N[mms_col] < d]["ref_cle"].sum()
+                    ap3_hybrid_total = ap3_above + ap3_below
 
                     ref_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
-                    ap3_hybrid_total = ap3_below + ap3_above
+                    ap3_hybrid_total = ap3_above + ap3_below
                     ap2_2b_energies.append(ap2_hybrid_total)
                     ap3_2b_energies.append(ap3_hybrid_total)
                     ref_2b_energies.append(ref_below)
