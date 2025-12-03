@@ -2274,39 +2274,41 @@ def plot_crystal_lattice_energies_with_N(N=1):
 
                     ref_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
                     ap3_hybrid_total = ap3_above + ap3_below
+
                     ap2_2b_energies.append(ap2_hybrid_total)
                     ap3_2b_energies.append(ap3_hybrid_total)
                     ref_2b_energies.append(ref_below)
 
                 # Plot
-                ax_apprx.plot(
-                    sep_distances,
-                    ap2_2b_energies,
-                    "o-",
-                    label="AP2",
-                    markersize=4,
-                    linewidth=1.5,
-                    alpha=0.8,
-                )
-                ax_apprx.plot(
-                    sep_distances,
-                    ap3_2b_energies,
-                    "s-",
-                    label="AP3",
-                    markersize=4,
-                    linewidth=1.5,
-                    alpha=0.8,
-                )
-                ax_apprx.plot(
-                    sep_distances,
-                    ref_2b_energies,
-                    "-",
-                    color='red',
-                    label="SAPT0/aDZ",
-                    markersize=4,
-                    linewidth=1.5,
-                    alpha=0.8,
-                )
+                if ref_2b_energies[-1] != 0.0:
+                    ax_apprx.plot(
+                        sep_distances,
+                        ap2_2b_energies,
+                        "o-",
+                        label="AP2",
+                        markersize=4,
+                        linewidth=1.5,
+                        alpha=0.8,
+                    )
+                    ax_apprx.plot(
+                        sep_distances,
+                        ap3_2b_energies,
+                        "s-",
+                        label="AP3",
+                        markersize=4,
+                        linewidth=1.5,
+                        alpha=0.8,
+                    )
+                    ax_apprx.plot(
+                        sep_distances,
+                        ref_2b_energies,
+                        "-",
+                        color='red',
+                        label="SAPT0/aDZ",
+                        markersize=4,
+                        linewidth=1.5,
+                        alpha=0.8,
+                    )
                 ax_apprx.axhline(
                     y=0, color="black", linestyle="--", linewidth=1.0, alpha=0.5
                 )
@@ -2375,36 +2377,37 @@ def plot_crystal_lattice_energies_with_N(N=1):
                     ref_2b_energies.append(ref_below)
 
                 # Plot
-                ax_bm.plot(
-                    sep_distances,
-                    ap2_2b_energies,
-                    "o-",
-                    label="AP2",
-                    markersize=4,
-                    linewidth=1.5,
-                    alpha=0.8,
-                )
-                ax_bm.plot(
-                    sep_distances,
-                    ap3_2b_energies,
-                    "s-",
-                    label="AP3",
-                    markersize=4,
-                    linewidth=1.5,
-                    alpha=0.8,
-                )
-                ax_bm.plot(
-                    sep_distances,
-                    ref_2b_energies,
-                    "k-",
-                    label="CCSD(T)/CBS",
-                    markersize=4,
-                    linewidth=1.5,
-                    alpha=0.8,
-                )
-                ax_bm.axhline(
-                    y=0, color="black", linestyle="--", linewidth=1.0, alpha=0.5
-                )
+                if ref_2b_energies[-1] != 0.0:
+                    ax_bm.plot(
+                        sep_distances,
+                        ap2_2b_energies,
+                        "o-",
+                        label="AP2",
+                        markersize=4,
+                        linewidth=1.5,
+                        alpha=0.8,
+                    )
+                    ax_bm.plot(
+                        sep_distances,
+                        ap3_2b_energies,
+                        "s-",
+                        label="AP3",
+                        markersize=4,
+                        linewidth=1.5,
+                        alpha=0.8,
+                    )
+                    ax_bm.plot(
+                        sep_distances,
+                        ref_2b_energies,
+                        "k-",
+                        label="CCSD(T)/CBS",
+                        markersize=4,
+                        linewidth=1.5,
+                        alpha=0.8,
+                    )
+                    ax_bm.axhline(
+                        y=0, color="black", linestyle="--", linewidth=1.0, alpha=0.5
+                    )
                 ax_bm.set_ylabel("CLE Error (kJ/mol)", fontsize=10)
                 ax_bm.set_title(f"{crystal}\nvs CCSD(T)/CBS", fontsize=10)
 
@@ -2429,6 +2432,12 @@ def plot_crystal_lattice_energies_with_N(N=1):
     # Adjust layout
     plt.tight_layout()
     print("Error CLE statistics")
+    # Filter out nans from ap2_full_cle_errors_ccsd_t_CBS
+    ap2_full_cle_errors_ccsd_t_CBS = [x for x in ap2_full_cle_errors_ccsd_t_CBS if x != 0.0 ]
+    ap3_full_cle_errors_ccsd_t_CBS = [x for x in ap3_full_cle_errors_ccsd_t_CBS if x != 0.0 ]
+    ap2_full_cle_errors_sapt0_aDZ = [x for x in ap2_full_cle_errors_sapt0_aDZ if x != 0.0 ]
+    ap3_full_cle_errors_sapt0_aDZ = [x for x in ap3_full_cle_errors_sapt0_aDZ if x != 0.0 ]
+
     mae_ap2_sapt = np.sum(np.array(ap2_full_cle_errors_sapt0_aDZ)) / len(ap2_full_cle_errors_sapt0_aDZ)
     mae_ap3_sapt = np.sum(np.array(ap3_full_cle_errors_sapt0_aDZ)) / len(ap3_full_cle_errors_sapt0_aDZ)
     mae_ap2_ccsd = np.sum(np.array(ap2_full_cle_errors_ccsd_t_CBS)) / len(ap2_full_cle_errors_ccsd_t_CBS)
