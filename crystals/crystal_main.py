@@ -1803,9 +1803,9 @@ def plot_crystal_lattice_energies():
                 )
                 ax_apprx.plot(
                     sep_distances,
-                    ap3_2b_energies,
+                    ref_2b_energies,
                     "-",
-                    color='grey',
+                    color='red',
                     label="SAPT0/aDZ",
                     markersize=4,
                     linewidth=1.5,
@@ -1884,7 +1884,7 @@ def plot_crystal_lattice_energies():
                 )
                 ax_bm.plot(
                     sep_distances,
-                    ap3_2b_energies,
+                    ref_2b_energies,
                     "k-",
                     label="CCSD(T)/CBS",
                     markersize=4,
@@ -1909,7 +1909,7 @@ def plot_crystal_lattice_energies():
 
             # Only show x-label on bottom row
             if idx == N - 1:
-                ax.set_xlabel("Switchover Distance $R^*$ (Å)", fontsize=11)
+                ax.set_xlabel("Min. Mon. Sep. (Å)", fontsize=11)
             else:
                 ax.tick_params(axis="x", labelbottom=False)
 
