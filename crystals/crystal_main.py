@@ -14,7 +14,6 @@ import matplotlib as mpl
 from matplotlib.ticker import AutoMinorLocator
 
 
-
 kcalmol_to_kjmol = qcel.constants.conversion_factor("kcal/mol", "kJ/mol")
 
 crystal_names_all = [
@@ -697,15 +696,33 @@ def collect_crystal_data(generate=False):
     return
 
 
-def ap2_energies(mols, compile=True):
+def ap2_energies(mols, compile=True, finetune_mols=[], finetune_labels=[]):
+    if len(finetune_mols) > 0 and len(finetune_labels) > 0:
+        print("Finetuning to crystal...")
+        ds_qcel_molecules = finetune_mols
+        ds_energy_labels = finetune_labels
+        finetune = True
+    else:
+        ds_qcel_molecules = None
+        ds_energy_labels = None
+        finetune = False
+
     ap2 = apnet_pt.AtomPairwiseModels.apnet2_fused.APNet2_AM_Model(
         atom_model=apnet_pt.AtomModels.ap2_atom_model.AtomModel(
             pre_trained_model_path="/home/awallace43/gits/qcmlforge/models/am_ensemble/am_1.pt",
         ).model,
         pre_trained_model_path="/home/awallace43/gits/qcmlforge/models/ap2-fused_ensemble/ap2_1.pt",
+        ds_qcel_molecules=ds_qcel_molecules,
+        ds_energy_labels=ds_energy_labels,
     )
     if compile:
         ap2.compile_model()
+    if finetune:
+        ap2.train(
+            n_epochs=10,
+            lr=1e-5,
+            split_percent=0.99,
+        )
     pred = ap2.predict_qcel_mols(mols, batch_size=64)
     return pred
 
@@ -781,6 +798,98 @@ def ap2_ap3_df_energies(generate=False):
         df["AP3 EXCH"] = pred_ap3[:, 1]
         df["AP3 INDU"] = pred_ap3[:, 2]
         df["AP3 DISP"] = pred_ap3[:, 3]
+        # LE
+        non_additive_cols = [
+            i for i in df.columns if "Non-Additive MB Energy (kJ/mol)" in i
+        ]
+        for c in non_additive_cols:
+            label = c.split()[-1]
+            df[f"{label}_le_contribution"] = df.apply(
+                lambda r: r[c]
+                * r[f"Num. Rep. (#) {label}"]
+                / int(r[f"N-mer Name {v}"][0]),
+                axis=1,
+            )
+        df["ap3_le_contribution"] = df.apply(
+            lambda r: r["AP3 TOTAL"]
+            * r["Num. Rep. (#) sapt0-dz-aug"]
+            / int(r[f"N-mer Name {v}"][0]),
+            axis=1,
+        )
+        df["ap2_le_contribution"] = df.apply(
+            lambda r: r["AP2 TOTAL"]
+            * r["Num. Rep. (#) sapt0-dz-aug"]
+            / int(r[f"N-mer Name {v}"][0]),
+            axis=1,
+        )
+        df.to_pickle(pkl_fn)
+    else:
+        df = pd.read_pickle(pkl_fn)
+
+    if v == "apprx":
+        pp(df.columns.tolist())
+        print("\nResults\n")
+        df["AP3 total error"] = (
+            df["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"] - df["AP3 TOTAL"]
+        )
+        df["AP2 total error"] = (
+            df["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"] - df["AP2 TOTAL"]
+        )
+        mae_total_ap3 = df["AP3 total error"].abs().mean()
+        print(f"MAE AP3 Total: {mae_total_ap3:.4f} kJ/mol")
+        mae_total_ap2 = df["AP2 total error"].abs().mean()
+        print(f"MAE AP2 Total: {mae_total_ap2:.4f} kJ/mol")
+        print(
+            df[
+                [
+                    "AP3 total error",
+                    "AP2 total error",
+                ]
+            ].describe()
+        )
+    return df
+
+
+def ap2_ap3_df_energies_sft(generate=False):
+    v = "apprx"
+    v = "bm"
+    mol_str = "mol " + v
+    pkl_fn = f"sft_crystals_ap2_ap3_results_{mol_str.replace(' ', '_')}.pkl"
+    if not os.path.exists(pkl_fn) or generate:
+        df = pd.read_pickle("./x23_dfs/main_df.pkl")
+        print(df)
+        df = df.dropna(subset=[mol_str])
+        if v == "apprx":
+            mms_col = "Minimum Monomer Separations (A) sapt0-dz-aug"
+        else:
+            mms_col = "Minimum Monomer Separations (A) CCSD(T)/CBS"
+        for c in crystal_names_all:
+            df_c_a = df[df[f"crystal {v}"] == c]
+            df_c_a.sort_values(by=mms_col, inplace=True)
+            pp(df.columns.tolist())
+            print("AP2 start")
+            mols = df[mol_str].tolist()
+            pred_ap2 = ap2_energies(mols)
+            pred_ap2 *= kcalmol_to_kjmol
+            df_c_a["AP2 TOTAL"] = np.sum(pred_ap2[:, 0:4], axis=1)
+            df_c_a["AP2 ELST"] = pred_ap2[:, 0]
+            df_c_a["AP2 EXCH"] = pred_ap2[:, 1]
+            df_c_a["AP2 INDU"] = pred_ap2[:, 2]
+            df_c_a["AP2 DISP"] = pred_ap2[:, 3]
+            df_c_a.to_pickle(pkl_fn)
+            print("AP3 start")
+            pred_ap3, pair_elst, pair_ind = ap3_d_elst_classical_energies(mols)
+            pred_ap3 *= kcalmol_to_kjmol
+            elst_energies = [np.sum(e) * kcalmol_to_kjmol for e in pair_elst]
+            ind_energies = [np.sum(e) * kcalmol_to_kjmol for e in pair_ind]
+            # df_c_a["mtp_elst_energies"] = elst_undamped
+            df_c_a["ap3_d_elst"] = elst_energies
+            df_c_a["ap3_classical_ind_energy"] = ind_energies
+            df_c_a["AP3 TOTAL"] = np.sum(pred_ap3[:, 0:4], axis=1)
+            df_c_a["AP3 ELST"] = pred_ap3[:, 0]
+            df_c_a["AP3 EXCH"] = pred_ap3[:, 1]
+            df_c_a["AP3 INDU"] = pred_ap3[:, 2]
+            df_c_a["AP3 DISP"] = pred_ap3[:, 3]
         # LE
         non_additive_cols = [
             i for i in df.columns if "Non-Additive MB Energy (kJ/mol)" in i
@@ -1559,8 +1668,8 @@ def plot_switchover_errors():
                     ap3_errors.append(ap3_hybrid_total - ref_total)
 
                 print("APPRX")
-                print(df_c[['ap2_cle', 'ap3_cle', 'ref_cle']])
-                print(df_c[['AP2 TOTAL', 'AP3 TOTAL', ref_col]])
+                print(df_c[["ap2_cle", "ap3_cle", "ref_cle"]])
+                print(df_c[["AP2 TOTAL", "AP3 TOTAL", ref_col]])
                 # Plot
                 ax_apprx.plot(
                     sep_distances,
@@ -1624,7 +1733,7 @@ def plot_switchover_errors():
                     axis=1,
                 )
                 print("BM")
-                print(df_c[['ap2_cle', 'ref_cle']])
+                print(df_c[["ap2_cle", "ref_cle"]])
 
                 # Calculate switchover errors for different cutoffs
                 ap2_errors = []
@@ -1779,7 +1888,7 @@ def plot_crystal_lattice_energies():
                 for d in sep_distances:
                     ap2_2b_energies.append(df_c[df_c[mms_col] <= d]["ap2_cle"].sum())
                     ap3_2b_energies.append(df_c[df_c[mms_col] <= d]["ap3_cle"].sum())
-                    ref_2b_energies.append(df_c[df_c[mms_col] <= d]['ref_cle'].sum())
+                    ref_2b_energies.append(df_c[df_c[mms_col] <= d]["ref_cle"].sum())
 
                 # Plot
                 ax_apprx.plot(
@@ -1804,7 +1913,7 @@ def plot_crystal_lattice_energies():
                     sep_distances,
                     ref_2b_energies,
                     "-",
-                    color='red',
+                    color="red",
                     label="SAPT0/aDZ",
                     markersize=4,
                     linewidth=1.5,
@@ -1860,7 +1969,7 @@ def plot_crystal_lattice_energies():
                 for d in sep_distances:
                     ap2_2b_energies.append(df_c[df_c[mms_col] <= d]["ap2_cle"].sum())
                     ap3_2b_energies.append(df_c[df_c[mms_col] <= d]["ap3_cle"].sum())
-                    ref_2b_energies.append(df_c[df_c[mms_col] <= d]['ref_cle'].sum())
+                    ref_2b_energies.append(df_c[df_c[mms_col] <= d]["ref_cle"].sum())
 
                 # Plot
                 ax_bm.plot(
@@ -2005,11 +2114,19 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.5):
                 ap3_2b_energies = []
                 ref_2b_energies = []
                 for d in sep_distances:
-                    ap2_above = df_c[(df_c[mms_col] >= switchover) & (df_c[mms_col] < d)]["ap2_cle"].sum()
-                    ap2_below = df_c[(df_c[mms_col] < switchover) & (df_c[mms_col] < d)]["ref_cle"].sum()
+                    ap2_above = df_c[
+                        (df_c[mms_col] >= switchover) & (df_c[mms_col] < d)
+                    ]["ap2_cle"].sum()
+                    ap2_below = df_c[
+                        (df_c[mms_col] < switchover) & (df_c[mms_col] < d)
+                    ]["ref_cle"].sum()
                     ap2_hybrid_total = ap2_above + ap2_below
-                    ap3_above = df_c[(df_c[mms_col] >= switchover) & (df_c[mms_col] < d)]["ap3_cle"].sum()
-                    ap3_below = df_c[(df_c[mms_col] < switchover) & (df_c[mms_col] < d)]["ref_cle"].sum()
+                    ap3_above = df_c[
+                        (df_c[mms_col] >= switchover) & (df_c[mms_col] < d)
+                    ]["ap3_cle"].sum()
+                    ap3_below = df_c[
+                        (df_c[mms_col] < switchover) & (df_c[mms_col] < d)
+                    ]["ref_cle"].sum()
                     ref_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
                     ap3_hybrid_total = ap3_above + ap3_below
                     ap2_2b_energies.append(ap2_hybrid_total)
@@ -2039,7 +2156,7 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.5):
                     sep_distances,
                     ref_2b_energies,
                     "-",
-                    color='red',
+                    color="red",
                     label="SAPT0/aDZ",
                     markersize=4,
                     linewidth=1.5,
@@ -2054,8 +2171,12 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.5):
                 if idx == 0:
                     ax_apprx.legend(loc="best", fontsize=8)
 
-                ap2_full_cle_errors_sapt0_aDZ.append(ap2_2b_energies[-1] - ref_2b_energies[-1])
-                ap3_full_cle_errors_sapt0_aDZ.append(ap3_2b_energies[-1] - ref_2b_energies[-1])
+                ap2_full_cle_errors_sapt0_aDZ.append(
+                    ap2_2b_energies[-1] - ref_2b_energies[-1]
+                )
+                ap3_full_cle_errors_sapt0_aDZ.append(
+                    ap3_2b_energies[-1] - ref_2b_energies[-1]
+                )
                 # ax_apprx.set_ylim(-5, 5)
 
         # Right plot: bm (vs CCSD(T)/CBS)
@@ -2094,13 +2215,23 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.5):
                 ap2_2b_energies = []
                 ap3_2b_energies = []
                 ref_2b_energies = []
-                print(f"{crystal = }, cnt below SO: {len(df_c[(df_c[mms_col] < switchover)])}/{len(df_c)}")
+                print(
+                    f"{crystal = }, cnt below SO: {len(df_c[(df_c[mms_col] < switchover)])}/{len(df_c)}"
+                )
                 for d in sep_distances:
-                    ap2_above = df_c[(df_c[mms_col] >= switchover) & (df_c[mms_col] < d)]["ap2_cle"].sum()
-                    ap2_below = df_c[(df_c[mms_col] < switchover) & (df_c[mms_col] < d)]["ref_cle"].sum()
+                    ap2_above = df_c[
+                        (df_c[mms_col] >= switchover) & (df_c[mms_col] < d)
+                    ]["ap2_cle"].sum()
+                    ap2_below = df_c[
+                        (df_c[mms_col] < switchover) & (df_c[mms_col] < d)
+                    ]["ref_cle"].sum()
                     ap2_hybrid_total = ap2_above + ap2_below
-                    ap3_above = df_c[(df_c[mms_col] >= switchover) & (df_c[mms_col] < d)]["ap3_cle"].sum()
-                    ap3_below = df_c[(df_c[mms_col] < switchover) & (df_c[mms_col] < d)]["ref_cle"].sum()
+                    ap3_above = df_c[
+                        (df_c[mms_col] >= switchover) & (df_c[mms_col] < d)
+                    ]["ap3_cle"].sum()
+                    ap3_below = df_c[
+                        (df_c[mms_col] < switchover) & (df_c[mms_col] < d)
+                    ]["ref_cle"].sum()
                     ap3_hybrid_total = ap3_above + ap3_below
                     ref_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
                     ap2_2b_energies.append(ap2_hybrid_total)
@@ -2144,8 +2275,12 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.5):
                 if idx == 0:
                     ax_bm.legend(loc="best", fontsize=8)
 
-                ap2_full_cle_errors_ccsd_t_CBS.append(ap2_2b_energies[-1] - ref_2b_energies[-1])
-                ap3_full_cle_errors_ccsd_t_CBS.append(ap3_2b_energies[-1] - ref_2b_energies[-1])
+                ap2_full_cle_errors_ccsd_t_CBS.append(
+                    ap2_2b_energies[-1] - ref_2b_energies[-1]
+                )
+                ap3_full_cle_errors_ccsd_t_CBS.append(
+                    ap3_2b_energies[-1] - ref_2b_energies[-1]
+                )
                 # ax_bm.set_ylim(-5, 5)
 
         # Style axes
@@ -2162,10 +2297,18 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.5):
     # Adjust layout
     plt.tight_layout()
     print("Error CLE statistics")
-    mae_ap2_sapt = np.sum(np.array(ap2_full_cle_errors_sapt0_aDZ)) / len(ap2_full_cle_errors_sapt0_aDZ)
-    mae_ap3_sapt = np.sum(np.array(ap3_full_cle_errors_sapt0_aDZ)) / len(ap3_full_cle_errors_sapt0_aDZ)
-    mae_ap2_ccsd = np.sum(np.array(ap2_full_cle_errors_ccsd_t_CBS)) / len(ap2_full_cle_errors_ccsd_t_CBS)
-    mae_ap3_ccsd = np.sum(np.array(ap3_full_cle_errors_ccsd_t_CBS)) / len(ap3_full_cle_errors_ccsd_t_CBS)
+    mae_ap2_sapt = np.sum(np.array(ap2_full_cle_errors_sapt0_aDZ)) / len(
+        ap2_full_cle_errors_sapt0_aDZ
+    )
+    mae_ap3_sapt = np.sum(np.array(ap3_full_cle_errors_sapt0_aDZ)) / len(
+        ap3_full_cle_errors_sapt0_aDZ
+    )
+    mae_ap2_ccsd = np.sum(np.array(ap2_full_cle_errors_ccsd_t_CBS)) / len(
+        ap2_full_cle_errors_ccsd_t_CBS
+    )
+    mae_ap3_ccsd = np.sum(np.array(ap3_full_cle_errors_ccsd_t_CBS)) / len(
+        ap3_full_cle_errors_ccsd_t_CBS
+    )
     print(f"{mae_ap2_sapt=:.4f} kJ/mol")
     print(f"{mae_ap3_sapt=:.4f} kJ/mol")
     print(f"{mae_ap2_ccsd=:.4f} kJ/mol")
@@ -2303,7 +2446,7 @@ def plot_crystal_lattice_energies_with_N(N=1):
                         sep_distances,
                         ref_2b_energies,
                         "-",
-                        color='red',
+                        color="red",
                         label="SAPT0/aDZ",
                         markersize=4,
                         linewidth=1.5,
@@ -2318,8 +2461,12 @@ def plot_crystal_lattice_energies_with_N(N=1):
                 if idx == 0:
                     ax_apprx.legend(loc="best", fontsize=8)
 
-                ap2_full_cle_errors_sapt0_aDZ.append(ap2_2b_energies[-1] - ref_2b_energies[-1])
-                ap3_full_cle_errors_sapt0_aDZ.append(ap3_2b_energies[-1] - ref_2b_energies[-1])
+                ap2_full_cle_errors_sapt0_aDZ.append(
+                    ap2_2b_energies[-1] - ref_2b_energies[-1]
+                )
+                ap3_full_cle_errors_sapt0_aDZ.append(
+                    ap3_2b_energies[-1] - ref_2b_energies[-1]
+                )
                 # ax_apprx.set_ylim(-5, 5)
 
         # Right plot: bm (vs CCSD(T)/CBS)
@@ -2414,8 +2561,12 @@ def plot_crystal_lattice_energies_with_N(N=1):
                 if idx == 0:
                     ax_bm.legend(loc="best", fontsize=8)
 
-                ap2_full_cle_errors_ccsd_t_CBS.append(ap2_2b_energies[-1] - ref_2b_energies[-1])
-                ap3_full_cle_errors_ccsd_t_CBS.append(ap3_2b_energies[-1] - ref_2b_energies[-1])
+                ap2_full_cle_errors_ccsd_t_CBS.append(
+                    ap2_2b_energies[-1] - ref_2b_energies[-1]
+                )
+                ap3_full_cle_errors_ccsd_t_CBS.append(
+                    ap3_2b_energies[-1] - ref_2b_energies[-1]
+                )
                 # ax_bm.set_ylim(-5, 5)
 
         # Style axes
@@ -2433,15 +2584,31 @@ def plot_crystal_lattice_energies_with_N(N=1):
     plt.tight_layout()
     print("Error CLE statistics")
     # Filter out nans from ap2_full_cle_errors_ccsd_t_CBS
-    ap2_full_cle_errors_ccsd_t_CBS = [x for x in ap2_full_cle_errors_ccsd_t_CBS if x != 0.0 ]
-    ap3_full_cle_errors_ccsd_t_CBS = [x for x in ap3_full_cle_errors_ccsd_t_CBS if x != 0.0 ]
-    ap2_full_cle_errors_sapt0_aDZ = [x for x in ap2_full_cle_errors_sapt0_aDZ if x != 0.0 ]
-    ap3_full_cle_errors_sapt0_aDZ = [x for x in ap3_full_cle_errors_sapt0_aDZ if x != 0.0 ]
+    ap2_full_cle_errors_ccsd_t_CBS = [
+        x for x in ap2_full_cle_errors_ccsd_t_CBS if x != 0.0
+    ]
+    ap3_full_cle_errors_ccsd_t_CBS = [
+        x for x in ap3_full_cle_errors_ccsd_t_CBS if x != 0.0
+    ]
+    ap2_full_cle_errors_sapt0_aDZ = [
+        x for x in ap2_full_cle_errors_sapt0_aDZ if x != 0.0
+    ]
+    ap3_full_cle_errors_sapt0_aDZ = [
+        x for x in ap3_full_cle_errors_sapt0_aDZ if x != 0.0
+    ]
 
-    mae_ap2_sapt = np.sum(np.array(ap2_full_cle_errors_sapt0_aDZ)) / len(ap2_full_cle_errors_sapt0_aDZ)
-    mae_ap3_sapt = np.sum(np.array(ap3_full_cle_errors_sapt0_aDZ)) / len(ap3_full_cle_errors_sapt0_aDZ)
-    mae_ap2_ccsd = np.sum(np.array(ap2_full_cle_errors_ccsd_t_CBS)) / len(ap2_full_cle_errors_ccsd_t_CBS)
-    mae_ap3_ccsd = np.sum(np.array(ap3_full_cle_errors_ccsd_t_CBS)) / len(ap3_full_cle_errors_ccsd_t_CBS)
+    mae_ap2_sapt = np.sum(np.array(ap2_full_cle_errors_sapt0_aDZ)) / len(
+        ap2_full_cle_errors_sapt0_aDZ
+    )
+    mae_ap3_sapt = np.sum(np.array(ap3_full_cle_errors_sapt0_aDZ)) / len(
+        ap3_full_cle_errors_sapt0_aDZ
+    )
+    mae_ap2_ccsd = np.sum(np.array(ap2_full_cle_errors_ccsd_t_CBS)) / len(
+        ap2_full_cle_errors_ccsd_t_CBS
+    )
+    mae_ap3_ccsd = np.sum(np.array(ap3_full_cle_errors_ccsd_t_CBS)) / len(
+        ap3_full_cle_errors_ccsd_t_CBS
+    )
     print(f"{mae_ap2_sapt=:.4f} kJ/mol")
     print(f"{mae_ap3_sapt=:.4f} kJ/mol")
     print(f"{mae_ap2_ccsd=:.4f} kJ/mol")
