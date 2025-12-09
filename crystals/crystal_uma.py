@@ -64,7 +64,7 @@ def uma_df_energies_sft(generate=False, v="apprx", uma_type="uma-s-1p1"):
     )
     # v = "bm"
     mol_str = "mol " + v
-    pkl_fn = f"crystals_ap2_ap3_results_uma_{mol_str.replace(' ', '_')}.pkl"
+    pkl_fn = f"crystals_ap2_ap3_results_{uma_type}_{mol_str.replace(' ', '_')}.pkl"
     new_cols = [
         "AP3 TOTAL",
         "AP3 ELST",
@@ -174,7 +174,14 @@ def uma_df_energies_sft(generate=False, v="apprx", uma_type="uma-s-1p1"):
 
 
 def main():
-    df_uma = uma_df_energies_sft(generate=True, v="apprx", uma_type="uma-s-1p1")
+    # df_uma = uma_df_energies_sft(generate=True, v="apprx", uma_type="uma-s-1p1")
+    # print(df_uma.head())
+    # df_uma = uma_df_energies_sft(generate=True, v="bm", uma_type="uma-s-1p1")
+    # print(df_uma.head())
+
+    df_uma = uma_df_energies_sft(generate=True, v="apprx", uma_type="uma-m-1p1")
+    print(df_uma.head())
+    df_uma = uma_df_energies_sft(generate=True, v="bm", uma_type="uma-m-1p1")
     print(df_uma.head())
 
 
