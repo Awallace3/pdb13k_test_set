@@ -19,8 +19,8 @@ qcml_model_dir = os.path.expanduser("~/gits/qcmlforge/models")
 
 kcalmol_to_kjmol = qcel.constants.conversion_factor("kcal/mol", "kJ/mol")
 
-sft_n_epochs = 30
-sft_lr = 5e-4
+sft_n_epochs = 100
+sft_lr = 5e-5
 
 crystal_names_all = [
     "14-cyclohexanedione",
