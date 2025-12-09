@@ -375,7 +375,9 @@ def analyze_results(
     df_dapnet2_le_last = df.iloc[-1]["dAPNet2_le"]
     print(f"   BASE LE First: {df_le_first:.4f}, LE Last: {df_le_last:.4f}")
     print(
-        f"dAPNet2 LE First: {df_dapnet2_le_first:.4f}, LE Last: {df_dapnet2_le_last:.4f}"
+        f"dAPNet2 LE First: {df_dapnet2_le_first:.4f}, LE Last: {
+            df_dapnet2_le_last:.4f
+        }"
     )
     print(f"     BM LE First: {df_bm_le_first:.4f}, LE Last: {df_bm_le_last:.4f}")
     df_bm.rename(
@@ -501,14 +503,24 @@ def process_all_crystals(compute=False):
             pp(c)
             if compute:
                 process_inputs(
-                    output_data=f"{base_path}{c['name']}/{c['level_of_theory']}/{c['name']}/{c['name']}.csv",
-                    data_path=f"{base_path}{c['name']}/{c['level_of_theory']}/{c['name']}/*.in",
+                    output_data=f"{base_path}{c['name']}/{c['level_of_theory']}/{
+                        c['name']
+                    }/{c['name']}.csv",
+                    data_path=f"{base_path}{c['name']}/{c['level_of_theory']}/{
+                        c['name']
+                    }/*.in",
                     delta_model_path=c["delta_model_path"],
-                    output_csv=f"./outputs/{c['name']}/{c['level_of_theory']}/{c['name']}/{c['name']}_dapnet2.csv",
+                    output_csv=f"./outputs/{c['name']}/{c['level_of_theory']}/{
+                        c['name']
+                    }/{c['name']}_dapnet2.csv",
                 )
             analyze_results(
-                data_path=f"./outputs/{c['name']}/{c['level_of_theory']}/{c['name']}/{c['name']}_dapnet2.csv",
-                bm_data_path=f"{base_path}{c['name']}/benchmark-cc/{c['name']}/{c['name']}.csv",
+                data_path=f"./outputs/{c['name']}/{c['level_of_theory']}/{c['name']}/{
+                    c['name']
+                }_dapnet2.csv",
+                bm_data_path=f"{base_path}{c['name']}/benchmark-cc/{c['name']}/{
+                    c['name']
+                }.csv",
             )
         except Exception as e:
             print(f"Error processing {c['name']} crystal at {c['level_of_theory']}")
@@ -576,16 +588,22 @@ def collect_crystal_data(generate=False):
                     print(f"\nProcessing {c['name']} crystal at {c['level_of_theory']}")
                     pp(c)
                     if n == 0:
-                        data_path = f"{base_path}{c['name']}/{c['level_of_theory']}/{c['name']}/*.in"
+                        data_path = f"{base_path}{c['name']}/{c['level_of_theory']}/{
+                            c['name']
+                        }/*.in"
                         print(data_path)
                     else:
                         data_path = ""
                     # data_path=""
                     df = process_inputs(
-                        output_data=f"{base_path}{c['name']}/{c['level_of_theory']}/{c['name']}/{c['name']}.csv",
+                        output_data=f"{base_path}{c['name']}/{c['level_of_theory']}/{
+                            c['name']
+                        }/{c['name']}.csv",
                         data_path=data_path,
                         delta_model_path=None,
-                        output_csv=f"./x23_dfs/{c['name']}_{c['level_of_theory']}_cle.csv",
+                        output_csv=f"./x23_dfs/{c['name']}_{
+                            c['level_of_theory']
+                        }_cle.csv",
                     )
                     df.rename(
                         columns={
@@ -602,7 +620,9 @@ def collect_crystal_data(generate=False):
                     frames.append(df)
                 except Exception as e:
                     print(
-                        f"Error processing {c['name']} crystal at {c['level_of_theory']}"
+                        f"Error processing {c['name']} crystal at {
+                            c['level_of_theory']
+                        }"
                     )
                     print(e)
                     print("Continue processing other crystals...\n\n")
@@ -633,9 +653,13 @@ def collect_crystal_data(generate=False):
         #     output_data=f"{base_path}{c['name']}/{c['level_of_theory']}/0-benchmark-cc.csv"
         # elif cname in ['oxalic_acid_alpha', 'pyrazine']:
         #     output_data=f"{base_path}{c['name']}/{c['level_of_theory']}/{c['name']}/benchmark-cc.csv"
-        output_data = f"{base_path}{c['name']}/{c['level_of_theory']}/{c['name']}/{c['name']}-fp.csv"
+        output_data = f"{base_path}{c['name']}/{c['level_of_theory']}/{c['name']}/{
+            c['name']
+        }-fp.csv"
         if cname in ["CO2"]:
-            output_data = f"{base_path}{c['name']}/{c['level_of_theory']}/carbon_dioxide/CO2-fp.csv"
+            output_data = f"{base_path}{c['name']}/{
+                c['level_of_theory']
+            }/carbon_dioxide/CO2-fp.csv"
         # else:
 
         base_parent = Path(output_data).parent
@@ -1156,7 +1180,11 @@ def dapnet_main_df_crystals(
                     )
                     apprx_error = crystal_information[active_crystal]["cle target"][k]
                     print(
-                        f"{n}/{len(df)}, crystal: {active_crystal}, dAP (apprx, bm): ({energies_sum_crystal_apprx:.2f}, {energies_sum_crystal_bm:.2f}), CLE d-target: {apprx_error:.2f}"
+                        f"{n}/{len(df)}, crystal: {active_crystal}, dAP (apprx, bm): ({
+                            energies_sum_crystal_apprx:.2f
+                        }, {energies_sum_crystal_bm:.2f}), CLE d-target: {
+                            apprx_error:.2f
+                        }"
                     )
         else:
             if verbose:
@@ -1177,7 +1205,11 @@ def dapnet_main_df_crystals(
                             k
                         ]
                         print(
-                            f"{n}/{len(df)}, crystal: {active_crystal}, dAP (apprx, bm): ({energies_sum_crystal_apprx:.2f}, {energies_sum_crystal_bm:.2f}), CLE d-target: {apprx_error:.2f}"
+                            f"{n}/{len(df)}, crystal: {
+                                active_crystal
+                            }, dAP (apprx, bm): ({energies_sum_crystal_apprx:.2f}, {
+                                energies_sum_crystal_bm:.2f
+                            }), CLE d-target: {apprx_error:.2f}"
                         )
         if compute_delta:
             Path(output_pickle).parent.mkdir(parents=True, exist_ok=True)
@@ -1309,11 +1341,15 @@ def main_og():
             f"/theoryfs2/ds/csargent/chem/x23-crystals/{i}/sapt0-dz-aug/{i}/{i}.csv"
         )
         if i == "pyrazine":
-            output_data = f"/theoryfs2/ds/csargent/chem/x23-crystals/{i}/sapt0-dz-aug/{i}/sapt0-dz-aug.csv"
+            output_data = f"/theoryfs2/ds/csargent/chem/x23-crystals/{i}/sapt0-dz-aug/{
+                i
+            }/sapt0-dz-aug.csv"
         process_inputs_sapt0_induction(
             output_data=output_data,
             delta_model_path=None,
-            data_path=f"/theoryfs2/ds/csargent/chem/x23-crystals/{i}/sapt0-dz-aug/{i}/*.out",
+            data_path=f"/theoryfs2/ds/csargent/chem/x23-crystals/{i}/sapt0-dz-aug/{
+                i
+            }/*.out",
             output_csv=f"./sapt0_induction/{i}_sapt0adz.pkl",
         )
 
@@ -1931,7 +1967,7 @@ def plot_crystal_lattice_energies(sft=False):
     all_crystals = sorted(list(set(crystals_apprx) | set(crystals_bm)))
     N = len(all_crystals)
 
-    print(f"Processing {N} crystals for switchover error plots")
+    print(f"Processing {N} crystals for CLE plots")
 
     # Create figure with subplots (2 columns: apprx and bm)
     fig, axes = plt.subplots(N, 2, figsize=(12, N * 2 + 2))
@@ -1942,9 +1978,14 @@ def plot_crystal_lattice_energies(sft=False):
     increment = 0.25
     sep_distances = np.arange(1.0, 15.0 + 0.05, increment)
 
+    ap2_full_cle_errors_sapt0_aDZ = []
+    ap3_full_cle_errors_sapt0_aDZ = []
+    ap2_full_cle_errors_ccsd_t_CBS = []
+    ap3_full_cle_errors_ccsd_t_CBS = []
+
     # Process each crystal
     for idx, crystal in enumerate(all_crystals):
-        print(f"\nProcessing crystal {idx + 1}/{N}: {crystal}")
+        # print(f"\nProcessing crystal {idx + 1}/{N}: {crystal}")
 
         # Left plot: apprx (vs SAPT0/aDZ)
         ax_apprx = axes[idx, 0]
@@ -2025,6 +2066,19 @@ def plot_crystal_lattice_energies(sft=False):
                     ax_apprx.legend(loc="best", fontsize=8)
 
                 # ax_apprx.set_ylim(-5, 5)
+                if not abs(ap2_2b_energies[-1]) < 8e-8:
+                    ap2_full_cle_errors_sapt0_aDZ.append(
+                        ap2_2b_energies[-1] - ref_2b_energies[-1]
+                    )
+                    # print(
+                    #     ap2_2b_energies[-1] - ref_2b_energies[-1],
+                    #     ap2_2b_energies[-1],
+                    #     ref_2b_energies[-1],
+                    # )
+
+                ap3_full_cle_errors_sapt0_aDZ.append(
+                    ap3_2b_energies[-1] - ref_2b_energies[-1]
+                )
 
         # Right plot: bm (vs CCSD(T)/CBS)
         ax_bm = axes[idx, 1]
@@ -2103,6 +2157,18 @@ def plot_crystal_lattice_energies(sft=False):
 
                 if idx == 0:
                     ax_bm.legend(loc="best", fontsize=8)
+                if not abs(ap2_2b_energies[-1]) < 8e-8:
+                    ap2_full_cle_errors_ccsd_t_CBS.append(
+                        ap2_2b_energies[-1] - ref_2b_energies[-1]
+                    )
+                    ap3_full_cle_errors_ccsd_t_CBS.append(
+                        ap3_2b_energies[-1] - ref_2b_energies[-1]
+                    )
+                    # print(
+                    #     ap2_2b_energies[-1] - ref_2b_energies[-1],
+                    #     ap2_2b_energies[-1],
+                    #     ref_2b_energies[-1],
+                    # )
 
                 # ax_bm.set_ylim(-5, 5)
 
@@ -2117,12 +2183,59 @@ def plot_crystal_lattice_energies(sft=False):
             else:
                 ax.tick_params(axis="x", labelbottom=False)
 
+    # Filter out nans from ap2_full_cle_errors_ccsd_t_CBS
+    ap2_full_cle_errors_ccsd_t_CBS = [
+        x for x in ap2_full_cle_errors_ccsd_t_CBS if x != 0.0
+    ]
+    ap3_full_cle_errors_ccsd_t_CBS = [
+        x for x in ap3_full_cle_errors_ccsd_t_CBS if x != 0.0
+    ]
+    ap2_full_cle_errors_sapt0_aDZ = [
+        x for x in ap2_full_cle_errors_sapt0_aDZ if x != 0.0
+    ]
+    ap3_full_cle_errors_sapt0_aDZ = [
+        x for x in ap3_full_cle_errors_sapt0_aDZ if x != 0.0
+    ]
+
+    me_ap2_sapt = np.sum(np.array(ap2_full_cle_errors_sapt0_aDZ)) / len(
+        ap2_full_cle_errors_sapt0_aDZ
+    )
+    me_ap3_sapt = np.sum(np.array(ap3_full_cle_errors_sapt0_aDZ)) / len(
+        ap3_full_cle_errors_sapt0_aDZ
+    )
+    me_ap2_ccsd = np.sum(np.array(ap2_full_cle_errors_ccsd_t_CBS)) / len(
+        ap2_full_cle_errors_ccsd_t_CBS
+    )
+    me_ap3_ccsd = np.sum(np.array(ap3_full_cle_errors_ccsd_t_CBS)) / len(
+        ap3_full_cle_errors_ccsd_t_CBS
+    )
+    print(f"{me_ap2_sapt=:.4f} kJ/mol")
+    print(f"{me_ap3_sapt=:.4f} kJ/mol")
+    print(f"{me_ap2_ccsd=:.4f} kJ/mol")
+    print(f"{me_ap3_ccsd=:.4f} kJ/mol")
+    mae_ap2_sapt = np.sum(np.abs(np.array(ap2_full_cle_errors_sapt0_aDZ))) / len(
+        ap2_full_cle_errors_sapt0_aDZ
+    )
+    mae_ap3_sapt = np.sum(np.abs(np.array(ap3_full_cle_errors_sapt0_aDZ))) / len(
+        ap3_full_cle_errors_sapt0_aDZ
+    )
+    mae_ap2_ccsd = np.sum(np.abs(np.array(ap2_full_cle_errors_ccsd_t_CBS))) / len(
+        ap2_full_cle_errors_ccsd_t_CBS
+    )
+    mae_ap3_ccsd = np.sum(np.abs(np.array(ap3_full_cle_errors_ccsd_t_CBS))) / len(
+        ap3_full_cle_errors_ccsd_t_CBS
+    )
+    print(f"{mae_ap2_sapt=:.4f} kJ/mol")
+    print(f"{mae_ap3_sapt=:.4f} kJ/mol")
+    print(f"{mae_ap2_ccsd=:.4f} kJ/mol")
+    print(f"{mae_ap3_ccsd=:.4f} kJ/mol")
+
     # Adjust layout
     plt.tight_layout()
 
     # Save figure
     plt.savefig(output_path, dpi=300, bbox_inches="tight")
-    print(f"\nFigure saved to: {output_path}")
+    print(f"    Figure saved to: {output_path}\n")
     return fig, axes
 
 
@@ -2171,7 +2284,7 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.5):
 
     # Process each crystal
     for idx, crystal in enumerate(all_crystals):
-        print(f"\nProcessing crystal {idx + 1}/{N}: {crystal}")
+        # print(f"\nProcessing crystal {idx + 1}/{N}: {crystal}")
 
         # Left plot: apprx (vs SAPT0/aDZ)
         ax_apprx = axes[idx, 0]
@@ -2311,7 +2424,9 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.5):
                 ap3_2b_energies = []
                 ref_2b_energies = []
                 print(
-                    f"{crystal = }, cnt below SO: {len(df_c[(df_c[mms_col] < switchover)])}/{len(df_c)}"
+                    f"{crystal=}, cnt below SO: {
+                        len(df_c[(df_c[mms_col] < switchover)])
+                    }/{len(df_c)}"
                 )
                 for d in sep_distances:
                     ap2_above = df_c[
@@ -2727,16 +2842,18 @@ def main():
     # plot_crystal_lattice_energies_with_switchover(2.9)
 
     # GENERATE DATAFRAMES
-    ap2_ap3_df_energies_sft(
-        generate=True,
-        v='apprx'
-    )
-    ap2_ap3_df_energies_sft(
-        generate=True,
-        v='bm'
-    )
+    # ap2_ap3_df_energies_sft(
+    #     generate=True,
+    #     v='apprx'
+    # )
+    # ap2_ap3_df_energies_sft(
+    #     generate=True,
+    #     v='bm'
+    # )
+    plot_crystal_lattice_energies(sft=False)
     plot_crystal_lattice_energies(sft=True)
-    plot_crystal_lattice_energies_with_N(1, sft=True)
+    # plot_crystal_lattice_energies_with_N(1, sft=True)
+    # plot_crystal_lattice_energies_with_N(1, sft=False)
     return
 
 
