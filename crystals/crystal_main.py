@@ -12,9 +12,15 @@ from cdsg_plot import error_statistics
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.ticker import AutoMinorLocator
+import shutil
 
+
+qcml_model_dir = os.path.expanduser("~/gits/qcmlforge/models")
 
 kcalmol_to_kjmol = qcel.constants.conversion_factor("kcal/mol", "kJ/mol")
+
+sft_n_epochs = 10
+sft_lr = 5e-4
 
 crystal_names_all = [
     "14-cyclohexanedione",
@@ -702,32 +708,57 @@ def ap2_energies(mols, compile=True, finetune_mols=[], finetune_labels=[]):
         ds_qcel_molecules = finetune_mols
         ds_energy_labels = finetune_labels
         finetune = True
+        ignore_database_null = False
     else:
         ds_qcel_molecules = None
         ds_energy_labels = None
         finetune = False
+        ignore_database_null = True
+
+    if os.path.exists("data_dir"):
+        shutil.rmtree("data_dir")
 
     ap2 = apnet_pt.AtomPairwiseModels.apnet2_fused.APNet2_AM_Model(
+        ds_root="data_dir",
         atom_model=apnet_pt.AtomModels.ap2_atom_model.AtomModel(
-            pre_trained_model_path="/home/awallace43/gits/qcmlforge/models/am_ensemble/am_1.pt",
+            pre_trained_model_path=f"{qcml_model_dir}/am_ensemble/am_1.pt",
         ).model,
-        pre_trained_model_path="/home/awallace43/gits/qcmlforge/models/ap2-fused_ensemble/ap2_1.pt",
+        pre_trained_model_path=f"{qcml_model_dir}/ap2-fused_ensemble/ap2_1.pt",
         ds_qcel_molecules=ds_qcel_molecules,
         ds_energy_labels=ds_energy_labels,
+        ds_spec_type=None,
+        ignore_database_null=ignore_database_null,
     )
     if compile:
         ap2.compile_model()
     if finetune:
+        print(ds_qcel_molecules)
+        print(ds_energy_labels)
+        ap2.freeze_parameters_except_readouts()
         ap2.train(
-            n_epochs=10,
-            lr=1e-5,
+            n_epochs=sft_n_epochs,
+            lr=sft_lr,
             split_percent=0.99,
+            skip_compile=True,
+            transfer_learning=True,
         )
     pred = ap2.predict_qcel_mols(mols, batch_size=64)
     return pred
 
 
-def ap3_d_elst_classical_energies(mols):
+def ap3_d_elst_classical_energies(mols, finetune_mols=[], finetune_labels=[]):
+    if len(finetune_mols) > 0 and len(finetune_labels) > 0:
+        print("Finetuning to crystal...")
+        ds_qcel_molecules = finetune_mols
+        ds_energy_labels = finetune_labels
+        finetune = True
+        ignore_database_null = False
+    else:
+        ds_qcel_molecules = None
+        ds_energy_labels = None
+        finetune = False
+        ignore_database_null = True
+
     path_to_qcml = os.path.join(os.path.expanduser("~"), "gits/qcmlforge/models")
     am_path = f"{path_to_qcml}/../models/ap3_ensemble/1/am_3.pt"
     at_hf_vw_path = f"{path_to_qcml}/../models/ap3_ensemble/1/am_h+1_3.pt"
@@ -750,12 +781,27 @@ def ap3_d_elst_classical_energies(mols):
         model_type="AtomTypeParamNN",
         pre_trained_model_path=at_elst_path,
     )
+    if os.path.exists("data_dir"):
+        shutil.rmtree("data_dir")
+
     ap3 = apnet_pt.AtomPairwiseModels.apnet3_fused.APNet3_AtomType_Model(
-        ds_root=None,
+        ds_root="data_dir",
         atom_type_model=atom_type_hf_vw_model.model,
         dimer_prop_model=atom_type_elst_model.dimer_model,
         pre_trained_model_path=ap3_path,
+        ds_spec_type=None,
+        ignore_database_null=ignore_database_null,
+        ds_qcel_molecules=ds_qcel_molecules,
+        ds_energy_labels=ds_energy_labels,
     )
+    if finetune:
+        ap3.freeze_parameters_except_readouts()
+        ap3.train(
+            n_epochs=sft_n_epochs,
+            lr=sft_lr,
+            split_percent=0.99,
+            transfer_learning=True,
+        )
     pred, pair_elst, pair_ind = ap3.predict_qcel_mols(
         mols, batch_size=64, return_classical_pairs=True
     )
@@ -769,12 +815,7 @@ def ap2_ap3_df_energies(generate=False):
     pkl_fn = f"crystals_ap2_ap3_results_{mol_str.replace(' ', '_')}.pkl"
     if not os.path.exists(pkl_fn) or generate:
         df = pd.read_pickle("./x23_dfs/main_df.pkl")
-        print(df)
         df = df.dropna(subset=[mol_str])
-        # df = df.dropna(subset=["mol bm"])
-        print(df)
-        # df = df.head()
-        pp(df.columns.tolist())
         print("AP2 start")
         mols = df[mol_str].tolist()
         pred_ap2 = ap2_energies(mols)
@@ -861,24 +902,25 @@ def ap2_ap3_df_energies_sft(generate=False):
         df = df.dropna(subset=[mol_str])
         if v == "apprx":
             mms_col = "Minimum Monomer Separations (A) sapt0-dz-aug"
+            target_col = "Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"
         else:
             mms_col = "Minimum Monomer Separations (A) CCSD(T)/CBS"
-        for c in crystal_names_all:
+            target_col = "Non-Additive MB Energy (kJ/mol) CCSD(T)/CBS"
+        for n, c in enumerate(crystal_names_all):
             df_c_a = df[df[f"crystal {v}"] == c]
             df_c_a.sort_values(by=mms_col, inplace=True)
-            pp(df.columns.tolist())
-            print("AP2 start")
-            mols = df[mol_str].tolist()
-            pred_ap2 = ap2_energies(mols)
-            pred_ap2 *= kcalmol_to_kjmol
-            df_c_a["AP2 TOTAL"] = np.sum(pred_ap2[:, 0:4], axis=1)
-            df_c_a["AP2 ELST"] = pred_ap2[:, 0]
-            df_c_a["AP2 EXCH"] = pred_ap2[:, 1]
-            df_c_a["AP2 INDU"] = pred_ap2[:, 2]
-            df_c_a["AP2 DISP"] = pred_ap2[:, 3]
-            df_c_a.to_pickle(pkl_fn)
+            print(f"\nProcessing crystal: {n} {c} with {len(df_c_a)} entries")
+            print(df_c_a[[mms_col, target_col]])
+            mols = df_c_a[mol_str].tolist()
             print("AP3 start")
-            pred_ap3, pair_elst, pair_ind = ap3_d_elst_classical_energies(mols)
+            # return
+            pred_ap3, pair_elst, pair_ind = ap3_d_elst_classical_energies(
+                mols,
+                finetune_labels=[
+                    i / kcalmol_to_kjmol for i in df_c_a[target_col].to_list()[:5]
+                ],
+                finetune_mols=mols[:5],
+            )
             pred_ap3 *= kcalmol_to_kjmol
             elst_energies = [np.sum(e) * kcalmol_to_kjmol for e in pair_elst]
             ind_energies = [np.sum(e) * kcalmol_to_kjmol for e in pair_ind]
@@ -890,6 +932,22 @@ def ap2_ap3_df_energies_sft(generate=False):
             df_c_a["AP3 EXCH"] = pred_ap3[:, 1]
             df_c_a["AP3 INDU"] = pred_ap3[:, 2]
             df_c_a["AP3 DISP"] = pred_ap3[:, 3]
+
+            print("AP2 start")
+            pred_ap2 = ap2_energies(
+                mols,
+                compile=False,
+                finetune_labels=[
+                    i / kcalmol_to_kjmol for i in df_c_a[target_col].to_list()[:5]
+                ],
+                finetune_mols=mols[:5],
+            )
+            pred_ap2 *= kcalmol_to_kjmol
+            df_c_a["AP2 TOTAL"] = np.sum(pred_ap2[:, 0:4], axis=1)
+            df_c_a["AP2 ELST"] = pred_ap2[:, 0]
+            df_c_a["AP2 EXCH"] = pred_ap2[:, 1]
+            df_c_a["AP2 INDU"] = pred_ap2[:, 2]
+            df_c_a["AP2 DISP"] = pred_ap2[:, 3]
         # LE
         non_additive_cols = [
             i for i in df.columns if "Non-Additive MB Energy (kJ/mol)" in i
@@ -2626,7 +2684,8 @@ def main():
     # plot_switchover_errors()
     # plot_crystal_lattice_energies()
     # plot_crystal_lattice_energies_with_switchover(2.9)
-    plot_crystal_lattice_energies_with_N(1)
+    # plot_crystal_lattice_energies_with_N(1)
+    ap2_ap3_df_energies_sft(generate=True)
     return
 
 
