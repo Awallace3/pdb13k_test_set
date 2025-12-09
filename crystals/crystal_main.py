@@ -938,10 +938,10 @@ def ap2_ap3_df_energies_sft(generate=False, v="apprx"):
             # return
             pred_ap3, pair_elst, pair_ind = ap3_d_elst_classical_energies(
                 mols,
-                # finetune_labels=[
-                #     i / kcalmol_to_kjmol for i in df_c_a[target_col].to_list()[:5]
-                # ],
-                # finetune_mols=mols[:5],
+                finetune_labels=[
+                    i / kcalmol_to_kjmol for i in df_c_a[target_col].to_list()[:5]
+                ],
+                finetune_mols=mols[:5],
             )
             pred_ap3 *= kcalmol_to_kjmol
             elst_energies = [np.sum(e) * kcalmol_to_kjmol for e in pair_elst]
@@ -960,10 +960,10 @@ def ap2_ap3_df_energies_sft(generate=False, v="apprx"):
             pred_ap2 = ap2_energies(
                 mols,
                 compile=False,
-                # finetune_labels=[
-                #     i / kcalmol_to_kjmol for i in df_c_a[target_col].to_list()[:5]
-                # ],
-                # finetune_mols=mols[:5],
+                finetune_labels=[
+                    i / kcalmol_to_kjmol for i in df_c_a[target_col].to_list()[:5]
+                ],
+                finetune_mols=mols[:5],
             )
             pred_ap2 *= kcalmol_to_kjmol
 
