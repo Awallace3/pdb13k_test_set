@@ -19,7 +19,7 @@ qcml_model_dir = os.path.expanduser("~/gits/qcmlforge/models")
 
 kcalmol_to_kjmol = qcel.constants.conversion_factor("kcal/mol", "kJ/mol")
 
-sft_n_epochs = 10
+sft_n_epochs = 20
 sft_lr = 5e-4
 
 crystal_names_all = [
@@ -896,8 +896,23 @@ def ap2_ap3_df_energies_sft(generate=False):
     v = "bm"
     mol_str = "mol " + v
     pkl_fn = f"sft_crystals_ap2_ap3_results_{mol_str.replace(' ', '_')}.pkl"
+    new_cols = [
+        'AP3 TOTAL',
+        'AP3 ELST',
+        'AP3 EXCH',
+        'AP3 INDU',
+        'AP3 DISP',
+        'AP2 TOTAL',
+        'AP2 ELST',
+        'AP2 EXCH',
+        'AP2 INDU',
+        'AP2 DISP',
+    ]
     if not os.path.exists(pkl_fn) or generate:
         df = pd.read_pickle("./x23_dfs/main_df.pkl")
+        df = df.sample(n=20)
+        for c in new_cols:
+            df[c] = None
         print(df)
         df = df.dropna(subset=[mol_str])
         if v == "apprx":
@@ -908,6 +923,8 @@ def ap2_ap3_df_energies_sft(generate=False):
             target_col = "Non-Additive MB Energy (kJ/mol) CCSD(T)/CBS"
         for n, c in enumerate(crystal_names_all):
             df_c_a = df[df[f"crystal {v}"] == c]
+            if len(df_c_a) == 0:
+                continue
             df_c_a.sort_values(by=mms_col, inplace=True)
             print(f"\nProcessing crystal: {n} {c} with {len(df_c_a)} entries")
             print(df_c_a[[mms_col, target_col]])
