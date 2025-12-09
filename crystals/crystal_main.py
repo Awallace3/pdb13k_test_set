@@ -891,26 +891,25 @@ def ap2_ap3_df_energies(generate=False):
     return df
 
 
-def ap2_ap3_df_energies_sft(generate=False):
-    v = "apprx"
-    v = "bm"
+def ap2_ap3_df_energies_sft(generate=False, v="apprx"):
+    # v = "bm"
     mol_str = "mol " + v
     pkl_fn = f"sft_crystals_ap2_ap3_results_{mol_str.replace(' ', '_')}.pkl"
     new_cols = [
-        'AP3 TOTAL',
-        'AP3 ELST',
-        'AP3 EXCH',
-        'AP3 INDU',
-        'AP3 DISP',
-        'AP2 TOTAL',
-        'AP2 ELST',
-        'AP2 EXCH',
-        'AP2 INDU',
-        'AP2 DISP',
+        "AP3 TOTAL",
+        "AP3 ELST",
+        "AP3 EXCH",
+        "AP3 INDU",
+        "AP3 DISP",
+        "AP2 TOTAL",
+        "AP2 ELST",
+        "AP2 EXCH",
+        "AP2 INDU",
+        "AP2 DISP",
     ]
     if not os.path.exists(pkl_fn) or generate:
         df = pd.read_pickle("./x23_dfs/main_df.pkl")
-        df = df.sample(n=20)
+        # df = df.sample(n=20)
         for c in new_cols:
             df[c] = None
         print(df)
@@ -922,9 +921,15 @@ def ap2_ap3_df_energies_sft(generate=False):
             mms_col = "Minimum Monomer Separations (A) CCSD(T)/CBS"
             target_col = "Non-Additive MB Energy (kJ/mol) CCSD(T)/CBS"
         for n, c in enumerate(crystal_names_all):
-            df_c_a = df[df[f"crystal {v}"] == c]
-            if len(df_c_a) == 0:
+            # Get indices for this crystal
+            crystal_mask = df[f"crystal {v}"] == c
+            crystal_indices = df[crystal_mask].index
+
+            if len(crystal_indices) == 0:
                 continue
+
+            # Get sorted crystal dataframe
+            df_c_a = df.loc[crystal_indices].copy()
             df_c_a.sort_values(by=mms_col, inplace=True)
             print(f"\nProcessing crystal: {n} {c} with {len(df_c_a)} entries")
             print(df_c_a[[mms_col, target_col]])
@@ -933,38 +938,42 @@ def ap2_ap3_df_energies_sft(generate=False):
             # return
             pred_ap3, pair_elst, pair_ind = ap3_d_elst_classical_energies(
                 mols,
-                finetune_labels=[
-                    i / kcalmol_to_kjmol for i in df_c_a[target_col].to_list()[:5]
-                ],
-                finetune_mols=mols[:5],
+                # finetune_labels=[
+                #     i / kcalmol_to_kjmol for i in df_c_a[target_col].to_list()[:5]
+                # ],
+                # finetune_mols=mols[:5],
             )
             pred_ap3 *= kcalmol_to_kjmol
             elst_energies = [np.sum(e) * kcalmol_to_kjmol for e in pair_elst]
             ind_energies = [np.sum(e) * kcalmol_to_kjmol for e in pair_ind]
-            # df_c_a["mtp_elst_energies"] = elst_undamped
-            df_c_a["ap3_d_elst"] = elst_energies
-            df_c_a["ap3_classical_ind_energy"] = ind_energies
-            df_c_a["AP3 TOTAL"] = np.sum(pred_ap3[:, 0:4], axis=1)
-            df_c_a["AP3 ELST"] = pred_ap3[:, 0]
-            df_c_a["AP3 EXCH"] = pred_ap3[:, 1]
-            df_c_a["AP3 INDU"] = pred_ap3[:, 2]
-            df_c_a["AP3 DISP"] = pred_ap3[:, 3]
+
+            # Update main dataframe using .loc with the sorted indices
+            df.loc[df_c_a.index, "ap3_d_elst"] = elst_energies
+            df.loc[df_c_a.index, "ap3_classical_ind_energy"] = ind_energies
+            df.loc[df_c_a.index, "AP3 TOTAL"] = np.sum(pred_ap3[:, 0:4], axis=1)
+            df.loc[df_c_a.index, "AP3 ELST"] = pred_ap3[:, 0]
+            df.loc[df_c_a.index, "AP3 EXCH"] = pred_ap3[:, 1]
+            df.loc[df_c_a.index, "AP3 INDU"] = pred_ap3[:, 2]
+            df.loc[df_c_a.index, "AP3 DISP"] = pred_ap3[:, 3]
 
             print("AP2 start")
             pred_ap2 = ap2_energies(
                 mols,
                 compile=False,
-                finetune_labels=[
-                    i / kcalmol_to_kjmol for i in df_c_a[target_col].to_list()[:5]
-                ],
-                finetune_mols=mols[:5],
+                # finetune_labels=[
+                #     i / kcalmol_to_kjmol for i in df_c_a[target_col].to_list()[:5]
+                # ],
+                # finetune_mols=mols[:5],
             )
             pred_ap2 *= kcalmol_to_kjmol
-            df_c_a["AP2 TOTAL"] = np.sum(pred_ap2[:, 0:4], axis=1)
-            df_c_a["AP2 ELST"] = pred_ap2[:, 0]
-            df_c_a["AP2 EXCH"] = pred_ap2[:, 1]
-            df_c_a["AP2 INDU"] = pred_ap2[:, 2]
-            df_c_a["AP2 DISP"] = pred_ap2[:, 3]
+
+            # Update main dataframe using .loc with the sorted indices
+            df.loc[df_c_a.index, "AP2 TOTAL"] = np.sum(pred_ap2[:, 0:4], axis=1)
+            df.loc[df_c_a.index, "AP2 ELST"] = pred_ap2[:, 0]
+            df.loc[df_c_a.index, "AP2 EXCH"] = pred_ap2[:, 1]
+            df.loc[df_c_a.index, "AP2 INDU"] = pred_ap2[:, 2]
+            df.loc[df_c_a.index, "AP2 DISP"] = pred_ap2[:, 3]
+
         # LE
         non_additive_cols = [
             i for i in df.columns if "Non-Additive MB Energy (kJ/mol)" in i
@@ -974,19 +983,25 @@ def ap2_ap3_df_energies_sft(generate=False):
             df[f"{label}_le_contribution"] = df.apply(
                 lambda r: r[c]
                 * r[f"Num. Rep. (#) {label}"]
-                / int(r[f"N-mer Name {v}"][0]),
+                / int(r[f"N-mer Name {v}"][0])
+                if pd.notnull(r[c]) and pd.notnull(r[f"N-mer Name {v}"])
+                else 0,
                 axis=1,
             )
         df["ap3_le_contribution"] = df.apply(
             lambda r: r["AP3 TOTAL"]
             * r["Num. Rep. (#) sapt0-dz-aug"]
-            / int(r[f"N-mer Name {v}"][0]),
+            / int(r[f"N-mer Name {v}"][0])
+            if pd.notnull(r["AP3 TOTAL"]) and pd.notnull(r[f"N-mer Name {v}"])
+            else 0,
             axis=1,
         )
         df["ap2_le_contribution"] = df.apply(
             lambda r: r["AP2 TOTAL"]
             * r["Num. Rep. (#) sapt0-dz-aug"]
-            / int(r[f"N-mer Name {v}"][0]),
+            / int(r[f"N-mer Name {v}"][0])
+            if pd.notnull(r["AP2 TOTAL"]) and pd.notnull(r[f"N-mer Name {v}"])
+            else 0,
             axis=1,
         )
         df.to_pickle(pkl_fn)
@@ -1883,7 +1898,7 @@ def plot_switchover_errors():
     return fig, axes
 
 
-def plot_crystal_lattice_energies():
+def plot_crystal_lattice_energies(sft=False):
     """
     For each crystal, plot rolling sum of CLE energy errors from all points
     above X. Creates subplots showing AP2/AP3
@@ -1899,8 +1914,14 @@ def plot_crystal_lattice_energies():
     mpl.rcParams["lines.markersize"] = 6
 
     # Load dataframes
-    df_apprx = pd.read_pickle("./crystals_ap2_ap3_results_mol_apprx.pkl")
-    df_bm = pd.read_pickle("./crystals_ap2_ap3_results_mol_bm.pkl")
+    if sft:
+        df_apprx = pd.read_pickle("./sft_crystals_ap2_ap3_results_mol_apprx.pkl")
+        df_bm = pd.read_pickle("./sft_crystals_ap2_ap3_results_mol_bm.pkl")
+        output_path = "./x23_plots/CLE_all_crystals_sft.png"
+    else:
+        df_apprx = pd.read_pickle("./crystals_ap2_ap3_results_mol_apprx.pkl")
+        df_bm = pd.read_pickle("./crystals_ap2_ap3_results_mol_bm.pkl")
+        output_path = "./x23_plots/CLE_all_crystals.png"
 
     # Get unique crystals
     crystals_apprx = sorted(df_apprx["crystal apprx"].dropna().unique())
@@ -2100,7 +2121,6 @@ def plot_crystal_lattice_energies():
     plt.tight_layout()
 
     # Save figure
-    output_path = "./x23_plots/CLE_all_crystals.png"
     plt.savefig(output_path, dpi=300, bbox_inches="tight")
     print(f"\nFigure saved to: {output_path}")
     return fig, axes
@@ -2396,7 +2416,7 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.5):
     return fig, axes
 
 
-def plot_crystal_lattice_energies_with_N(N=1):
+def plot_crystal_lattice_energies_with_N(N=1, sft=False):
     """
     For each crystal, plot rolling sum of CLE energy errors from all points
     above X. Creates subplots showing AP2/AP3
@@ -2412,8 +2432,14 @@ def plot_crystal_lattice_energies_with_N(N=1):
     mpl.rcParams["lines.markersize"] = 6
 
     # Load dataframes
-    df_apprx = pd.read_pickle("./crystals_ap2_ap3_results_mol_apprx.pkl")
-    df_bm = pd.read_pickle("./crystals_ap2_ap3_results_mol_bm.pkl")
+    if sft:
+        df_apprx = pd.read_pickle("./sft_crystals_ap2_ap3_results_mol_apprx.pkl")
+        df_bm = pd.read_pickle("./sft_crystals_ap2_ap3_results_mol_bm.pkl")
+        output_path = "./x23_plots/CLE_all_crystals_N_sft.png"
+    else:
+        df_apprx = pd.read_pickle("./crystals_ap2_ap3_results_mol_apprx.pkl")
+        df_bm = pd.read_pickle("./crystals_ap2_ap3_results_mol_bm.pkl")
+        output_path = "./x23_plots/CLE_all_crystals_N.png"
 
     # Get unique crystals
     crystals_apprx = sorted(df_apprx["crystal apprx"].dropna().unique())
@@ -2690,7 +2716,6 @@ def plot_crystal_lattice_energies_with_N(N=1):
     print(f"{mae_ap3_ccsd=:.4f} kJ/mol")
 
     # Save figure
-    output_path = "./x23_plots/CLE_all_crystals_N.png"
     plt.savefig(output_path, dpi=300, bbox_inches="tight")
     print(f"\nFigure saved to: {output_path}")
     return fig, axes
@@ -2699,10 +2724,19 @@ def plot_crystal_lattice_energies_with_N(N=1):
 def main():
     # plot_full_crystal_errors()
     # plot_switchover_errors()
-    # plot_crystal_lattice_energies()
     # plot_crystal_lattice_energies_with_switchover(2.9)
-    # plot_crystal_lattice_energies_with_N(1)
-    ap2_ap3_df_energies_sft(generate=True)
+
+    # GENERATE DATAFRAMES
+    ap2_ap3_df_energies_sft(
+        generate=True,
+        v='apprx'
+    )
+    ap2_ap3_df_energies_sft(
+        generate=True,
+        v='bm'
+    )
+    plot_crystal_lattice_energies(sft=True)
+    plot_crystal_lattice_energies_with_N(1, sft=True)
     return
 
 
