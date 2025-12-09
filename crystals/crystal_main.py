@@ -1251,7 +1251,6 @@ def plot_crystal_errors(
         index=True,
         float_format="{:0.2f}".format,
     )
-    from cdsg_plot import error_statistics
 
     error_statistics.violin_plot_table_multi_SAPT_components(
         dfs,
@@ -1918,10 +1917,14 @@ def plot_crystal_lattice_energies(sft=False):
         df_apprx = pd.read_pickle("./sft_crystals_ap2_ap3_results_mol_apprx.pkl")
         df_bm = pd.read_pickle("./sft_crystals_ap2_ap3_results_mol_bm.pkl")
         output_path = "./x23_plots/CLE_all_crystals_sft.png"
+        output_violin_apprx = "./x23_plots/ap2_ap3_errors_vs_sapt0_sft.png"
+        output_violin_bm = "./x23_plots/ap2_ap3_errors_vs_ccsdt_cbs_sft.png"
     else:
         df_apprx = pd.read_pickle("./crystals_ap2_ap3_results_mol_apprx.pkl")
         df_bm = pd.read_pickle("./crystals_ap2_ap3_results_mol_bm.pkl")
         output_path = "./x23_plots/CLE_all_crystals.png"
+        output_violin_apprx = "./x23_plots/ap2_ap3_errors_vs_sapt0.png"
+        output_violin_bm = "./x23_plots/ap2_ap3_errors_vs_ccsdt_cbs.png"
 
     # Get unique crystals
     crystals_apprx = sorted(df_apprx["crystal apprx"].dropna().unique())
@@ -2171,6 +2174,94 @@ def plot_crystal_lattice_energies(sft=False):
     # Save figure
     plt.savefig(output_path, dpi=300, bbox_inches="tight")
     print(f"\nFigure saved to: {output_path}")
+
+
+    # Prepare df1 for violin plot
+    dfs1 = [
+        {
+            "df": df_apprx,
+            "basis": "",
+            "label": "SAPT0/aDZ Reference",
+            "ylim": [[-4, 4]],
+        }
+    ]
+
+    # Labels and columns for df1 (multiple methods)
+    df1_labels = {
+        "AP2": "AP2 vs SAPT0 error",
+        "AP3": "AP3 vs SAPT0 error",
+    }
+
+    method_cols = [
+        col
+        for col in df_apprx.columns
+        if "Non-Additive MB Energy (kJ/mol)" in col and "sapt0-dz-aug" not in col
+    ]
+    # Add other methods if available
+    for method_col in method_cols[:3]:
+        method_name = method_col.replace("Non-Additive MB Energy (kJ/mol) ", "")
+        if f"{method_name} error" in df_apprx.columns:
+            df1_labels[method_name] = f"{method_name} error"
+
+    # Prepare df2 for violin plot
+    dfs2 = [
+        {
+            "df": df_bm,
+            "basis": "",
+            "label": "CCSD(T)/CBS Reference",
+            "ylim": [[-4, 4]],
+        }
+    ]
+
+    # Labels and columns for df2 (only AP2 and AP3 vs CCSD(T)/CBS)
+    df2_labels = {
+        "AP2": "AP2 vs CCSD(T)/CBS error",
+        "AP3": "AP3 vs CCSD(T)/CBS error",
+    }
+
+    # Create violin plot for df1
+    print("\nCreating violin plot for df1 (approximate methods)...")
+    error_statistics.violin_plot_table_multi_SAPT_components(
+        dfs1,
+        df_labels_and_columns_total=df1_labels,
+        output_filename=output_violin_apprx,
+        grid_heights=[0.3, 1.0],
+        grid_widths=[1],
+        legend_loc="upper left",
+        annotations_texty=0.3,
+        figure_size=(6, 2.5),
+        add_title=False,
+    )
+    # Create violin plot for df2
+    print("\nCreating violin plot for df2 (benchmark comparison)...")
+    error_statistics.violin_plot_table_multi_SAPT_components(
+        dfs2,
+        df_labels_and_columns_total=df2_labels,
+        output_filename=output_violin_bm,
+        grid_heights=[0.3, 1.0],
+        grid_widths=[1],
+        legend_loc="upper left",
+        annotations_texty=0.3,
+        figure_size=(4, 2.5),
+        add_title=False,
+    )
+    # Print summary statistics
+    print("\n=== df_apprx Summary Statistics ===")
+    for label, col in df1_labels.items():
+        if col in df_apprx.columns:
+            print(f"\n{label}:")
+            print(f"  MAE: {df_apprx[col].abs().mean():.4f} kJ/mol")
+            print(f"  RMSE: {np.sqrt((df_apprx[col] ** 2).mean()):.4f} kJ/mol")
+            print(f"  Mean: {df_apprx[col].mean():.4f} kJ/mol")
+
+    print("\n=== df_bm Summary Statistics ===")
+    for label, col in df2_labels.items():
+        if col in df_bm.columns:
+            print(f"\n{label}:")
+            print(f"  MAE: {df_bm[col].abs().mean():.4f} kJ/mol")
+            print(f"  RMSE: {np.sqrt((df_bm[col] ** 2).mean()):.4f} kJ/mol")
+            print(f"  Mean: {df_bm[col].mean():.4f} kJ/mol")
+
     return fig, axes
 
 
@@ -2785,8 +2876,8 @@ def main():
     # )
     plot_crystal_lattice_energies(sft=True)
     plot_crystal_lattice_energies(sft=False)
-    # plot_crystal_lattice_energies_with_N(1, sft=True)
-    # plot_crystal_lattice_energies_with_N(1, sft=False)
+    plot_crystal_lattice_energies_with_N(1, sft=True)
+    plot_crystal_lattice_energies_with_N(1, sft=False)
     return
 
 
