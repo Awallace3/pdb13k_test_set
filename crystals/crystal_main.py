@@ -19,7 +19,7 @@ qcml_model_dir = os.path.expanduser("~/gits/qcmlforge/models")
 
 kcalmol_to_kjmol = qcel.constants.conversion_factor("kcal/mol", "kJ/mol")
 
-sft_n_epochs = 20
+sft_n_epochs = 30
 sft_lr = 5e-4
 
 crystal_names_all = [
