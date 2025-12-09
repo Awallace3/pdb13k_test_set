@@ -1942,6 +1942,11 @@ def plot_crystal_lattice_energies(sft=False):
     increment = 0.25
     sep_distances = np.arange(1.0, 15.0 + 0.05, increment)
 
+    ap2_full_cle_errors_sapt0_aDZ = []
+    ap3_full_cle_errors_sapt0_aDZ = []
+    ap2_full_cle_errors_ccsd_t_CBS = []
+    ap3_full_cle_errors_ccsd_t_CBS = []
+
     # Process each crystal
     for idx, crystal in enumerate(all_crystals):
         print(f"\nProcessing crystal {idx + 1}/{N}: {crystal}")
@@ -2025,6 +2030,12 @@ def plot_crystal_lattice_energies(sft=False):
                     ax_apprx.legend(loc="best", fontsize=8)
 
                 # ax_apprx.set_ylim(-5, 5)
+                ap2_full_cle_errors_sapt0_aDZ.append(
+                    ap2_2b_energies[-1] - ref_2b_energies[-1]
+                )
+                ap3_full_cle_errors_sapt0_aDZ.append(
+                    ap3_2b_energies[-1] - ref_2b_energies[-1]
+                )
 
         # Right plot: bm (vs CCSD(T)/CBS)
         ax_bm = axes[idx, 1]
@@ -2103,6 +2114,12 @@ def plot_crystal_lattice_energies(sft=False):
 
                 if idx == 0:
                     ax_bm.legend(loc="best", fontsize=8)
+                ap2_full_cle_errors_ccsd_t_CBS.append(
+                    ap2_2b_energies[-1] - ref_2b_energies[-1]
+                )
+                ap3_full_cle_errors_ccsd_t_CBS.append(
+                    ap3_2b_energies[-1] - ref_2b_energies[-1]
+                )
 
                 # ax_bm.set_ylim(-5, 5)
 
@@ -2116,6 +2133,37 @@ def plot_crystal_lattice_energies(sft=False):
                 ax.set_xlabel("Min. Mon. Sep. (Å)", fontsize=11)
             else:
                 ax.tick_params(axis="x", labelbottom=False)
+
+    # Filter out nans from ap2_full_cle_errors_ccsd_t_CBS
+    ap2_full_cle_errors_ccsd_t_CBS = [
+        x for x in ap2_full_cle_errors_ccsd_t_CBS if x != 0.0
+    ]
+    ap3_full_cle_errors_ccsd_t_CBS = [
+        x for x in ap3_full_cle_errors_ccsd_t_CBS if x != 0.0
+    ]
+    ap2_full_cle_errors_sapt0_aDZ = [
+        x for x in ap2_full_cle_errors_sapt0_aDZ if x != 0.0
+    ]
+    ap3_full_cle_errors_sapt0_aDZ = [
+        x for x in ap3_full_cle_errors_sapt0_aDZ if x != 0.0
+    ]
+
+    mae_ap2_sapt = np.sum(np.array(ap2_full_cle_errors_sapt0_aDZ)) / len(
+        ap2_full_cle_errors_sapt0_aDZ
+    )
+    mae_ap3_sapt = np.sum(np.array(ap3_full_cle_errors_sapt0_aDZ)) / len(
+        ap3_full_cle_errors_sapt0_aDZ
+    )
+    mae_ap2_ccsd = np.sum(np.array(ap2_full_cle_errors_ccsd_t_CBS)) / len(
+        ap2_full_cle_errors_ccsd_t_CBS
+    )
+    mae_ap3_ccsd = np.sum(np.array(ap3_full_cle_errors_ccsd_t_CBS)) / len(
+        ap3_full_cle_errors_ccsd_t_CBS
+    )
+    print(f"{mae_ap2_sapt=:.4f} kJ/mol")
+    print(f"{mae_ap3_sapt=:.4f} kJ/mol")
+    print(f"{mae_ap2_ccsd=:.4f} kJ/mol")
+    print(f"{mae_ap3_ccsd=:.4f} kJ/mol")
 
     # Adjust layout
     plt.tight_layout()
@@ -2727,16 +2775,18 @@ def main():
     # plot_crystal_lattice_energies_with_switchover(2.9)
 
     # GENERATE DATAFRAMES
-    ap2_ap3_df_energies_sft(
-        generate=True,
-        v='apprx'
-    )
-    ap2_ap3_df_energies_sft(
-        generate=True,
-        v='bm'
-    )
+    # ap2_ap3_df_energies_sft(
+    #     generate=True,
+    #     v='apprx'
+    # )
+    # ap2_ap3_df_energies_sft(
+    #     generate=True,
+    #     v='bm'
+    # )
     plot_crystal_lattice_energies(sft=True)
-    plot_crystal_lattice_energies_with_N(1, sft=True)
+    plot_crystal_lattice_energies(sft=False)
+    # plot_crystal_lattice_energies_with_N(1, sft=True)
+    # plot_crystal_lattice_energies_with_N(1, sft=False)
     return
 
 
