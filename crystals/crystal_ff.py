@@ -15,6 +15,8 @@ from matplotlib.ticker import AutoMinorLocator
 import shutil
 import subprocess
 from subprocess import check_output
+import openmm
+import omm_utils as utils
 
 
 qcml_model_dir = os.path.expanduser("~/gits/qcmlforge/models")
@@ -69,14 +71,36 @@ def generate_paramaters():
     return
 
 
+def qcel_molecule_to_openmm_for_energy(qcel_mol, **kwargs):
+    pdb_file = kwargs.get("pdb_file", None)
+    xml_file = kwargs.get("xml_file", None)
+    atom_types_map = kwargs.get("atom_types_map", None)
+
+    # fix topological issues in QCElemental (if any)
+    qcel_mol = utils._fix_topological_order(qcel_mol)
+
+    # update pdb_file with correct qcel_mol "topology"
+    pdb_file = utils._create_topology(qcel_mol, pdb_file, atom_types_map)
+    xmlmd = utils.XmlMD(qcel_mol=qcel_mol, atom_types_map=atom_types_map)
+    xmlmd.parse_xml(xml_file)
+    print(xmlmd)
+    return xmlmd
+
+
 def run_ff_dimer():
     df = pd.read_pickle("./crystals_ap2_ap3_results_mol_apprx.pkl")
-    for c in ['ice']:
+    for c in ["ice"]:
         c_path = f"ff_params/{c}"
         if not os.path.exists(c_path):
             os.makedirs(c_path)
         mol = df[df["crystal apprx"] == c]["mol apprx"].iloc[0]
         print(mol.to_string("psi4"))
+        xmlmd = qcel_molecule_to_openmm_for_energy(
+            mol,
+            pdb_file=f"{c_path}/mol_A.openmm.pdb",
+            xml_file=f"{c_path}/mol_A.openmm.xml",
+        )
+        # TODO: use xmlmd to evaluate the dimer interaction energy with OpenMM
         break
     return
 
