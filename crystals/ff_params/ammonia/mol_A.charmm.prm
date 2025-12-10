@@ -1,0 +1,30 @@
+!---------------------------------------------
+!        Generated with LigParGen 
+!        William L. Jorgensen Lab
+!     Author: israel.cabezadevaca@yale.edu
+!    OPLS Force Field with CM1A derived Atomic Charges
+!---------------------------------------------
+
+BOND
+H801  N800  434.000   1.010
+H802  N800  434.000   1.010
+H803  N800  434.000   1.010
+
+ANGLE
+H802  N800  H801        43.60     106.400
+H803  N800  H801        43.60     106.400
+H803  N800  H802        43.60     106.400
+
+DIHEDRAL
+!  X    X    X    X    0.00000 1 0.000000 1 ! WILD CARD FOR MISSING TORSION PARAMETERS
+
+IMPROPER
+H801       N800       H802       H803            0.000 2 180.000
+!  X    X    X    X    0.00000 2 0.000000 1 ! WILD CARD FOR MISSING IMPROPER PARAMETERS
+
+NONBONDED nbxmod 5 atom cdiel switch vatom vdistance vswitch -
+cutnb 14.0 ctofnb 12.0 ctonnb 11.5 eps 1.0 e14fac 0.5  geom
+N800 0.00 -0.170000 1.852062 0.00 -0.085000 1.852062
+H801 0.00 -0.000000 0.000000 0.00 -0.000000 0.000000
+H802 0.00 -0.000000 0.000000 0.00 -0.000000 0.000000
+H803 0.00 -0.000000 0.000000 0.00 -0.000000 0.000000

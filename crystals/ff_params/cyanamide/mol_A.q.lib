@@ -1,0 +1,22 @@
+*Generated with LigParGen (israel.cabezadevaca@yale.edu)
+
+{MOL}
+[atoms]
+   1   C00       C800         0.4648
+   2   N01       N801        -0.3722
+   3   N02       N802        -1.0588
+   4   H03       H803         0.4831
+   5   H04       H804         0.4831
+
+[bonds]
+N01       C00       
+N02       C00       
+H03       N02       
+H04       N02       
+
+[impropers]
+C00       N02       H03       H04       
+
+[charge_groups]
+C00 N01 N02 H03 H04 
+

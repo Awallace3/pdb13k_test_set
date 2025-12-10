@@ -1,0 +1,28 @@
+Remarks generated with LigParGen (israel.cabezadevaca@yale.edu)
+
+set echo=false end
+
+{ BOND: atomType1 atomType2 kb r0 }
+BOND   H801  N800    434.0   1.0100
+BOND   H802  N800    434.0   1.0100
+BOND   H803  N800    434.0   1.0100
+
+{ ANGLE: aType1 aType2 aType3 kt t0 }
+ANGLE  H802  N800  H801     43.6   106.40
+ANGLE  H803  N800  H801     43.6   106.40
+ANGLE  H803  N800  H802     43.6   106.40
+
+{ Proper Dihedrals: aType1 aType2 aType3 aType4 kt period phase }
+
+{ Improper Dihedrals: aType1 aType2 aType3 aType4 kt period phase }
+IMPROPER  H801  N800  H802  H803  0.00000 2 180.0000 
+
+{ Nonbonded: Type Emin sigma; (1-4): Emin/2 sigma }
+NONBONDED  N800    0.170000    3.300000    0.085000    3.300000
+NONBONDED  H801    0.000000    0.000000    0.000000    0.000000
+NONBONDED  H802    0.000000    0.000000    0.000000    0.000000
+NONBONDED  H803    0.000000    0.000000    0.000000    0.000000
+
+set echo=true end
+
+

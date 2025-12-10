@@ -1,0 +1,34 @@
+<!--       Generated with LigParGen   --> 
+<!--        William L. Jorgensen Lab  -->
+<!--     Author: israel.cabezadevaca@yale.edu  -->
+<!--    OPLS Force Field with CM1A derived Atomic Charges  -->
+<ForceField>
+<AtomTypes>
+<Type name="opls_800" class="O800" element="O" mass="15.999"/>
+<Type name="opls_801" class="H801" element="H" mass="1.008"/>
+<Type name="opls_802" class="H802" element="H" mass="1.008"/>
+</AtomTypes>
+<Residues>
+<Residue name="MOL">
+<Atom name="O00" type="opls_800"/>
+<Atom name="H01" type="opls_801"/>
+<Atom name="H02" type="opls_802"/>
+<Bond from="1" to="0"/>
+<Bond from="2" to="0"/>
+</Residue>
+</Residues>
+<HarmonicBondForce>
+<Bond class1="H801" class2="O800" length="0.094500" k="462750.400000"/>
+<Bond class1="H802" class2="O800" length="0.094500" k="462750.400000"/>
+</HarmonicBondForce>
+<HarmonicAngleForce>
+<Angle class1="H802" class2="O800" class3="H801" angle="1.433264" k="523.000000"/>
+</HarmonicAngleForce>
+<PeriodicTorsionForce>
+</PeriodicTorsionForce>
+<NonbondedForce coulomb14scale="0.5" lj14scale="0.5">
+<Atom type="opls_800" charge="-0.838675" sigma="0.315365" epsilon="0.648520"/>
+<Atom type="opls_801" charge="0.419338" sigma="0.000000" epsilon="0.000000"/>
+<Atom type="opls_802" charge="0.419337" sigma="0.000000" epsilon="0.000000"/>
+</NonbondedForce>
+</ForceField>

@@ -1,0 +1,74 @@
+Remarks generated with LigParGen (israel.cabezadevaca@yale.edu)
+
+set echo=false end
+
+{ BOND: atomType1 atomType2 kb r0 }
+BOND   C801  C800    350.0   1.5100
+BOND   O802  C801    570.0   1.2290
+BOND   O803  C800    570.0   1.2290
+BOND   O804  C800    450.0   1.3640
+BOND   O805  C801    450.0   1.3640
+BOND   H806  O805    553.0   0.9450
+BOND   H807  O804    553.0   0.9450
+
+{ ANGLE: aType1 aType2 aType3 kt t0 }
+ANGLE  O802  C801  C800     80.0   121.40
+ANGLE  O803  C800  C801     80.0   121.40
+ANGLE  O804  C800  C801     70.1   117.45
+ANGLE  O805  C801  C800     70.1   117.45
+ANGLE  H806  O805  C801     35.0   113.00
+ANGLE  H807  O804  C800     35.0   113.00
+ANGLE  O805  C801  O802     80.0   121.00
+ANGLE  O804  C800  O803     80.0   121.00
+
+{ Proper Dihedrals: aType1 aType2 aType3 aType4 kt period phase }
+DIHEDRAL  O803  C800  C801  O802 MULT 4     0.800    1     0.00
+                                            1.600    2   180.00
+                                            0.000    3     0.00
+                                            0.000    4   180.00
+DIHEDRAL  O804  C800  C801  O802 MULT 4     0.800    1     0.00
+                                            1.600    2   180.00
+                                            0.000    3     0.00
+                                            0.000    4   180.00
+DIHEDRAL  O805  C801  C800  O803 MULT 4     0.800    1     0.00
+                                            1.600    2   180.00
+                                            0.000    3     0.00
+                                            0.000    4   180.00
+DIHEDRAL  H806  O805  C801  C800 MULT 4     1.500    1     0.00
+                                            2.750    2   180.00
+                                            0.000    3     0.00
+                                            0.000    4   180.00
+DIHEDRAL  H807  O804  C800  C801 MULT 4     1.500    1     0.00
+                                            2.750    2   180.00
+                                            0.000    3     0.00
+                                            0.000    4   180.00
+DIHEDRAL  H806  O805  C801  O802 MULT 4     0.000    1     0.00
+                                            2.750    2   180.00
+                                            0.000    3     0.00
+                                            0.000    4   180.00
+DIHEDRAL  H807  O804  C800  O803 MULT 4     0.000    1     0.00
+                                            2.750    2   180.00
+                                            0.000    3     0.00
+                                            0.000    4   180.00
+DIHEDRAL  O805  C801  C800  O804 MULT 4     0.800    1     0.00
+                                            1.600    2   180.00
+                                            0.000    3     0.00
+                                            0.000    4   180.00
+
+{ Improper Dihedrals: aType1 aType2 aType3 aType4 kt period phase }
+IMPROPER  C801  C800  O803  O804 10.50000 2 180.0000 
+IMPROPER  C800  C801  O802  O805 10.50000 2 180.0000 
+
+{ Nonbonded: Type Emin sigma; (1-4): Emin/2 sigma }
+NONBONDED  C800    0.070000    3.550000    0.035000    3.550000
+NONBONDED  C801    0.070000    3.550000    0.035000    3.550000
+NONBONDED  O802    0.210000    2.960000    0.105000    2.960000
+NONBONDED  O803    0.210000    2.960000    0.105000    2.960000
+NONBONDED  O804    0.170000    3.120000    0.085000    3.120000
+NONBONDED  O805    0.170000    3.120000    0.085000    3.120000
+NONBONDED  H806    0.000000    0.000000    0.000000    0.000000
+NONBONDED  H807    0.000000    0.000000    0.000000    0.000000
+
+set echo=true end
+
+

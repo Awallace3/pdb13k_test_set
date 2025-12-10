@@ -1,0 +1,78 @@
+LAMMPS data file generated with LigParGen (israel.cabezadevaca@yale.edu)
+
+       4 atoms
+       3 bonds
+       3 angles
+       0 dihedrals
+       1 impropers
+
+       4 atom types
+       3 bond types
+       3 angle types
+       0 dihedral types
+       1 improper types
+
+   -0.648000    49.352000 xlo xhi
+   -0.738000    49.262000 ylo yhi
+   -0.086000    49.914000 zlo zhi
+
+Masses
+
+       1     14.007
+       2      1.008
+       3      1.008
+       4      1.008
+
+Pair Coeffs
+
+       1      0.170  3.3000000
+       2      0.000  0.0000000
+       3      0.000  0.0000000
+       4      0.000  0.0000000
+
+Bond Coeffs
+
+       1   434.0000     1.0100
+       2   434.0000     1.0100
+       3   434.0000     1.0100
+
+Angle Coeffs
+
+       1     43.600    106.400
+       2     43.600    106.400
+       3     43.600    106.400
+
+Dihedral Coeffs
+
+
+Improper Coeffs
+
+       1      0.000      -1       2
+
+Atoms
+
+     1      1      1  -1.289520  0.01900 -0.00300  0.24600
+     2      1      2   0.429840  0.99500 -0.16200 -0.08600
+     3      1      3   0.429840 -0.64800 -0.73800 -0.08000
+     4      1      4   0.429840 -0.36700  0.90400 -0.08000
+
+Bonds
+
+     1      1      2      1
+     2      2      3      1
+     3      3      4      1
+
+Angles
+
+     1      1      3      1      2
+     2      2      4      1      2
+     3      3      4      1      3
+
+Dihedrals
+
+
+Impropers
+
+     1      1      2      1      3      4
+
+

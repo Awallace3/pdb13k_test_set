@@ -1,0 +1,41 @@
+;---------------------------------------------
+;        Generated with LigParGen 
+;        William L. Jorgensen Lab
+;     Author: israel.cabezadevaca@yale.edu
+;    OPLS Force Field with CM1A derived Atomic Charges
+;---------------------------------------------
+[ defaults ]
+; nbfunc        comb-rule       gen-pairs       fudgeLJ fudgeQQ
+    1               3              yes            0.5     0.5
+
+[ atomtypes ]
+  opls_800    OW    15.9990     0.000    A    3.15365E-01   6.48520E-01
+  opls_801    HO     1.0080     0.000    A    0.00000E+00   0.00000E+00
+  opls_802    HO     1.0080     0.000    A    0.00000E+00   0.00000E+00
+
+[ moleculetype ]
+; Name               nrexcl
+  MOL                  3
+
+[ atoms ]
+;   nr       type  resnr residue  atom   cgnr     charge       mass
+     1   opls_800      1    MOL   O00      1    -0.8387    15.9990 
+     2   opls_801      1    MOL   H01      1     0.4193     1.0080 
+     3   opls_802      1    MOL   H02      1     0.4194     1.0080 
+
+[ bonds ]
+;  ai    aj   funct      c0       c1
+    2    1    1      0.0945    462750.400
+    3    1    1      0.0945    462750.400
+
+[angles]
+;  ai    aj   ak  funct      c0       c1 
+    3    1    2    1        82.120    523.000
+[ dihedrals ]
+;  PROPER DIHEDRAL ANGLES
+;  ai    aj   ak   al funct      c0       c1      c2      c3       c4     c5
+[ dihedrals ]
+;IMPROPER DIHEDRAL ANGLES
+;  ai    aj   ak   al funct      c0       c1      c2      c3       c4     c5
+[ pairs ]
+;  ai    aj funct

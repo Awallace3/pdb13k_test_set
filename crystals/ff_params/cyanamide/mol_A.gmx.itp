@@ -1,0 +1,55 @@
+;---------------------------------------------
+;        Generated with LigParGen 
+;        William L. Jorgensen Lab
+;     Author: israel.cabezadevaca@yale.edu
+;    OPLS Force Field with CM1A derived Atomic Charges
+;---------------------------------------------
+[ defaults ]
+; nbfunc        comb-rule       gen-pairs       fudgeLJ fudgeQQ
+    1               3              yes            0.5     0.5
+
+[ atomtypes ]
+  opls_800    CZ    12.0110     0.000    A    3.30000E-01   2.76144E-01
+  opls_801    NZ    14.0070     0.000    A    3.20000E-01   7.11280E-01
+  opls_802    NT    14.0070     0.000    A    3.30000E-01   7.11280E-01
+  opls_803     H     1.0080     0.000    A    0.00000E+00   0.00000E+00
+  opls_804     H     1.0080     0.000    A    0.00000E+00   0.00000E+00
+
+[ moleculetype ]
+; Name               nrexcl
+  MOL                  3
+
+[ atoms ]
+;   nr       type  resnr residue  atom   cgnr     charge       mass
+     1   opls_800      1    MOL   C00      1     0.4648    12.0110 
+     2   opls_801      1    MOL   N01      1    -0.3722    14.0070 
+     3   opls_802      1    MOL   N02      1    -1.0588    14.0070 
+     4   opls_803      1    MOL   H03      1     0.4831     1.0080 
+     5   opls_804      1    MOL   H04      1     0.4831     1.0080 
+
+[ bonds ]
+;  ai    aj   funct      c0       c1
+    2    1    1      0.1157    543920.000
+    3    1    1      0.1470    326352.000
+    4    3    1      0.1010    363171.200
+    5    3    1      0.1010    363171.200
+
+[angles]
+;  ai    aj   ak  funct      c0       c1 
+    3    1    2    1       180.000   1255.200
+    4    3    1    1       109.400    378.652
+    5    3    1    1       109.400    378.652
+    5    3    4    1       106.400    364.845
+[ dihedrals ]
+;  PROPER DIHEDRAL ANGLES
+;  ai    aj   ak   al funct      c0       c1      c2      c3       c4     c5
+    4    3    1    2    3      15.899   0.000  -15.899  -0.000  -0.000   0.000
+    5    3    1    2    3      15.899   0.000  -15.899  -0.000  -0.000   0.000
+[ dihedrals ]
+;IMPROPER DIHEDRAL ANGLES
+;  ai    aj   ak   al funct      c0       c1      c2      c3       c4     c5
+    1    3    4    5     4     180.000    0.000       2  
+[ pairs ]
+;  ai    aj funct
+    2    4    1
+    2    5    1

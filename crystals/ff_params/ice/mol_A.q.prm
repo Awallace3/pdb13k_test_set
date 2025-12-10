@@ -1,0 +1,36 @@
+*---------------------------------------------
+*        Generated with LigParGen 
+*        William L. Jorgensen Lab
+*     Author: israel.cabezadevaca@yale.edu
+*    OPLS Force Field with CM1A derived Atomic Charges
+*---------------------------------------------
+[options]
+vdw_rule     geometric !vwd combination rule
+scale_14     0.5       !electrostatics 1-4 scaling factor
+switch_atoms on
+improper_potential      periodic
+force_field AMBER
+improper_definition explicit
+
+[atom_types]
+*tac--Avdw1--Avdw2--Bvdw1--Avdw3--Bvdw2&3--mass--comment
+O800     774.5988     774.5988      24.6966     547.7240      17.4631      15.9990 !   MOL
+H801       0.0000       0.0000       0.0000       0.0000       0.0000       1.0080 !   MOL
+H802       0.0000       0.0000       0.0000       0.0000       0.0000       1.0080 !   MOL
+
+[bonds]
+!*iaci--iacj--force.c--dist.
+H801       O800           1106.0     0.945
+H802       O800           1106.0     0.945
+
+[angles]
+!*iaci--iacj--iack--force.c--angle.
+H802       O800       H801         125.00      82.120
+
+[torsions]
+!*iaci--iacj--iack--iackl--force.c--minima--phase--path.
+!  X    X    X    X    0.00000 1 0.000000 1 ! WILD CARD FOR MISSING TORSION PARAMETERS
+
+[impropers]
+!*iaci--iacj--iack--iackl--force.c--phase.
+!  X    X    X    X    0.00000 2 0.000000 1 ! WILD CARD FOR MISSING IMPROPER PARAMETERS
