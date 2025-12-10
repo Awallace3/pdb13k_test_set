@@ -2789,12 +2789,20 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
         df_apprx[f"{i} IE (kJ/mol)"] = df_uma_apprx[f"{i} IE (kJ/mol)"]
         # where uma-m-1p1 IE (kJ/mol) 0, use ap3_d_elst+ap3_classical_ind_energy
         uma_ap3_lr = []
+        df_bm.sort_values(by="Minimum Monomer Separations (A) CCSD(T)/CBS", inplace=True)
         for n, r in df_bm.iterrows():
-            if r[f"{i} IE (kJ/mol)"] == 0.0:
+            if r['Minimum Monomer Separations (A) CCSD(T)/CBS'] > 7.0:
+            # if r[f"{i} IE (kJ/mol)"] == 0.0:
                 val = r["ap3_d_elst"] + r["ap3_classical_ind_energy"]
                 uma_ap3_lr.append(val)
             else:
                 uma_ap3_lr.append(r[f"{i} IE (kJ/mol)"])
+        pd.set_option('display.max_rows', None)
+        # pd print 4float format
+        pd.set_option('display.float_format', '{:.4f}'.format)
+        df_bm['d'] = df_bm["Minimum Monomer Separations (A) CCSD(T)/CBS"]
+        df_bm['ref'] = df_bm["Non-Additive MB Energy (kJ/mol) CCSD(T)/CBS"]
+        print(df_bm[['crystal bm', 'd', 'ref', f"{i} IE (kJ/mol)", "ap3_d_elst", "ap3_classical_ind_energy"]])
         df_bm[f"{i}+ap3_lr IE (kJ/mol)"] = uma_ap3_lr
         uma_ap3_lr = []
         for n, r in df_apprx.iterrows():
@@ -2822,7 +2830,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
 
     # Define separation distance range
     increment = 0.25
-    sep_distances = np.arange(1.0, 15.0 + 0.05, increment)
+    sep_distances_full = np.arange(1.0, 20.0 + 0.05, increment)
 
     ap2_full_cle_errors_sapt0_aDZ = []
     ap3_full_cle_errors_sapt0_aDZ = []
@@ -2888,6 +2896,12 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                     else 0,
                     axis=1,
                 )
+                # Determine relevant sep_distances per crystal starting point based on ref_cle non-zero
+                for d in sep_distances_full:
+                    ref_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
+                    if ref_below != 0.0:
+                        sep_distances = np.arange(d, sep_distances_full[-1], increment)
+                        break
 
                 ap2_2b_energies = []
                 ap3_2b_energies = []
@@ -2981,9 +2995,9 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                         linewidth=1.5,
                         alpha=0.8,
                     )
-                ax_apprx.axhline(
-                    y=0, color="black", linestyle="--", linewidth=1.0, alpha=0.5
-                )
+                # ax_apprx.axhline(
+                #     y=0, color="black", linestyle="--", linewidth=1.0, alpha=0.5
+                # )
                 ax_apprx.set_ylabel("CLE Error (kJ/mol)", fontsize=10)
                 ax_apprx.set_title(f"{crystal}\nvs SAPT0/aDZ", fontsize=10)
 
@@ -3149,9 +3163,10 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                         linewidth=1.5,
                         alpha=0.8,
                     )
-                    ax_bm.axhline(
-                        y=0, color="black", linestyle="--", linewidth=1.0, alpha=0.5
-                    )
+                    ax_bm.set_xlim(sep_distances_full[0], sep_distances_full[-1])
+                    # ax_bm.axhline(
+                    #     y=0, color="black", linestyle="--", linewidth=1.0, alpha=0.5
+                    # )
                 ax_bm.set_ylabel("CLE Error (kJ/mol)", fontsize=10)
                 ax_bm.set_title(f"{crystal}\nvs CCSD(T)/CBS", fontsize=10)
 
@@ -3174,6 +3189,8 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                     uma_s_ap3lr_full_cle_errors_ccsd_t_CBS.append(
                         uma_s_ap3lr_2b_energies[-1] - ref_2b_energies[-1]
                     )
+                    # difference between uma_s and uma_s_ap3lr
+                    print(f"{crystal:19s} bm|UMA-s: {uma_s_2b_energies[-1]:.4f}, UMA-s+AP3-LR: {uma_s_ap3lr_2b_energies[-1]:.4f}, diff: {uma_s_2b_energies[-1]-uma_s_ap3lr_2b_energies[-1]:.8f}, ref: {ref_2b_energies[-1]:.4f} kJ/mol")
                 # ax_bm.set_ylim(-5, 5)
 
         # Style axes
