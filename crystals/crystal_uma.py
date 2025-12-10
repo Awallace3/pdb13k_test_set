@@ -183,6 +183,7 @@ def main():
     print(df_uma.head())
     df_uma = uma_df_energies_sft(generate=True, v="bm", uma_type="uma-m-1p1")
     print(df_uma.head())
+    # uma-m-1p1 took ~23K s on apprx and ~48K on bm
 
 
 if __name__ == "__main__":
