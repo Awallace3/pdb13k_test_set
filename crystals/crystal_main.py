@@ -131,19 +131,15 @@ def process_inputs(
                 dimer = v[0]
                 df_lt.loc[df_lt["N-mer Name"] == k, "mol"] = v
                 RA = (
-                    np.array(
-                        dimer.geometry[dimer.fragments[0]], dtype=np.float32)
+                    np.array(dimer.geometry[dimer.fragments[0]], dtype=np.float32)
                     * qcel.constants.bohr2angstroms
                 )
                 RB = (
-                    np.array(
-                        dimer.geometry[dimer.fragments[1]], dtype=np.float32)
+                    np.array(dimer.geometry[dimer.fragments[1]], dtype=np.float32)
                     * qcel.constants.bohr2angstroms
                 )
-                ZA = np.array(
-                    dimer.atomic_numbers[dimer.fragments[0]], dtype=np.int32)
-                ZB = np.array(
-                    dimer.atomic_numbers[dimer.fragments[1]], dtype=np.int32)
+                ZA = np.array(dimer.atomic_numbers[dimer.fragments[0]], dtype=np.int32)
+                ZB = np.array(dimer.atomic_numbers[dimer.fragments[1]], dtype=np.int32)
                 for idx in df_lt.loc[df_lt["N-mer Name"] == k].index:
                     df_lt.at[idx, "RA"] = RA
                     df_lt.at[idx, "RB"] = RB
@@ -228,8 +224,7 @@ def process_inputs_sapt0_induction(
                 print(i)
                 print(geom)
             mol = qcel.models.Molecule.from_data(geom)
-            data[Path(i).stem] = [mol, Electrostatics,
-                                  Exchange, Induction, Dispersion]
+            data[Path(i).stem] = [mol, Electrostatics, Exchange, Induction, Dispersion]
     else:
         if verbose:
             print("Unrecognized filetype. Skipping mols")
@@ -265,8 +260,7 @@ def process_inputs_sapt0_induction(
             df_lt["RB"] = df_lt["RB"].astype(object)
             df_lt["ZA"] = df_lt["ZA"].astype(object)
             df_lt["ZB"] = df_lt["ZB"].astype(object)
-            df_lt["SAPT0 Electrostatics (kJ/mol)"] = [
-                np.nan for i in range(len(df_lt))]
+            df_lt["SAPT0 Electrostatics (kJ/mol)"] = [np.nan for i in range(len(df_lt))]
             df_lt["SAPT0 Exchange (kJ/mol)"] = [np.nan for i in range(len(df_lt))]
             df_lt["SAPT0 Induction (kJ/mol)"] = [np.nan for i in range(len(df_lt))]
             df_lt["SAPT0 Dispersion (kJ/mol)"] = [np.nan for i in range(len(df_lt))]
@@ -276,27 +270,21 @@ def process_inputs_sapt0_induction(
                 df_lt.loc[df_lt["N-mer Name"] == k, "SAPT0 Electrostatics (kJ/mol)"] = [
                     v[1]
                 ]
-                df_lt.loc[df_lt["N-mer Name"] == k,
-                          "SAPT0 Exchange (kJ/mol)"] = [v[2]]
-                df_lt.loc[df_lt["N-mer Name"] == k,
-                          "SAPT0 Induction (kJ/mol)"] = [v[3]]
+                df_lt.loc[df_lt["N-mer Name"] == k, "SAPT0 Exchange (kJ/mol)"] = [v[2]]
+                df_lt.loc[df_lt["N-mer Name"] == k, "SAPT0 Induction (kJ/mol)"] = [v[3]]
                 df_lt.loc[df_lt["N-mer Name"] == k, "SAPT0 Dispersion (kJ/mol)"] = [
                     v[4]
                 ]
                 RA = (
-                    np.array(
-                        dimer.geometry[dimer.fragments[0]], dtype=np.float32)
+                    np.array(dimer.geometry[dimer.fragments[0]], dtype=np.float32)
                     * qcel.constants.bohr2angstroms
                 )
                 RB = (
-                    np.array(
-                        dimer.geometry[dimer.fragments[1]], dtype=np.float32)
+                    np.array(dimer.geometry[dimer.fragments[1]], dtype=np.float32)
                     * qcel.constants.bohr2angstroms
                 )
-                ZA = np.array(
-                    dimer.atomic_numbers[dimer.fragments[0]], dtype=np.int32)
-                ZB = np.array(
-                    dimer.atomic_numbers[dimer.fragments[1]], dtype=np.int32)
+                ZA = np.array(dimer.atomic_numbers[dimer.fragments[0]], dtype=np.int32)
+                ZB = np.array(dimer.atomic_numbers[dimer.fragments[1]], dtype=np.int32)
                 for idx in df_lt.loc[df_lt["N-mer Name"] == k].index:
                     df_lt.at[idx, "RA"] = RA
                     df_lt.at[idx, "RB"] = RB
@@ -391,8 +379,7 @@ def analyze_results(
             df_dapnet2_le_last: .4f
         }"
     )
-    print(
-        f"     BM LE First: {df_bm_le_first:.4f}, LE Last: {df_bm_le_last:.4f}")
+    print(f"     BM LE First: {df_bm_le_first:.4f}, LE Last: {df_bm_le_last:.4f}")
     df_bm.rename(
         columns={
             "Minimum Monomer Separations (A)": "min_sep",
@@ -512,8 +499,7 @@ def process_all_crystals(compute=False):
     pp(crystals)
     for c in crystals:
         try:
-            print(
-                f"\nProcessing {c['name']} crystal at {c['level_of_theory']}")
+            print(f"\nProcessing {c['name']} crystal at {c['level_of_theory']}")
             pp(c)
             if compute:
                 process_inputs(
@@ -537,8 +523,7 @@ def process_all_crystals(compute=False):
                 }.csv",
             )
         except Exception as e:
-            print(
-                f"Error processing {c['name']} crystal at {c['level_of_theory']}")
+            print(f"Error processing {c['name']} crystal at {c['level_of_theory']}")
             print(e)
             print("Continue processing other crystals...\n\n")
             # raise e
@@ -600,8 +585,7 @@ def collect_crystal_data(generate=False):
                     "level_of_theory": lt,
                 }
                 try:
-                    print(
-                        f"\nProcessing {c['name']} crystal at {c['level_of_theory']}")
+                    print(f"\nProcessing {c['name']} crystal at {c['level_of_theory']}")
                     pp(c)
                     if n == 0:
                         data_path = f"{base_path}{c['name']}/{c['level_of_theory']}/{
@@ -716,11 +700,9 @@ def collect_crystal_data(generate=False):
         df_bm["hash"] = df_bm["mol"].apply(lambda x: x.get_hash())
         # print(df_apprx[['N-mer Name', 'mol']])
         # print(df_bm[['N-mer Name', 'mol']])
-        df = df_apprx.merge(df_bm, on="hash", how="outer",
-                            suffixes=(" apprx", " bm"))
+        df = df_apprx.merge(df_bm, on="hash", how="outer", suffixes=(" apprx", " bm"))
         print(
-            "lengths:", len(df_apprx), len(df_bm), len(
-                df), len(df_apprx) + len(df_bm)
+            "lengths:", len(df_apprx), len(df_bm), len(df), len(df_apprx) + len(df_bm)
         )
         print(df)
         df.to_pickle(f"./x23_dfs/{cname}_all.pkl")
@@ -801,8 +783,7 @@ def ap3_d_elst_classical_energies(mols, finetune_mols=[], finetune_labels=[]):
         finetune = False
         ignore_database_null = True
 
-    path_to_qcml = os.path.join(
-        os.path.expanduser("~"), "gits/qcmlforge/models")
+    path_to_qcml = os.path.join(os.path.expanduser("~"), "gits/qcmlforge/models")
     am_path = f"{path_to_qcml}/../models/ap3_ensemble/1/am_3.pt"
     at_hf_vw_path = f"{path_to_qcml}/../models/ap3_ensemble/1/am_h+1_3.pt"
     at_elst_path = f"{path_to_qcml}/../models/ap3_ensemble/1/am_elst_h+1_3.pt"
@@ -914,12 +895,10 @@ def ap2_ap3_df_energies(generate=False):
         pp(df.columns.tolist())
         print("\nResults\n")
         df["AP3 total error"] = (
-            df["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"] -
-            df["AP3 TOTAL"]
+            df["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"] - df["AP3 TOTAL"]
         )
         df["AP2 total error"] = (
-            df["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"] -
-            df["AP2 TOTAL"]
+            df["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"] - df["AP2 TOTAL"]
         )
         mae_total_ap3 = df["AP3 total error"].abs().mean()
         print(f"MAE AP3 Total: {mae_total_ap3:.4f} kJ/mol")
@@ -995,8 +974,7 @@ def ap2_ap3_df_energies_sft(generate=False, v="apprx"):
             # Update main dataframe using .loc with the sorted indices
             df.loc[df_c_a.index, "ap3_d_elst"] = elst_energies
             df.loc[df_c_a.index, "ap3_classical_ind_energy"] = ind_energies
-            df.loc[df_c_a.index, "AP3 TOTAL"] = np.sum(
-                pred_ap3[:, 0:4], axis=1)
+            df.loc[df_c_a.index, "AP3 TOTAL"] = np.sum(pred_ap3[:, 0:4], axis=1)
             df.loc[df_c_a.index, "AP3 ELST"] = pred_ap3[:, 0]
             df.loc[df_c_a.index, "AP3 EXCH"] = pred_ap3[:, 1]
             df.loc[df_c_a.index, "AP3 INDU"] = pred_ap3[:, 2]
@@ -1014,8 +992,7 @@ def ap2_ap3_df_energies_sft(generate=False, v="apprx"):
             pred_ap2 *= kcalmol_to_kjmol
 
             # Update main dataframe using .loc with the sorted indices
-            df.loc[df_c_a.index, "AP2 TOTAL"] = np.sum(
-                pred_ap2[:, 0:4], axis=1)
+            df.loc[df_c_a.index, "AP2 TOTAL"] = np.sum(pred_ap2[:, 0:4], axis=1)
             df.loc[df_c_a.index, "AP2 ELST"] = pred_ap2[:, 0]
             df.loc[df_c_a.index, "AP2 EXCH"] = pred_ap2[:, 1]
             df.loc[df_c_a.index, "AP2 INDU"] = pred_ap2[:, 2]
@@ -1059,12 +1036,10 @@ def ap2_ap3_df_energies_sft(generate=False, v="apprx"):
         pp(df.columns.tolist())
         print("\nResults\n")
         df["AP3 total error"] = (
-            df["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"] -
-            df["AP3 TOTAL"]
+            df["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"] - df["AP3 TOTAL"]
         )
         df["AP2 total error"] = (
-            df["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"] -
-            df["AP2 TOTAL"]
+            df["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"] - df["AP2 TOTAL"]
         )
         mae_total_ap3 = df["AP3 total error"].abs().mean()
         print(f"MAE AP3 Total: {mae_total_ap3:.4f} kJ/mol")
@@ -1178,15 +1153,13 @@ def dapnet_main_df_crystals(
                     # energy = pm.predict([row["mol apprx"]], batch_size=1)
                     # if len(energy) == 0:
                     #     energy = [[0]]
-                    energy = dapnet2.predict_qcel_mols(
-                        [row["mol apprx"]], batch_size=1)
+                    energy = dapnet2.predict_qcel_mols([row["mol apprx"]], batch_size=1)
                     df.loc[n, f"dAPNet2 apprx {basefile}"] = (
                         energy[0] * kcalmol_to_kjmol
                     )
                 if pd.notnull(row["mol bm"]):
                     # energy = pm.predict([row["mol bm"]], batch_size=1)
-                    energy = dapnet2.predict_qcel_mols(
-                        [row["mol bm"]], batch_size=1)
+                    energy = dapnet2.predict_qcel_mols([row["mol bm"]], batch_size=1)
                     if len(energy) == 0:
                         energy = [[0]]
                     df.loc[n, f"dAPNet2 bm {basefile}"] = (
@@ -1287,21 +1260,17 @@ def plot_crystal_errors(
     )
     print(
         df_c[
-            ["bm cle", "apprx cles b3lyp",
-                "dAPNet2 apprx b3lyp", "b3lyp+dAPNet2 error"]
+            ["bm cle", "apprx cles b3lyp", "dAPNet2 apprx b3lyp", "b3lyp+dAPNet2 error"]
         ]
     )
-    print(df_c[["bm cle", "apprx cles b3lyp",
-          "b3lyp error", "b3lyp+dAPNet2 error"]])
+    print(df_c[["bm cle", "apprx cles b3lyp", "b3lyp error", "b3lyp+dAPNet2 error"]])
     df_c.sort_values(by="b3lyp+dAPNet2 error", inplace=True)
     print(
         df_c[
-            ["bm cle", "apprx cles b3lyp",
-                "dAPNet2 apprx b3lyp", "b3lyp+dAPNet2 error"]
+            ["bm cle", "apprx cles b3lyp", "dAPNet2 apprx b3lyp", "b3lyp+dAPNet2 error"]
         ]
     )
-    print(df_c[["bm cle", "apprx cles b3lyp",
-          "b3lyp error", "b3lyp+dAPNet2 error"]])
+    print(df_c[["bm cle", "apprx cles b3lyp", "b3lyp error", "b3lyp+dAPNet2 error"]])
     df_tex = df_c[
         ["bm cle", "apprx cles b3lyp", "b3lyp error", "b3lyp+dAPNet2 error"]
     ].copy()
@@ -1631,11 +1600,9 @@ def plot_all_systems():
         if "Non-Additive MB Energy (kJ/mol)" in col and "sapt0-dz-aug" not in col
     ]
     for method_col in method_cols[:3]:  # Limit to first 3 additional methods
-        method_name = method_col.replace(
-            "Non-Additive MB Energy (kJ/mol) ", "")
+        method_name = method_col.replace("Non-Additive MB Energy (kJ/mol) ", "")
         df1[f"{method_name} error"] = (
-            df1[method_col] -
-            df1["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"]
+            df1[method_col] - df1["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"]
         )
 
     # Create error columns for df2 (comparing against CCSD(T)/CBS)
@@ -1664,8 +1631,7 @@ def plot_all_systems():
 
     # Add other methods if available
     for method_col in method_cols[:3]:
-        method_name = method_col.replace(
-            "Non-Additive MB Energy (kJ/mol) ", "")
+        method_name = method_col.replace("Non-Additive MB Energy (kJ/mol) ", "")
         if f"{method_name} error" in df1.columns:
             df1_labels[method_name] = f"{method_name} error"
 
@@ -1803,15 +1769,13 @@ def plot_switchover_errors():
                     axis=1,
                 )
                 df_c["ap2_cle"] = df_c.apply(
-                    lambda r: r["AP2 TOTAL"] *
-                    r[num_rep_col] / int(r[nmer_col][0])
+                    lambda r: r["AP2 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
                     if pd.notnull(r[nmer_col])
                     else 0,
                     axis=1,
                 )
                 df_c["ap3_cle"] = df_c.apply(
-                    lambda r: r["AP3 TOTAL"] *
-                    r[num_rep_col] / int(r[nmer_col][0])
+                    lambda r: r["AP3 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
                     if pd.notnull(r[nmer_col])
                     else 0,
                     axis=1,
@@ -1892,15 +1856,13 @@ def plot_switchover_errors():
                     axis=1,
                 )
                 df_c["ap2_cle"] = df_c.apply(
-                    lambda r: r["AP2 TOTAL"] *
-                    r[num_rep_col] / int(r[nmer_col][0])
+                    lambda r: r["AP2 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
                     if pd.notnull(r[nmer_col])
                     else 0,
                     axis=1,
                 )
                 df_c["ap3_cle"] = df_c.apply(
-                    lambda r: r["AP3 TOTAL"] *
-                    r[num_rep_col] / int(r[nmer_col][0])
+                    lambda r: r["AP3 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
                     if pd.notnull(r[nmer_col])
                     else 0,
                     axis=1,
@@ -1998,9 +1960,18 @@ def plot_crystal_lattice_energies(sft=False):
 
     # Load dataframes
     if sft:
-        df_apprx = pd.read_pickle(
-            "./sft_crystals_ap2_ap3_results_mol_apprx.pkl")
+        df_apprx = pd.read_pickle("./sft_crystals_ap2_ap3_results_mol_apprx.pkl")
         df_bm = pd.read_pickle("./sft_crystals_ap2_ap3_results_mol_bm.pkl")
+        df_uma_s_bm = pd.read_pickle("./crystals_ap2_ap3_results_uma-s-1p1_mol_bm.pkl")
+        print(df_uma_s_bm["uma-s-1p1_le_contribution"])
+        df_uma_s_apprx = pd.read_pickle(
+            "./crystals_ap2_ap3_results_uma-s-1p1_mol_apprx.pkl"
+        )
+        df_uma_m_bm = pd.read_pickle("./crystals_ap2_ap3_results_uma-m-1p1_mol_bm.pkl")
+        df_uma_m_apprx = pd.read_pickle(
+            "./crystals_ap2_ap3_results_uma-m-1p1_mol_apprx.pkl"
+        )
+
         output_path = "./x23_plots/CLE_all_crystals_sft.png"
         output_violin_apprx = "./x23_plots/ap2_ap3_errors_vs_sapt0_sft.png"
         output_violin_bm = "./x23_plots/ap2_ap3_errors_vs_ccsdt_cbs_sft.png"
@@ -2010,6 +1981,15 @@ def plot_crystal_lattice_energies(sft=False):
         output_path = "./x23_plots/CLE_all_crystals.png"
         output_violin_apprx = "./x23_plots/ap2_ap3_errors_vs_sapt0.png"
         output_violin_bm = "./x23_plots/ap2_ap3_errors_vs_ccsdt_cbs.png"
+
+        for i in ["uma-s-1p1", "uma-m-1p1"]:
+            df_uma_bm = pd.read_pickle(f"./crystals_ap2_ap3_results_{i}_mol_bm.pkl")
+            # need to add columns f"{i}  IE (kJ/mol)" to df_bm and compute the le_contribution
+            df_bm[f"{i} IE (kJ/mol)"] = df_uma_bm[f"{i} IE (kJ/mol)"]
+            df_uma_apprx = pd.read_pickle(
+                f"./crystals_ap2_ap3_results_{i}_mol_apprx.pkl"
+            )
+            df_apprx[f"{i} IE (kJ/mol)"] = df_uma_apprx[f"{i} IE (kJ/mol)"]
 
     # Get unique crystals
     crystals_apprx = sorted(df_apprx["crystal apprx"].dropna().unique())
@@ -2059,30 +2039,42 @@ def plot_crystal_lattice_energies(sft=False):
                     axis=1,
                 )
                 df_c["ap2_cle"] = df_c.apply(
-                    lambda r: r["AP2 TOTAL"] *
-                    r[num_rep_col] / int(r[nmer_col][0])
+                    lambda r: r["AP2 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
                     if pd.notnull(r[nmer_col])
                     else 0,
                     axis=1,
                 )
                 df_c["ap3_cle"] = df_c.apply(
-                    lambda r: r["AP3 TOTAL"] *
-                    r[num_rep_col] / int(r[nmer_col][0])
+                    lambda r: r["AP3 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
                     if pd.notnull(r[nmer_col])
+                    else 0,
+                    axis=1,
+                )
+                df_c['uma-s-1p1_cle'] = df_c.apply(
+                    lambda r: r["uma-s-1p1 IE (kJ/mol)"] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col]) and "uma-s-1p1 IE (kJ/mol)" in r
+                    else 0,
+                    axis=1,
+                )
+                df_c['uma-m-1p1_cle'] = df_c.apply(
+                    lambda r: r["uma-m-1p1 IE (kJ/mol)"] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col]) and "uma-m-1p1 IE (kJ/mol)" in r
                     else 0,
                     axis=1,
                 )
 
                 ap2_2b_energies = []
                 ap3_2b_energies = []
+                uma_s_2b_energies = []
+                uma_m_2b_energies = []
                 ref_2b_energies = []
                 for d in sep_distances:
-                    ap2_2b_energies.append(
-                        df_c[df_c[mms_col] <= d]["ap2_cle"].sum())
-                    ap3_2b_energies.append(
-                        df_c[df_c[mms_col] <= d]["ap3_cle"].sum())
-                    ref_2b_energies.append(
-                        df_c[df_c[mms_col] <= d]["ref_cle"].sum())
+                    ap2_2b_energies.append(df_c[df_c[mms_col] <= d]["ap2_cle"].sum())
+                    ap3_2b_energies.append(df_c[df_c[mms_col] <= d]["ap3_cle"].sum())
+                    uma_s_2b_energies.append(df_c[df_c[mms_col] <= d]["uma-s-1p1_cle"].sum())
+                    uma_m_2b_energies.append(df_c[df_c[mms_col] <= d]["uma-m-1p1_cle"].sum())
+                    ref_2b_energies.append(df_c[df_c[mms_col] <= d]["ref_cle"].sum())
+
 
                 # Plot
                 ax_apprx.plot(
@@ -2099,6 +2091,24 @@ def plot_crystal_lattice_energies(sft=False):
                     ap3_2b_energies,
                     "s-",
                     label="AP3",
+                    markersize=4,
+                    linewidth=1.5,
+                    alpha=0.8,
+                )
+                ax_apprx.plot(
+                    sep_distances,
+                    uma_s_2b_energies,
+                    "s-",
+                    label="UMA-s-1p1",
+                    markersize=4,
+                    linewidth=1.5,
+                    alpha=0.8,
+                )
+                ax_apprx.plot(
+                    sep_distances,
+                    uma_m_2b_energies,
+                    "s-",
+                    label="UMA-m-1p1",
                     markersize=4,
                     linewidth=1.5,
                     alpha=0.8,
@@ -2158,30 +2168,42 @@ def plot_crystal_lattice_energies(sft=False):
                     axis=1,
                 )
                 df_c["ap2_cle"] = df_c.apply(
-                    lambda r: r["AP2 TOTAL"] *
-                    r[num_rep_col] / int(r[nmer_col][0])
+                    lambda r: r["AP2 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
                     if pd.notnull(r[nmer_col])
                     else 0,
                     axis=1,
                 )
                 df_c["ap3_cle"] = df_c.apply(
-                    lambda r: r["AP3 TOTAL"] *
-                    r[num_rep_col] / int(r[nmer_col][0])
+                    lambda r: r["AP3 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
                     if pd.notnull(r[nmer_col])
                     else 0,
                     axis=1,
                 )
+                df_c['uma-s-1p1_cle'] = df_c.apply(
+                    lambda r: r["uma-s-1p1 IE (kJ/mol)"] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col]) and "uma-s-1p1 IE (kJ/mol)" in r
+                    else 0,
+                    axis=1,
+                )
+                df_c['uma-m-1p1_cle'] = df_c.apply(
+                    lambda r: r["uma-m-1p1 IE (kJ/mol)"] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col]) and "uma-m-1p1 IE (kJ/mol)" in r
+                    else 0,
+                    axis=1,
+                )
+
 
                 ap2_2b_energies = []
                 ap3_2b_energies = []
+                uma_s_2b_energies = []
+                uma_m_2b_energies = []
                 ref_2b_energies = []
                 for d in sep_distances:
-                    ap2_2b_energies.append(
-                        df_c[df_c[mms_col] <= d]["ap2_cle"].sum())
-                    ap3_2b_energies.append(
-                        df_c[df_c[mms_col] <= d]["ap3_cle"].sum())
-                    ref_2b_energies.append(
-                        df_c[df_c[mms_col] <= d]["ref_cle"].sum())
+                    ap2_2b_energies.append(df_c[df_c[mms_col] <= d]["ap2_cle"].sum())
+                    ap3_2b_energies.append(df_c[df_c[mms_col] <= d]["ap3_cle"].sum())
+                    uma_s_2b_energies.append(df_c[df_c[mms_col] <= d]["uma-s-1p1_cle"].sum())
+                    uma_m_2b_energies.append(df_c[df_c[mms_col] <= d]["uma-m-1p1_cle"].sum())
+                    ref_2b_energies.append(df_c[df_c[mms_col] <= d]["ref_cle"].sum())
 
                 # Plot
                 ax_bm.plot(
@@ -2189,6 +2211,24 @@ def plot_crystal_lattice_energies(sft=False):
                     ap2_2b_energies,
                     "o-",
                     label="AP2",
+                    markersize=4,
+                    linewidth=1.5,
+                    alpha=0.8,
+                )
+                ax_bm.plot(
+                    sep_distances,
+                    uma_s_2b_energies,
+                    "s-",
+                    label="UMA-s-1p1",
+                    markersize=4,
+                    linewidth=1.5,
+                    alpha=0.8,
+                )
+                ax_bm.plot(
+                    sep_distances,
+                    uma_m_2b_energies,
+                    "s-",
+                    label="UMA-m-1p1",
                     markersize=4,
                     linewidth=1.5,
                     alpha=0.8,
@@ -2299,10 +2339,12 @@ def plot_crystal_lattice_energies(sft=False):
     plt.savefig(output_path, dpi=300, bbox_inches="tight")
     print(f"\nFigure saved to: {output_path}")
 
-    error_df1 = pd.DataFrame({
-        "AP2 vs SAPT0 error": ap2_full_cle_errors_sapt0_aDZ,
-        "AP3 vs SAPT0 error": ap3_full_cle_errors_sapt0_aDZ,
-    })
+    error_df1 = pd.DataFrame(
+        {
+            "AP2 vs SAPT0 error": ap2_full_cle_errors_sapt0_aDZ,
+            "AP3 vs SAPT0 error": ap3_full_cle_errors_sapt0_aDZ,
+        }
+    )
 
     # Prepare df1 for violin plot
     dfs1 = [
@@ -2327,15 +2369,16 @@ def plot_crystal_lattice_energies(sft=False):
     ]
     # Add other methods if available
     for method_col in method_cols[:3]:
-        method_name = method_col.replace(
-            "Non-Additive MB Energy (kJ/mol) ", "")
+        method_name = method_col.replace("Non-Additive MB Energy (kJ/mol) ", "")
         if f"{method_name} error" in df_apprx.columns:
             df1_labels[method_name] = f"{method_name} error"
 
-    error_df2 = pd.DataFrame({
-        "AP2 vs CCSD(T)/CBS error": ap2_full_cle_errors_ccsd_t_CBS,
-        "AP3 vs CCSD(T)/CBS error": ap3_full_cle_errors_ccsd_t_CBS,
-    })
+    error_df2 = pd.DataFrame(
+        {
+            "AP2 vs CCSD(T)/CBS error": ap2_full_cle_errors_ccsd_t_CBS,
+            "AP3 vs CCSD(T)/CBS error": ap3_full_cle_errors_ccsd_t_CBS,
+        }
+    )
 
     # Prepare df2 for violin plot
     dfs2 = [
@@ -2384,22 +2427,6 @@ def plot_crystal_lattice_energies(sft=False):
         ylabel=r"Error (kJ$\cdot$mol$^{-1}$)",
     )
     # Print summary statistics
-    print("\n=== df1_error Summary Statistics ===")
-    for label, col in df1_labels.items():
-        if col in df1_error.columns:
-            print(f"\n{label}:")
-            print(f"  MAE: {df1_error[col].abs().mean():.4f} kJ/mol")
-            print(f"  RMSE: {np.sqrt((df1_error[col] ** 2).mean()):.4f} kJ/mol")
-            print(f"  Mean: {df1_error[col].mean():.4f} kJ/mol")
-
-    print("\n=== df_bm Summary Statistics ===")
-    for label, col in df2_labels.items():
-        if col in df2_error.columns:
-            print(f"\n{label}:")
-            print(f"  MAE: {df2_error[col].abs().mean():.4f} kJ/mol")
-            print(f"  RMSE: {np.sqrt((df2_error[col] ** 2).mean()):.4f} kJ/mol")
-            print(f"  Mean: {df2_error[col].mean():.4f} kJ/mol")
-
     return fig, axes
 
 
@@ -2470,15 +2497,13 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.5):
                     axis=1,
                 )
                 df_c["ap2_cle"] = df_c.apply(
-                    lambda r: r["AP2 TOTAL"] *
-                    r[num_rep_col] / int(r[nmer_col][0])
+                    lambda r: r["AP2 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
                     if pd.notnull(r[nmer_col])
                     else 0,
                     axis=1,
                 )
                 df_c["ap3_cle"] = df_c.apply(
-                    lambda r: r["AP3 TOTAL"] *
-                    r[num_rep_col] / int(r[nmer_col][0])
+                    lambda r: r["AP3 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
                     if pd.notnull(r[nmer_col])
                     else 0,
                     axis=1,
@@ -2574,15 +2599,13 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.5):
                     axis=1,
                 )
                 df_c["ap2_cle"] = df_c.apply(
-                    lambda r: r["AP2 TOTAL"] *
-                    r[num_rep_col] / int(r[nmer_col][0])
+                    lambda r: r["AP2 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
                     if pd.notnull(r[nmer_col])
                     else 0,
                     axis=1,
                 )
                 df_c["ap3_cle"] = df_c.apply(
-                    lambda r: r["AP3 TOTAL"] *
-                    r[num_rep_col] / int(r[nmer_col][0])
+                    lambda r: r["AP3 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
                     if pd.notnull(r[nmer_col])
                     else 0,
                     axis=1,
@@ -2592,7 +2615,7 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.5):
                 ap3_2b_energies = []
                 ref_2b_energies = []
                 print(
-                    f"{crystal = }, cnt below SO: {
+                    f"{crystal=}, cnt below SO: {
                         len(df_c[(df_c[mms_col] < switchover)])
                     }/{len(df_c)}"
                 )
@@ -2716,8 +2739,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
 
     # Load dataframes
     if sft:
-        df_apprx = pd.read_pickle(
-            "./sft_crystals_ap2_ap3_results_mol_apprx.pkl")
+        df_apprx = pd.read_pickle("./sft_crystals_ap2_ap3_results_mol_apprx.pkl")
         df_bm = pd.read_pickle("./sft_crystals_ap2_ap3_results_mol_bm.pkl")
         output_path = "./x23_plots/CLE_all_crystals_N_sft.png"
         output_violin_apprx = "./x23_plots/N_ap2_ap3_errors_vs_sapt0_sft.png"
@@ -2777,15 +2799,13 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                     axis=1,
                 )
                 df_c["ap2_cle"] = df_c.apply(
-                    lambda r: r["AP2 TOTAL"] *
-                    r[num_rep_col] / int(r[nmer_col][0])
+                    lambda r: r["AP2 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
                     if pd.notnull(r[nmer_col])
                     else 0,
                     axis=1,
                 )
                 df_c["ap3_cle"] = df_c.apply(
-                    lambda r: r["AP3 TOTAL"] *
-                    r[num_rep_col] / int(r[nmer_col][0])
+                    lambda r: r["AP3 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
                     if pd.notnull(r[nmer_col])
                     else 0,
                     axis=1,
@@ -2798,13 +2818,11 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                 df_c_N = df_c.iloc[:N]
                 df_c_above = df_c.iloc[N:]
                 for d in sep_distances:
-                    ap2_above = df_c_above[df_c_above[mms_col]
-                                           > d]["ap2_cle"].sum()
+                    ap2_above = df_c_above[df_c_above[mms_col] > d]["ap2_cle"].sum()
                     ap2_below = df_c_N[df_c_N[mms_col] < d]["ref_cle"].sum()
                     ap2_hybrid_total = ap2_above + ap2_below
 
-                    ap3_above = df_c_above[df_c_above[mms_col]
-                                           > d]["ap3_cle"].sum()
+                    ap3_above = df_c_above[df_c_above[mms_col] > d]["ap3_cle"].sum()
                     ap3_below = df_c_N[df_c_N[mms_col] < d]["ref_cle"].sum()
                     ap3_hybrid_total = ap3_above + ap3_below
 
@@ -2883,15 +2901,13 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                     axis=1,
                 )
                 df_c["ap2_cle"] = df_c.apply(
-                    lambda r: r["AP2 TOTAL"] *
-                    r[num_rep_col] / int(r[nmer_col][0])
+                    lambda r: r["AP2 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
                     if pd.notnull(r[nmer_col])
                     else 0,
                     axis=1,
                 )
                 df_c["ap3_cle"] = df_c.apply(
-                    lambda r: r["AP3 TOTAL"] *
-                    r[num_rep_col] / int(r[nmer_col][0])
+                    lambda r: r["AP3 TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
                     if pd.notnull(r[nmer_col])
                     else 0,
                     axis=1,
@@ -2904,13 +2920,11 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                 df_c_N = df_c.iloc[:N]
                 df_c_above = df_c.iloc[N:]
                 for d in sep_distances:
-                    ap2_above = df_c_above[df_c_above[mms_col]
-                                           > d]["ap2_cle"].sum()
+                    ap2_above = df_c_above[df_c_above[mms_col] > d]["ap2_cle"].sum()
                     ap2_below = df_c_N[df_c_N[mms_col] < d]["ref_cle"].sum()
                     ap2_hybrid_total = ap2_above + ap2_below
 
-                    ap3_above = df_c_above[df_c_above[mms_col]
-                                           > d]["ap3_cle"].sum()
+                    ap3_above = df_c_above[df_c_above[mms_col] > d]["ap3_cle"].sum()
                     ap3_below = df_c_N[df_c_N[mms_col] < d]["ref_cle"].sum()
                     ap3_hybrid_total = ap3_above + ap3_below
 
@@ -3030,10 +3044,12 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
     # Save figure
     plt.savefig(output_path, dpi=300, bbox_inches="tight")
     print(f"\nFigure saved to: {output_path}")
-    error_df1 = pd.DataFrame({
-        "AP2 vs SAPT0 error": ap2_full_cle_errors_sapt0_aDZ,
-        "AP3 vs SAPT0 error": ap3_full_cle_errors_sapt0_aDZ,
-    })
+    error_df1 = pd.DataFrame(
+        {
+            "AP2 vs SAPT0 error": ap2_full_cle_errors_sapt0_aDZ,
+            "AP3 vs SAPT0 error": ap3_full_cle_errors_sapt0_aDZ,
+        }
+    )
 
     # Prepare df1 for violin plot
     dfs1 = [
@@ -3058,15 +3074,16 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
     ]
     # Add other methods if available
     for method_col in method_cols[:3]:
-        method_name = method_col.replace(
-            "Non-Additive MB Energy (kJ/mol) ", "")
+        method_name = method_col.replace("Non-Additive MB Energy (kJ/mol) ", "")
         if f"{method_name} error" in df_apprx.columns:
             df1_labels[method_name] = f"{method_name} error"
 
-    error_df2 = pd.DataFrame({
-        "AP2 vs CCSD(T)/CBS error": ap2_full_cle_errors_ccsd_t_CBS,
-        "AP3 vs CCSD(T)/CBS error": ap3_full_cle_errors_ccsd_t_CBS,
-    })
+    error_df2 = pd.DataFrame(
+        {
+            "AP2 vs CCSD(T)/CBS error": ap2_full_cle_errors_ccsd_t_CBS,
+            "AP3 vs CCSD(T)/CBS error": ap3_full_cle_errors_ccsd_t_CBS,
+        }
+    )
 
     # Prepare df2 for violin plot
     dfs2 = [
@@ -3131,10 +3148,10 @@ def main():
     #     generate=True,
     #     v='bm'
     # )
-    # plot_crystal_lattice_energies(sft=False)
+    plot_crystal_lattice_energies(sft=False)
+    # plot_crystal_lattice_energies_with_N(1, sft=False)
     # plot_crystal_lattice_energies(sft=True)
-    plot_crystal_lattice_energies_with_N(1, sft=True)
-    plot_crystal_lattice_energies_with_N(1, sft=False)
+    # plot_crystal_lattice_energies_with_N(1, sft=True)
     return
 
 
