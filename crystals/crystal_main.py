@@ -19,7 +19,7 @@ qcml_model_dir = os.path.expanduser("~/gits/qcmlforge/models")
 
 kcalmol_to_kjmol = qcel.constants.conversion_factor("kcal/mol", "kJ/mol")
 
-sft_n_epochs = 100
+sft_n_epochs = 300
 sft_lr = 5e-5
 
 crystal_names_all = [
@@ -239,7 +239,7 @@ def ap2_ap3_df_energies(generate=False):
     return df
 
 
-def ap2_ap3_df_energies_sft(generate=False, v="apprx"):
+def ap2_ap3_df_energies_sft(generate=False, v="apprx", N=10):
     # v = "bm"
     mol_str = "mol " + v
     pkl_fn = f"sft_crystals_ap2_ap3_results_{mol_str.replace(' ', '_')}.pkl"
@@ -287,9 +287,9 @@ def ap2_ap3_df_energies_sft(generate=False, v="apprx"):
             pred_ap3, pair_elst, pair_ind = ap3_d_elst_classical_energies(
                 mols,
                 finetune_labels=[
-                    i / kcalmol_to_kjmol for i in df_c_a[target_col].to_list()[:5]
+                    i / kcalmol_to_kjmol for i in df_c_a[target_col].to_list()[:N]
                 ],
-                finetune_mols=mols[:5],
+                finetune_mols=mols[:N],
             )
             pred_ap3 *= kcalmol_to_kjmol
             elst_energies = [np.sum(e) * kcalmol_to_kjmol for e in pair_elst]
@@ -309,9 +309,9 @@ def ap2_ap3_df_energies_sft(generate=False, v="apprx"):
                 mols,
                 compile=False,
                 finetune_labels=[
-                    i / kcalmol_to_kjmol for i in df_c_a[target_col].to_list()[:5]
+                    i / kcalmol_to_kjmol for i in df_c_a[target_col].to_list()[:N]
                 ],
-                finetune_mols=mols[:5],
+                finetune_mols=mols[:N],
             )
             pred_ap2 *= kcalmol_to_kjmol
 
@@ -2414,6 +2414,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                 df_c = df_c.sort_values(by=mms_col, ascending=True)
                 df_c_N = df_c.iloc[:N]
                 df_c_above = df_c.iloc[N:]
+                ml_sep_distances = []
                 for d in sep_distances:
                     ref_N = df_c_N[df_c_N[mms_col] < d]["ref_cle"].sum()
                     ap2_above = df_c_above[df_c_above[mms_col] < d]["ap2_cle"].sum()
@@ -2433,17 +2434,19 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
 
                     ref_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
 
-                    ap2_2b_energies.append(ap2_hybrid_total)
-                    ap3_2b_energies.append(ap3_hybrid_total)
-                    uma_s_2b_energies.append(uma_s_hybrid_total)
-                    uma_s_ap3lr_2b_energies.append(uma_s_ap3lr_hybrid_total)
-                    uma_m_2b_energies.append(uma_m_hybrid_total)
+                    if len(df_c_above[df_c_above[mms_col] < d]) > 0:
+                        ml_sep_distances.append(d)
+                        ap2_2b_energies.append(ap2_hybrid_total)
+                        ap3_2b_energies.append(ap3_hybrid_total)
+                        uma_s_2b_energies.append(uma_s_hybrid_total)
+                        uma_s_ap3lr_2b_energies.append(uma_s_ap3lr_hybrid_total)
+                        uma_m_2b_energies.append(uma_m_hybrid_total)
                     ref_2b_energies.append(ref_below)
 
                 # Plot
                 if ref_2b_energies[-1] != 0.0:
                     ax_bm.plot(
-                        sep_distances,
+                        ml_sep_distances,
                         ap2_2b_energies,
                         "o-",
                         label="AP2",
@@ -2452,7 +2455,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                         alpha=0.8,
                     )
                     ax_bm.plot(
-                        sep_distances,
+                        ml_sep_distances,
                         ap3_2b_energies,
                         "s-",
                         label="AP3",
@@ -2461,7 +2464,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                         alpha=0.8,
                     )
                     ax_bm.plot(
-                        sep_distances,
+                        ml_sep_distances,
                         uma_s_2b_energies,
                         "^-",
                         label="UMA-s",
@@ -2470,7 +2473,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                         alpha=0.8,
                     )
                     ax_bm.plot(
-                        sep_distances,
+                        ml_sep_distances,
                         uma_m_2b_energies,
                         "^-",
                         label="UMA-m",
@@ -2479,7 +2482,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                         alpha=0.8,
                     )
                     ax_bm.plot(
-                        sep_distances,
+                        ml_sep_distances,
                         uma_s_ap3lr_2b_energies,
                         "v-",
                         label="UMA-s+AP3-LR",
@@ -2691,18 +2694,18 @@ def main():
     # plot_crystal_lattice_energies_with_switchover(2.9)
 
     # GENERATE DATAFRAMES
-    # ap2_ap3_df_energies_sft(
-    #     generate=True,
-    #     v='apprx'
-    # )
-    # ap2_ap3_df_energies_sft(
-    #     generate=True,
-    #     v='bm'
-    # )
+    ap2_ap3_df_energies_sft(
+        generate=True,
+        v='apprx'
+    )
+    ap2_ap3_df_energies_sft(
+        generate=True,
+        v='bm'
+    )
     # plot_crystal_lattice_energies(sft=False)
-    plot_crystal_lattice_energies_with_N(1, sft=False)
     # plot_crystal_lattice_energies(sft=True)
-    # plot_crystal_lattice_energies_with_N(1, sft=True)
+    plot_crystal_lattice_energies_with_N(10, sft=True)
+    # plot_crystal_lattice_energies_with_N(5, sft=False)
     return
 
 
