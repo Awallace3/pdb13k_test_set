@@ -50,682 +50,6 @@ crystal_names_all = [
 ]
 
 
-def create_mols(
-    data_path="./ammonia-pbe-d3-dz-aug/ammonia/*.p4str",
-):
-    result = {}
-    for d in glob(data_path):
-        basename = Path(d).stem
-        with open(d, "r") as f:
-            data = f.read()
-            data += "\nunits au\n"
-        mol = qcel.models.Molecule.from_data(data)
-        result[basename] = [mol]
-    return result
-
-
-def process_inputs(
-    output_data="./ammonia-pbe-d3-dz-aug/ammonia/ammonia.csv",
-    delta_model_path="../../apnet_delta_correction/delta_correction_PBE_aug-cc-pVTZ_CP",
-    data_path="./ammonia-pbe-d3-dz-aug/ammonia/*.p4str",
-    output_csv="./ammonia-pbe-d3-dz-aug/ammonia/ammonia_dapnet2.csv",
-    verbose=False,
-):
-    # Load data
-    df_lt = pd.read_csv(output_data)
-    if data_path.endswith(".p4str"):
-        data = create_mols()
-    elif data_path.endswith("*.in") or data_path.endswith("*.out"):
-        # need to process data from path more interactively
-        data = {}
-        p4input_files = glob(data_path)
-        for i in p4input_files:
-            geom = subprocess.check_output(
-                f"sed -n '/molecule/,/units = au/ {{/^  [A-Za-z]/p; /^--/p}}' {i}",
-                shell=True,
-            )
-            # decode geom
-            geom = geom.decode("utf-8")
-            geom += "\nunits au\n"
-            if verbose:
-                print(i)
-                print(geom)
-            mol = qcel.models.Molecule.from_data(geom)
-            data[Path(i).stem] = [mol]
-    else:
-        if verbose:
-            print("Unrecognized filetype. Skipping mols")
-        data = {}
-        # raise ValueError("Unrecognized filetype")
-
-    if delta_model_path is None:
-        # need to save Geometry to df_lt['mol']
-        RAs, RBs, ZAs, ZBs = [], [], [], []
-        if len(data) > 0:
-            mol_len = len(data[list(data.keys())[0]][0].fragments[0])
-            df_lt["mol"] = [
-                np.array([[0.0, 0.0, 0.0] for j in range(mol_len)])
-                for i in range(len(df_lt))
-            ]
-            df_lt["RA"] = [
-                np.array([[0.0, 0.0, 0.0] for j in range(mol_len)])
-                for i in range(len(df_lt))
-            ]
-            df_lt["RB"] = [
-                np.array([[0.0, 0.0, 0.0] for j in range(mol_len)])
-                for i in range(len(df_lt))
-            ]
-            df_lt["ZA"] = [
-                np.array([[0.0, 0.0, 0.0] for j in range(mol_len)])
-                for i in range(len(df_lt))
-            ]
-            df_lt["ZB"] = [
-                np.array([[0.0, 0.0, 0.0] for j in range(mol_len)])
-                for i in range(len(df_lt))
-            ]
-            df_lt["RA"] = df_lt["RA"].astype(object)
-            df_lt["RB"] = df_lt["RB"].astype(object)
-            df_lt["ZA"] = df_lt["ZA"].astype(object)
-            df_lt["ZB"] = df_lt["ZB"].astype(object)
-            for i, (k, v) in enumerate(data.items()):
-                dimer = v[0]
-                df_lt.loc[df_lt["N-mer Name"] == k, "mol"] = v
-                RA = (
-                    np.array(dimer.geometry[dimer.fragments[0]], dtype=np.float32)
-                    * qcel.constants.bohr2angstroms
-                )
-                RB = (
-                    np.array(dimer.geometry[dimer.fragments[1]], dtype=np.float32)
-                    * qcel.constants.bohr2angstroms
-                )
-                ZA = np.array(dimer.atomic_numbers[dimer.fragments[0]], dtype=np.int32)
-                ZB = np.array(dimer.atomic_numbers[dimer.fragments[1]], dtype=np.int32)
-                for idx in df_lt.loc[df_lt["N-mer Name"] == k].index:
-                    df_lt.at[idx, "RA"] = RA
-                    df_lt.at[idx, "RB"] = RB
-                    df_lt.at[idx, "ZA"] = ZA
-                    df_lt.at[idx, "ZB"] = ZB
-        df_lt.to_pickle(output_csv.replace("csv", "pkl"))
-        print(df_lt[["N-mer Name", "RA", "ZA"]])
-        return df_lt
-
-    df_lt["dAPNet2"] = None
-    for k, v in data.items():
-        df_lt.loc[df_lt["N-mer Name"] == k, "dAPNet2"] = 0.0
-    print(dapnet2)
-    for i, (k, v) in enumerate(data.items()):
-        print(k, v)
-        energy = dapnet2.predict_qcel_mols(v, batch_size=1)
-        print(energy)
-        df_lt.loc[df_lt["N-mer Name"] == k, "dAPNet2"] = energy[0]
-    # import apnet
-    #
-    # pm = apnet.PairModel(
-    #     apnet.AtomModel().pretrained(0), pair_model_type="delta_correction"
-    # ).from_file(delta_model_path, pair_model_type="delta_correction")
-    # for i, (k, v) in enumerate(data.items()):
-    #     print(k, v)
-    #     energy = pm.predict(v, batch_size=1)
-    #     print(energy)
-    #     if len(energy) == 0:
-    #         energy = [[0]]
-    #     df_lt.loc[df_lt["N-mer Name"] == k, "dAPNet2"] = energy[0][0]
-
-    # ensure base path of output_csv exists and create if not
-    Path(output_csv).parent.mkdir(parents=True, exist_ok=True)
-    df_lt.to_csv(output_csv, index=False)
-    return
-
-
-def process_inputs_sapt0_induction(
-    output_data="./ammonia-pbe-d3-dz-aug/ammonia/ammonia.csv",
-    delta_model_path="../../apnet_delta_correction/delta_correction_PBE_aug-cc-pVTZ_CP",
-    data_path="./ammonia-pbe-d3-dz-aug/ammonia/*.p4str",
-    output_csv="./ammonia-pbe-d3-dz-aug/ammonia/ammonia_dapnet2.csv",
-    verbose=False,
-):
-    # Load data
-    df_lt = pd.read_csv(output_data)
-    if data_path.endswith(".p4str"):
-        data = create_mols()
-    elif data_path.endswith("*.in") or data_path.endswith("*.out"):
-        # need to process data from path more interactively
-        data = {}
-        p4input_files = glob(data_path)
-        for i in p4input_files:
-            geom = subprocess.check_output(
-                f"sed -n '/molecule/,/units = au/ {{/^  [A-Za-z]/p; /^--/p}}' {i}",
-                shell=True,
-            )
-            # decode geom
-            geom = geom.decode("utf-8")
-            geom += "\nunits au\n"
-            Induction = subprocess.check_output(
-                f"grep 'Induction       ' {i} | awk '{{ print $6 }}'",
-                shell=True,
-            )
-            Induction = float(Induction.decode("utf-8"))
-            Electrostatics = subprocess.check_output(
-                f"grep 'Electrostatics               ' {i} | awk '{{ print $6 }}'",
-                shell=True,
-            )
-            Electrostatics = float(Electrostatics.decode("utf-8"))
-            Exchange = subprocess.check_output(
-                f"grep 'Exchange               ' {i} | awk '{{ print $6 }}'",
-                shell=True,
-            )
-            Exchange = float(Exchange.decode("utf-8"))
-            Dispersion = subprocess.check_output(
-                f"grep 'Dispersion               ' {i} | awk '{{ print $6 }}'",
-                shell=True,
-            )
-            Dispersion = float(Dispersion.decode("utf-8"))
-            if verbose:
-                print(i)
-                print(geom)
-            mol = qcel.models.Molecule.from_data(geom)
-            data[Path(i).stem] = [mol, Electrostatics, Exchange, Induction, Dispersion]
-    else:
-        if verbose:
-            print("Unrecognized filetype. Skipping mols")
-        data = {}
-        # raise ValueError("Unrecognized filetype")
-
-    if delta_model_path is None:
-        # need to save Geometry to df_lt['mol']
-        RAs, RBs, ZAs, ZBs = [], [], [], []
-        if len(data) > 0:
-            mol_len = len(data[list(data.keys())[0]][0].fragments[0])
-            df_lt["mol"] = [
-                np.array([[0.0, 0.0, 0.0] for j in range(mol_len)])
-                for i in range(len(df_lt))
-            ]
-            df_lt["RA"] = [
-                np.array([[0.0, 0.0, 0.0] for j in range(mol_len)])
-                for i in range(len(df_lt))
-            ]
-            df_lt["RB"] = [
-                np.array([[0.0, 0.0, 0.0] for j in range(mol_len)])
-                for i in range(len(df_lt))
-            ]
-            df_lt["ZA"] = [
-                np.array([[0.0, 0.0, 0.0] for j in range(mol_len)])
-                for i in range(len(df_lt))
-            ]
-            df_lt["ZB"] = [
-                np.array([[0.0, 0.0, 0.0] for j in range(mol_len)])
-                for i in range(len(df_lt))
-            ]
-            df_lt["RA"] = df_lt["RA"].astype(object)
-            df_lt["RB"] = df_lt["RB"].astype(object)
-            df_lt["ZA"] = df_lt["ZA"].astype(object)
-            df_lt["ZB"] = df_lt["ZB"].astype(object)
-            df_lt["SAPT0 Electrostatics (kJ/mol)"] = [np.nan for i in range(len(df_lt))]
-            df_lt["SAPT0 Exchange (kJ/mol)"] = [np.nan for i in range(len(df_lt))]
-            df_lt["SAPT0 Induction (kJ/mol)"] = [np.nan for i in range(len(df_lt))]
-            df_lt["SAPT0 Dispersion (kJ/mol)"] = [np.nan for i in range(len(df_lt))]
-            for i, (k, v) in enumerate(data.items()):
-                dimer = v[0]
-                df_lt.loc[df_lt["N-mer Name"] == k, "mol"] = [v[0]]
-                df_lt.loc[df_lt["N-mer Name"] == k, "SAPT0 Electrostatics (kJ/mol)"] = [
-                    v[1]
-                ]
-                df_lt.loc[df_lt["N-mer Name"] == k, "SAPT0 Exchange (kJ/mol)"] = [v[2]]
-                df_lt.loc[df_lt["N-mer Name"] == k, "SAPT0 Induction (kJ/mol)"] = [v[3]]
-                df_lt.loc[df_lt["N-mer Name"] == k, "SAPT0 Dispersion (kJ/mol)"] = [
-                    v[4]
-                ]
-                RA = (
-                    np.array(dimer.geometry[dimer.fragments[0]], dtype=np.float32)
-                    * qcel.constants.bohr2angstroms
-                )
-                RB = (
-                    np.array(dimer.geometry[dimer.fragments[1]], dtype=np.float32)
-                    * qcel.constants.bohr2angstroms
-                )
-                ZA = np.array(dimer.atomic_numbers[dimer.fragments[0]], dtype=np.int32)
-                ZB = np.array(dimer.atomic_numbers[dimer.fragments[1]], dtype=np.int32)
-                for idx in df_lt.loc[df_lt["N-mer Name"] == k].index:
-                    df_lt.at[idx, "RA"] = RA
-                    df_lt.at[idx, "RB"] = RB
-                    df_lt.at[idx, "ZA"] = ZA
-                    df_lt.at[idx, "ZB"] = ZB
-        df_lt.to_pickle(output_csv.replace("csv", "pkl"))
-        r1 = df_lt.iloc[0]
-        tools.print_cartesians_pos_carts(r1["ZA"], r1["RA"])
-        print(
-            df_lt[
-                [
-                    "N-mer Name",
-                    "SAPT0 Induction (kJ/mol)",
-                    "SAPT0 Electrostatics (kJ/mol)",
-                ]
-            ]
-        )
-        return df_lt
-
-    df_lt["dAPNet2"] = None
-    for k, v in data.items():
-        df_lt.loc[df_lt["N-mer Name"] == k, "dAPNet2"] = 0.0
-    import apnet
-
-    pm = apnet.PairModel(
-        apnet.AtomModel().pretrained(0), pair_model_type="delta_correction"
-    ).from_file(delta_model_path, pair_model_type="delta_correction")
-    for i, (k, v) in enumerate(data.items()):
-        print(k, v)
-        energy = pm.predict(v, batch_size=1)
-        print(energy)
-        if len(energy) == 0:
-            energy = [[0]]
-        df_lt.loc[df_lt["N-mer Name"] == k, "dAPNet2"] = energy[0][0]
-    # ensure base path of output_csv exists and create if not
-    Path(output_csv).parent.mkdir(parents=True, exist_ok=True)
-    df_lt.to_csv(output_csv, index=False)
-    return
-
-
-def analyze_results(
-    data_path="./ammonia-pbe-d3-dz-aug/ammonia/ammonia_dapnet2.csv",
-    bm_data_path="./ammonia-benchmark-cc/ammonia/ammonia.csv",
-):
-    df = pd.read_csv(data_path)
-    pd.set_option("display.max_columns", None)
-    pd.set_option("display.max_rows", None)
-    df["le_contribution"] = df.apply(
-        lambda r: r["Non-Additive MB Energy (kJ/mol)"]
-        * r["Num. Rep. (#)"]
-        / int(r["N-mer Name"][0]),
-        axis=1,
-    )
-    df["dAPNet2_le_contribution"] = df.apply(
-        lambda r: (r["Non-Additive MB Energy (kJ/mol)"] + r["dAPNet2"])
-        * r["Num. Rep. (#)"]
-        / int(r["N-mer Name"][0]),
-        axis=1,
-    )
-    df.rename(
-        columns={
-            "Minimum Monomer Separations (A)": "min_sep",
-            "Partial Crys. Lattice Ener. (kJ/mol)": "lattice_energy",
-            "Non-Additive MB Energy (kJ/mol)": "mb_energy",
-        },
-        inplace=True,
-    )
-    df["mb_energy_norm"] = df["mb_energy"] * 3
-    # df['le_prev'] = df['lattice_energy'] - df['mb_energy'] * 3
-    base_energy = df.iloc[0]["lattice_energy"]
-    le_prev = []
-    dAPNet2_le = []
-    for i, row in df.iterrows():
-        if i == 0:
-            le_prev.append(base_energy)
-            dAPNet2_le.append(row["dAPNet2_le_contribution"])
-            continue
-        le_prev.append(le_prev[-1] + row["le_contribution"])
-        dAPNet2_le.append(dAPNet2_le[-1] + row["dAPNet2_le_contribution"])
-    df["dAPNet2_le"] = dAPNet2_le
-    df["le_prev"] = le_prev
-    df_bm = pd.read_csv(bm_data_path)
-    df_bm_le_first = df_bm.iloc[0]["Partial Crys. Lattice Ener. (kJ/mol)"]
-    df_bm_le_last = df_bm.iloc[-1]["Partial Crys. Lattice Ener. (kJ/mol)"]
-    df_le_first = df.iloc[0]["lattice_energy"]
-    df_le_last = df.iloc[-1]["lattice_energy"]
-    df_dapnet2_le_first = df.iloc[0]["dAPNet2_le"]
-    df_dapnet2_le_last = df.iloc[-1]["dAPNet2_le"]
-    print(f"   BASE LE First: {df_le_first:.4f}, LE Last: {df_le_last:.4f}")
-    print(
-        f"dAPNet2 LE First: {df_dapnet2_le_first: .4f}, LE Last: {
-            df_dapnet2_le_last: .4f
-        }"
-    )
-    print(f"     BM LE First: {df_bm_le_first:.4f}, LE Last: {df_bm_le_last:.4f}")
-    df_bm.rename(
-        columns={
-            "Minimum Monomer Separations (A)": "min_sep",
-            "Partial Crys. Lattice Ener. (kJ/mol)": "lattice_energy",
-            "Non-Additive MB Energy (kJ/mol)": "mb_energy",
-        },
-        inplace=True,
-    )
-    bm_le = [0 for i in range(len(df))]
-    bm_le[0] = df_bm_le_first
-    bm_le[-1] = df_bm_le_last
-    df["ccsd(t)_le"] = bm_le
-    df.to_csv(data_path.replace(".csv", "_out.csv"), index=False)
-    return
-
-
-def ammonia(reprocess=False):
-    if reprocess:
-        process_inputs()
-    analyze_results()
-    return
-
-
-def imidazole(reprocess=False):
-    if reprocess:
-        process_inputs(
-            output_data="./imidazole-pbe-d3-dz-aug/imidazole/imidazole.csv",
-            delta_model_path="../../apnet_delta_correction/delta_correction_PBE_aug-cc-pVTZ_CP",
-        )
-    analyze_results(
-        data_path="./imidazole-pbe-d3-dz-aug/imidazole/imidazole.csv",
-        bm_data_path="./imidazole-benchmark-cc/imidazole/imidazole.csv",
-    )
-    return
-
-
-def hexamine(reprocess=False):
-    if reprocess:
-        process_inputs(
-            output_data="/theoryfs2/ds/csargent/chem/x23-crystals/hexamine/pbe-d3-dz-aug/hexamine/hexamine.csv",
-            data_path="/theoryfs2/ds/csargent/chem/x23-crystals/hexamine/pbe-d3-dz-aug/hexamine/*.in",
-            delta_model_path="../../apnet_delta_correction/delta_correction_PBE_aug-cc-pVTZ_CP",
-            output_csv="./ouputs/hexamine/pbe-d3-dz-aug/hexamine/hexamine_dapnet2.csv",
-        )
-    analyze_results(
-        data_path="./ouputs/hexamine/pbe-d3-dz-aug/hexamine/hexamine_dapnet2.csv",
-        bm_data_path="/theoryfs2/ds/csargent/chem/x23-crystals/hexamine/benchmark-cc/hexamine/hexamine.csv",
-    )
-    return
-
-
-def process_all_crystals(compute=False):
-    base_path = "/theoryfs2/ds/csargent/chem/x23-crystals/"
-    crystal_names = [
-        "14-cyclohexanedione",
-        "acetic_acid",
-        "adamantane",
-        "ammonia",
-        "anthracene",
-        "benzene",
-        "cyanamide",
-        "cytosine",
-        "ethyl_carbamate",
-        "formamide",
-        "hexamine",
-        "ice",
-        "imidazole",
-        "naphthalene",
-        "oxalic_acid_alpha",
-        "oxalic_acid_beta",
-        "pyrazine",
-        "pyrazole",
-        "succinic_acid",
-        "triazine",
-        "trioxane",
-        "uracil",
-        "urea",
-    ]
-    level_of_theories = [
-        # [
-        #     "pbe-d3-dz-aug",
-        #     # "../../apnet_delta_correction/delta_correction_PBE-D3BJ_aug-cc-pVDZ_CP",
-        #     "../../dapnet_models/delta_correction_PBE-D3_aug-cc-pVDZ_CP_to_CCSDT_CBS_CP",
-        # ],
-        [
-            "b3lyp",  # actually is b3lyp-d3bj-adz
-            # "../../apnet_delta_correction/delta_correction_B3LYP-D3BJ_aug-cc-pVDZ_CP",
-            # "../../dapnet_models/delta_correction_B3LYP-D3_aug-cc-pVDZ_CP_to_CCSDT_CBS_CP",
-            "/home/awallace43/gits/qcmlforge/models/dapnet2/B3LYP-D3_aug-cc-pVDZ_CP_to_CCSD_LP_T_RP_CBS_CP_0.pt",
-        ],
-        # [
-        #     "pbeh3c",
-        #     # "../../apnet_delta_correction/delta_correction_PBEh-3c_aug-cc-pVDZ_CP",
-        #     "../../dapnet_models/delta_correction_PBEh-3c_aug-cc-pVDZ_CP_to_CCSDT_CBS_CP",
-        # ],
-        # [
-        #     "b97-d3bj-dz-aug",
-        #     # "../../apnet_delta_correction/delta_correction_B97-D3_aug-cc-pVTZ_CP",
-        #     "../../apnet_delta_correction/delta_correction_B97"
-        # ],
-        # [
-        #     "mp2-dz-aug",
-        #     "../../apnet_delta_correction/delta_correction_MP2_aug-cc-pVDZ_CP",
-        # ],
-    ]
-    crystals = []
-    for c in crystal_names:
-        for lt in level_of_theories:
-            crystals.append(
-                {
-                    "name": c,
-                    "level_of_theory": lt[0],
-                    "delta_model_path": lt[1],
-                }
-            )
-    print("Crystal Plan:")
-    pp(crystals)
-    for c in crystals:
-        try:
-            print(f"\nProcessing {c['name']} crystal at {c['level_of_theory']}")
-            pp(c)
-            if compute:
-                process_inputs(
-                    output_data=f"{base_path}{c['name']}/{c['level_of_theory']}/{
-                        c['name']
-                    }/{c['name']}.csv",
-                    data_path=f"{base_path}{c['name']}/{c['level_of_theory']}/{
-                        c['name']
-                    }/*. in ",
-                    delta_model_path=c["delta_model_path"],
-                    output_csv=f"./outputs/{c['name']}/{c['level_of_theory']}/{
-                        c['name']
-                    }/{c['name']}_dapnet2.csv",
-                )
-            analyze_results(
-                data_path=f"./outputs/{c['name']}/{c['level_of_theory']}/{c['name']}/{
-                    c['name']
-                }_dapnet2.csv",
-                bm_data_path=f"{base_path}{c['name']}/benchmark-cc/{c['name']}/{
-                    c['name']
-                }.csv",
-            )
-        except Exception as e:
-            print(f"Error processing {c['name']} crystal at {c['level_of_theory']}")
-            print(e)
-            print("Continue processing other crystals...\n\n")
-            # raise e
-    return
-
-
-def collect_crystal_data(generate=False):
-    base_path = "/theoryfs2/ds/csargent/chem/x23-crystals/"
-    crystal_names = [
-        "14-cyclohexanedione",
-        "acetic_acid",
-        # "adamantane",
-        "ammonia",
-        # "anthracene", # missing becnhmark-cc
-        "benzene",
-        "cyanamide",
-        "cytosine",
-        "ethyl_carbamate",
-        "formamide",
-        "hexamine",
-        "ice",
-        "imidazole",
-        # "naphthalene",
-        "oxalic_acid_alpha",
-        "oxalic_acid_beta",
-        "pyrazine",
-        "pyrazole",
-        "succinic_acid",
-        "triazine",
-        "trioxane",
-        "uracil",
-        "urea",
-        "CO2",
-    ]
-    level_of_theories = [
-        "b3lyp",
-        "b97-d3bj-dz-aug",
-        "b97d-dz-aug",
-        "hf3c",
-        "mp2-dz-aug",
-        "mp2-dz-jun",
-        "mp2_5-dz-aug",
-        "mp2_5-dz-jun",
-        "mp2d-dz-aug",
-        "mp2d-dz-jun",
-        "pbe-d3-def2",
-        "pbe-d3-dz-aug",
-        "pbeh3c-590",
-        "sapt0-dz-aug",
-        "sapt0-dz-jun",
-    ]
-    main_frames = []
-    for cname in crystal_names:
-        frames = []
-        if generate:
-            for n, lt in enumerate(level_of_theories):
-                c = {
-                    "name": cname,
-                    "level_of_theory": lt,
-                }
-                try:
-                    print(f"\nProcessing {c['name']} crystal at {c['level_of_theory']}")
-                    pp(c)
-                    if n == 0:
-                        data_path = f"{base_path}{c['name']}/{c['level_of_theory']}/{
-                            c['name']
-                        }/*. in "
-                        print(data_path)
-                    else:
-                        data_path = ""
-                    # data_path=""
-                    df = process_inputs(
-                        output_data=f"{base_path}{c['name']}/{c['level_of_theory']}/{
-                            c['name']
-                        }/{c['name']}.csv",
-                        data_path=data_path,
-                        delta_model_path=None,
-                        output_csv=f"./x23_dfs/{c['name']}_{
-                            c['level_of_theory']
-                        }_cle.csv",
-                    )
-                    df.rename(
-                        columns={
-                            k: f"{k} {lt}"
-                            for k in df.columns
-                            if k != "N-mer Name" and k != "mol"
-                        },
-                        inplace=True,
-                    )
-                    df[f"output {c['level_of_theory']}"] = df["N-mer Name"].apply(
-                        lambda x: data_path.replace("*", x)
-                    )
-                    df = df.dropna(subset=["N-mer Name"])
-                    frames.append(df)
-                except Exception as e:
-                    print(
-                        f"Error processing {c['name']} crystal at {
-                            c['level_of_theory']
-                        }"
-                    )
-                    print(e)
-                    print("Continue processing other crystals...\n\n")
-            for n, f in enumerate(frames):
-                if n == 0:
-                    df = f
-                else:
-                    df = df.merge(f, on="N-mer Name")
-            if "mol" not in df.columns:
-                df["mol"] = None
-            df["crystal"] = [cname for _ in range(len(df))]
-            print(df[["N-mer Name", "mol"]])
-            df = df.dropna(subset=["N-mer Name"])
-            print("Null mols:", df["mol"].isna().sum())
-            df.to_pickle(f"./x23_dfs/{cname}_apprx_method.pkl")
-            df_apprx = df.copy()
-        else:
-            df_apprx = pd.read_pickle(f"./x23_dfs/{cname}_apprx_method.pkl")
-            print("Null mols:", df_apprx["mol"].isna().sum())
-        c = {
-            "name": cname,
-            "level_of_theory": "benchmark-cc",
-        }
-        pp(c)
-        # if cname in ['formamide', 'oxalic_acid_beta']:
-        #     output_data=f"{base_path}{c['name']}/{c['level_of_theory']}/{c['name']}/0-benchmark-cc.csv"
-        # elif cname in ['naphthalene']:
-        #     output_data=f"{base_path}{c['name']}/{c['level_of_theory']}/0-benchmark-cc.csv"
-        # elif cname in ['oxalic_acid_alpha', 'pyrazine']:
-        #     output_data=f"{base_path}{c['name']}/{c['level_of_theory']}/{c['name']}/benchmark-cc.csv"
-        output_data = f"{base_path}{c['name']}/{c['level_of_theory']}/{c['name']}/{
-            c['name']
-        }-fp.csv"
-        if cname in ["CO2"]:
-            output_data = f"{base_path}{c['name']}/{
-                c['level_of_theory']
-            }/carbon_dioxide/CO2-fp.csv"
-        # else:
-
-        base_parent = Path(output_data).parent
-        data_path = f"{base_parent}/*.out"
-        # data_path=""
-        if generate:
-            df = process_inputs(
-                output_data=output_data,
-                data_path=data_path,
-                delta_model_path=None,
-                output_csv=f"./x23_dfs/{c['name']}_{c['level_of_theory']}_cle.csv",
-                verbose=False,
-            )
-            df.rename(
-                columns={
-                    k: f"{k} CCSD(T)/CBS"
-                    for k in df.columns
-                    if k != "N-mer Name" and k != "mol"
-                },
-                inplace=True,
-            )
-            df[f"output {c['level_of_theory']}"] = df["N-mer Name"].apply(
-                lambda x: data_path.replace("*", x)
-            )
-            df["crystal"] = [cname for _ in range(len(df))]
-            if "mol" not in df.columns:
-                df["mol"] = None
-            print(df[["N-mer Name", "mol"]])
-            print("Null mols:", df["mol"].isna().sum())
-            df.to_pickle(f"./x23_dfs/{cname}_benchmark.pkl")
-            df_bm = df.copy()
-        else:
-            df_bm = pd.read_pickle(f"./x23_dfs/{cname}_benchmark.pkl")
-            print("Null mols:", df_bm["mol"].isna().sum())
-        df_apprx.sort_values(by="N-mer Name", inplace=True)
-        df_bm.sort_values(by="N-mer Name", inplace=True)
-        df_apprx["hash"] = df_apprx["mol"].apply(lambda x: x.get_hash())
-        df_bm["hash"] = df_bm["mol"].apply(lambda x: x.get_hash())
-        # print(df_apprx[['N-mer Name', 'mol']])
-        # print(df_bm[['N-mer Name', 'mol']])
-        df = df_apprx.merge(df_bm, on="hash", how="outer", suffixes=(" apprx", " bm"))
-        print(
-            "lengths:", len(df_apprx), len(df_bm), len(df), len(df_apprx) + len(df_bm)
-        )
-        print(df)
-        df.to_pickle(f"./x23_dfs/{cname}_all.pkl")
-        main_frames.append(df)
-    # for i in range(len(main_frames)):
-    #     if i == 0:
-    #         columns = main_frames[i].columns.tolist()
-    #     else:
-    #         columns += main_frames[i].columns.tolist()
-    # for i in range(len(main_frames)):
-    #     for c in columns:
-    #         if c not in main_frames[i].columns:
-    #             main_frames[i][c] = None
-    main_df = pd.concat(main_frames)
-    main_df.reset_index(drop=False, inplace=True)
-    main_df.rename(columns={"index": "local_crystal_index"}, inplace=True)
-    pp(main_df.columns.tolist())
-    print(main_df)
-    print(main_df[["N-mer Name apprx", "crystal apprx", "crystal bm"]])
-    main_df.to_pickle("./x23_dfs/main_df.pkl")
-    return
-
-
 def ap2_energies(mols, compile=True, finetune_mols=[], finetune_labels=[]):
     if len(finetune_mols) > 0 and len(finetune_labels) > 0:
         print("Finetuning to crystal...")
@@ -1649,8 +973,8 @@ def plot_all_systems():
     df2_labels = {
         "AP2": "AP2 vs CCSD(T)/CBS error",
         "AP3": "AP3 vs CCSD(T)/CBS error",
-        "UMA-s": "UMA-s vs CCSD(T)/CBS error",
-        "UMA-m": "UMA-m vs CCSD(T)/CBS error",
+        # "UMA-s": "UMA-s vs CCSD(T)/CBS error",
+        # "UMA-m": "UMA-m vs CCSD(T)/CBS error",
     }
 
     # Create violin plot for df1
@@ -1658,7 +982,7 @@ def plot_all_systems():
     error_statistics.violin_plot_table_multi_SAPT_components(
         dfs1,
         df_labels_and_columns_total=df1_labels,
-        output_filename=output_violin_apprx,
+        output_filename="./x23_plots/ap2_ap3_errors_vs_sapt0_all.png",
         grid_heights=[0.3, 1.0],
         grid_widths=[1],
         legend_loc="upper left",
@@ -1675,7 +999,7 @@ def plot_all_systems():
     error_statistics.violin_plot_table_multi_SAPT_components(
         dfs2,
         df_labels_and_columns_total=df2_labels,
-        output_filename="./x23_plots/ap2_ap3_errors_vs_ccsdt_cbs.png",
+        output_filename="./x23_plots/ap2_ap3_errors_vs_ccsdt_cbs_all.png",
         grid_heights=[0.3, 1.0],
         grid_widths=[1],
         legend_loc="upper left",
@@ -2791,7 +2115,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
         uma_ap3_lr = []
         df_bm.sort_values(by="Minimum Monomer Separations (A) CCSD(T)/CBS", inplace=True)
         for n, r in df_bm.iterrows():
-            if r['Minimum Monomer Separations (A) CCSD(T)/CBS'] > 7.0:
+            if r['Minimum Monomer Separations (A) CCSD(T)/CBS'] > 6.0:
             # if r[f"{i} IE (kJ/mol)"] == 0.0:
                 val = r["ap3_d_elst"] + r["ap3_classical_ind_energy"]
                 uma_ap3_lr.append(val)
@@ -2806,7 +2130,8 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
         df_bm[f"{i}+ap3_lr IE (kJ/mol)"] = uma_ap3_lr
         uma_ap3_lr = []
         for n, r in df_apprx.iterrows():
-            if r[f"{i} IE (kJ/mol)"] == 0.0:
+            # if r[f"{i} IE (kJ/mol)"] == 0.0:
+            if r['Minimum Monomer Separations (A) CCSD(T)/CBS'] > 6.0:
                 val = r["ap3_d_elst"] + r["ap3_classical_ind_energy"]
                 uma_ap3_lr.append(val)
             else:
@@ -2912,6 +2237,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                 df_c = df_c.sort_values(by=mms_col, ascending=True)
                 df_c_N = df_c.iloc[:N]
                 df_c_above = df_c.iloc[N:]
+                ml_sep_distances = []
                 for d in sep_distances:
                     ref_N = df_c_N[df_c_N[mms_col] < d]["ref_cle"].sum()
                     ap2_above = df_c_above[df_c_above[mms_col] < d]["ap2_cle"].sum()
@@ -2931,17 +2257,20 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
 
                     ref_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
 
-                    ap2_2b_energies.append(ap2_hybrid_total)
-                    ap3_2b_energies.append(ap3_hybrid_total)
-                    uma_s_2b_energies.append(uma_s_hybrid_total)
-                    uma_s_ap3lr_2b_energies.append(uma_s_ap3lr_hybrid_total)
-                    uma_m_2b_energies.append(uma_m_hybrid_total)
+                    if len(df_c_above[df_c_above[mms_col] < d]) > 0:
+                        ml_sep_distances.append(d)
+                        ap2_2b_energies.append(ap2_hybrid_total)
+                        ap3_2b_energies.append(ap3_hybrid_total)
+                        uma_s_2b_energies.append(uma_s_hybrid_total)
+                        uma_s_ap3lr_2b_energies.append(uma_s_ap3lr_hybrid_total)
+                        uma_m_2b_energies.append(uma_m_hybrid_total)
                     ref_2b_energies.append(ref_below)
 
                 # Plot
                 if ref_2b_energies[-1] != 0.0:
+                    print(f"{crystal=}, {ml_sep_distances[0]}")
                     ax_apprx.plot(
-                        sep_distances,
+                        ml_sep_distances,
                         ap2_2b_energies,
                         "o-",
                         label="AP2",
@@ -2950,7 +2279,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                         alpha=0.8,
                     )
                     ax_apprx.plot(
-                        sep_distances,
+                        ml_sep_distances,
                         ap3_2b_energies,
                         "s-",
                         label="AP3",
@@ -2959,7 +2288,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                         alpha=0.8,
                     )
                     ax_apprx.plot(
-                        sep_distances,
+                        ml_sep_distances,
                         uma_s_2b_energies,
                         "^-",
                         label="UMA-s",
@@ -2968,7 +2297,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                         alpha=0.8,
                     )
                     ax_apprx.plot(
-                        sep_distances,
+                        ml_sep_distances,
                         uma_m_2b_energies,
                         "^-",
                         label="UMA-m",
@@ -2977,7 +2306,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                         alpha=0.8,
                     )
                     ax_apprx.plot(
-                        sep_distances,
+                        ml_sep_distances,
                         uma_s_ap3lr_2b_energies,
                         "v-",
                         label="UMA-s+AP3-LR",
@@ -2998,27 +2327,31 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                 # ax_apprx.axhline(
                 #     y=0, color="black", linestyle="--", linewidth=1.0, alpha=0.5
                 # )
+                ax_apprx.axvline(
+                    x=6.0, color="gray", linestyle="--", linewidth=1.0, alpha=0.5
+                )
                 ax_apprx.set_ylabel("CLE Error (kJ/mol)", fontsize=10)
-                ax_apprx.set_title(f"{crystal}\nvs SAPT0/aDZ", fontsize=10)
+                ax_apprx.set_title(f"{crystal}:{len(df_c)}\nvs SAPT0/aDZ", fontsize=10)
 
                 if idx == 0:
                     ax_apprx.legend(loc="best", fontsize=8)
 
-                ap2_full_cle_errors_sapt0_aDZ.append(
-                    ap2_2b_energies[-1] - ref_2b_energies[-1]
-                )
-                ap3_full_cle_errors_sapt0_aDZ.append(
-                    ap3_2b_energies[-1] - ref_2b_energies[-1]
-                )
-                uma_s_full_cle_errors_sapt0_aDZ.append(
-                    uma_s_2b_energies[-1] - ref_2b_energies[-1]
-                )
-                uma_m_full_cle_errors_sapt0_aDZ.append(
-                    uma_m_2b_energies[-1] - ref_2b_energies[-1]
-                )
-                uma_s_ap3lr_full_cle_errors_sapt0_aDZ.append(
-                    uma_s_ap3lr_2b_energies[-1] - ref_2b_energies[-1]
-                )
+                if len(ap2_2b_energies) > 0:
+                    ap2_full_cle_errors_sapt0_aDZ.append(
+                        ap2_2b_energies[-1] - ref_2b_energies[-1]
+                    )
+                    ap3_full_cle_errors_sapt0_aDZ.append(
+                        ap3_2b_energies[-1] - ref_2b_energies[-1]
+                    )
+                    uma_s_full_cle_errors_sapt0_aDZ.append(
+                        uma_s_2b_energies[-1] - ref_2b_energies[-1]
+                    )
+                    uma_m_full_cle_errors_sapt0_aDZ.append(
+                        uma_m_2b_energies[-1] - ref_2b_energies[-1]
+                    )
+                    uma_s_ap3lr_full_cle_errors_sapt0_aDZ.append(
+                        uma_s_ap3lr_2b_energies[-1] - ref_2b_energies[-1]
+                    )
                 # ax_apprx.set_ylim(-5, 5)
 
         # Right plot: bm (vs CCSD(T)/CBS)
@@ -3164,11 +2497,15 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                         alpha=0.8,
                     )
                     ax_bm.set_xlim(sep_distances_full[0], sep_distances_full[-1])
+                    # vertical line at 6.0 A
+                    ax_bm.axvline(
+                        x=6.0, color="gray", linestyle="--", linewidth=1.0, alpha=0.5
+                    )
                     # ax_bm.axhline(
                     #     y=0, color="black", linestyle="--", linewidth=1.0, alpha=0.5
                     # )
                 ax_bm.set_ylabel("CLE Error (kJ/mol)", fontsize=10)
-                ax_bm.set_title(f"{crystal}\nvs CCSD(T)/CBS", fontsize=10)
+                ax_bm.set_title(f"{crystal}:{len(df_c)}\nvs CCSD(T)/CBS", fontsize=10)
 
                 if idx == 0:
                     ax_bm.legend(loc="best", fontsize=8)
@@ -3348,6 +2685,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
 
 
 def main():
+    # plot_all_systems()
     # plot_full_crystal_errors()
     # plot_switchover_errors()
     # plot_crystal_lattice_energies_with_switchover(2.9)
@@ -3362,7 +2700,7 @@ def main():
     #     v='bm'
     # )
     # plot_crystal_lattice_energies(sft=False)
-    plot_crystal_lattice_energies_with_N(0, sft=False)
+    plot_crystal_lattice_energies_with_N(1, sft=False)
     # plot_crystal_lattice_energies(sft=True)
     # plot_crystal_lattice_energies_with_N(1, sft=True)
     return
