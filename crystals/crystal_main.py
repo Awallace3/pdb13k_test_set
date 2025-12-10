@@ -3345,7 +3345,7 @@ def main():
     #     v='bm'
     # )
     # plot_crystal_lattice_energies(sft=False)
-    plot_crystal_lattice_energies_with_N(1, sft=False)
+    plot_crystal_lattice_energies_with_N(0, sft=False)
     # plot_crystal_lattice_energies(sft=True)
     # plot_crystal_lattice_energies_with_N(1, sft=True)
     return
