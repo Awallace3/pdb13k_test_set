@@ -139,7 +139,7 @@ def calc_dftd4_c6_c8_pairDisp2(
     carts: np.array,  # angstroms
     charges: np.array,
     input_xyz: str = "dat.xyz",
-    dftd4_bin: str = "/theoryfs2/ds/amwalla3/.local/bin/dftd4",
+    dftd4_bin: str = "/home/awallace43/.local/bin/dftd4",
     p: [] = [1.0, 1.61679827, 0.44959224, 3.35743605],
     s9=0.0,
     C6s_ATM=False,
@@ -213,7 +213,7 @@ def calc_dftd4_c6_for_d_a_b(
     cB,
     charges: np.array,
     input_xyz: str = "dat.xyz",
-    dftd4_bin: str = "/theoryfs2/ds/amwalla3/.local/bin/dftd4",
+    dftd4_bin: str = "/home/awallace43/.local/bin/dftd4",
     p: [] = [1.0, 1.61679827, 0.44959224, 3.35743605],
     s9=0.0,
 ):
@@ -257,7 +257,10 @@ def dftd4_df_c6s(generate=False, v="apprx", dftd4_type="d4_i"):
         "C6_B": [],
     }
     ang_to_bohr = qcel.constants.conversion_factor("angstrom", "bohr")
-    for n, r in df.iterrows():
+    # use tqdm for progress bar
+    from tqdm import tqdm
+    for n, r in tqdm(df.iterrows(), total=len(df), desc="DFTD4 C6s", ascii=True,
+                      bar_format="{l_bar}{bar:10}{r_bar}{bar:-10b}"):
         geom, pD, cD, ma, mb, charges = tools.mol_to_pos_carts_ma_mb(r[mol_str])
         table["Geometry_bohr"].append(geom.copy())
         geom[:, 1:] *= ang_to_bohr

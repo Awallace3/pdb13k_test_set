@@ -247,57 +247,54 @@ def ap2_ap3_df_energies_des370k_tl(v='bm', generate=False, N=100):
     # NOTE: pkl_fn uses _des_, so ensure that other AP energies are already in that df
     mol_str = "mol " + v
     pkl_fn = f"crystals_ap2_ap3_des_results_{mol_str.replace(' ', '_')}.pkl"
-    if not os.path.exists(pkl_fn) or generate:
-        df = pd.read_pickle(f"crystals_ap2_ap3_des_results_{mol_str.replace(' ', '_')}.pkl")
-        df = df.dropna(subset=[mol_str])
-        print("AP2 start")
-        mols = df[mol_str].tolist()
-        pred_ap2 = ap2_energies(
-            mols,
-            pretrained_ap2_path=f"./sft_models/ap2_des370k_{N}.pt",
-            data_dir="data_des370k",
-            compile=False,
-        )
-        pred_ap2 *= kcalmol_to_kjmol
-        df[f"AP2-des-tl{N} TOTAL"] = np.sum(pred_ap2[:, 0:4], axis=1)
-        df[f"AP2-des-tl{N} ELST"] = pred_ap2[:, 0]
-        df[f"AP2-des-tl{N} EXCH"] = pred_ap2[:, 1]
-        df[f"AP2-des-tl{N} INDU"] = pred_ap2[:, 2]
-        df[f"AP2-des-tl{N} DISP"] = pred_ap2[:, 3]
-        df.to_pickle(pkl_fn)
-        print("AP3 start")
-        pred_ap3, pair_elst, pair_ind = ap3_d_elst_classical_energies(
-            mols,
-            pretrained_ap3_path=f"./sft_models/ap3_des370k_{N}.pt",
-            data_dir="data_des370k",
-        )
-        pred_ap3 *= kcalmol_to_kjmol
-        elst_energies = [np.sum(e) * kcalmol_to_kjmol for e in pair_elst]
-        ind_energies = [np.sum(e) * kcalmol_to_kjmol for e in pair_ind]
-        # df["mtp_elst_energies"] = elst_undamped
-        df[f"ap3_d_elst-des-tl{N}"] = elst_energies
-        df[f"ap3_classical_ind_energy-des-tl{N}"] = ind_energies
-        df[f"AP3-des-tl{N} TOTAL"] = np.sum(pred_ap3[:, 0:4], axis=1)
-        df[f"AP3-des-tl{N} ELST"] = pred_ap3[:, 0]
-        df[f"AP3-des-tl{N} EXCH"] = pred_ap3[:, 1]
-        df[f"AP3-des-tl{N} INDU"] = pred_ap3[:, 2]
-        df[f"AP3-des-tl{N} DISP"] = pred_ap3[:, 3]
-        # LE
-        df[f"ap3-des-tl{N}_le_contribution"] = df.apply(
-            lambda r: r[f"AP3-des-tl{N} TOTAL"]
-            * r["Num. Rep. (#) sapt0-dz-aug"]
-            / int(r[f"N-mer Name {v}"][0]),
-            axis=1,
-        )
-        df[f"ap2-des-tl{N}_le_contribution"] = df.apply(
-            lambda r: r[f"AP2-des-tl{N} TOTAL"]
-            * r["Num. Rep. (#) sapt0-dz-aug"]
-            / int(r[f"N-mer Name {v}"][0]),
-            axis=1,
-        )
-        df.to_pickle(pkl_fn)
-    else:
-        df = pd.read_pickle(pkl_fn)
+    df = pd.read_pickle(f"crystals_ap2_ap3_des_results_{mol_str.replace(' ', '_')}.pkl")
+    df = df.dropna(subset=[mol_str])
+    print("AP2 start")
+    mols = df[mol_str].tolist()
+    pred_ap2 = ap2_energies(
+        mols,
+        pretrained_ap2_path=f"./sft_models/ap2_des370k_{N}.pt",
+        data_dir="data_des370k",
+        compile=False,
+    )
+    pred_ap2 *= kcalmol_to_kjmol
+    df[f"AP2-des-tl{N} TOTAL"] = np.sum(pred_ap2[:, 0:4], axis=1)
+    df[f"AP2-des-tl{N} ELST"] = pred_ap2[:, 0]
+    df[f"AP2-des-tl{N} EXCH"] = pred_ap2[:, 1]
+    df[f"AP2-des-tl{N} INDU"] = pred_ap2[:, 2]
+    df[f"AP2-des-tl{N} DISP"] = pred_ap2[:, 3]
+    df.to_pickle(pkl_fn)
+    print("AP3 start")
+    pred_ap3, pair_elst, pair_ind = ap3_d_elst_classical_energies(
+        mols,
+        pretrained_ap3_path=f"./sft_models/ap3_des370k_{N}.pt",
+        data_dir="data_des370k",
+    )
+    pred_ap3 *= kcalmol_to_kjmol
+    elst_energies = [np.sum(e) * kcalmol_to_kjmol for e in pair_elst]
+    ind_energies = [np.sum(e) * kcalmol_to_kjmol for e in pair_ind]
+    # df["mtp_elst_energies"] = elst_undamped
+    df[f"ap3_d_elst-des-tl{N}"] = elst_energies
+    df[f"ap3_classical_ind_energy-des-tl{N}"] = ind_energies
+    df[f"AP3-des-tl{N} TOTAL"] = np.sum(pred_ap3[:, 0:4], axis=1)
+    df[f"AP3-des-tl{N} ELST"] = pred_ap3[:, 0]
+    df[f"AP3-des-tl{N} EXCH"] = pred_ap3[:, 1]
+    df[f"AP3-des-tl{N} INDU"] = pred_ap3[:, 2]
+    df[f"AP3-des-tl{N} DISP"] = pred_ap3[:, 3]
+    # LE
+    df[f"ap3-des-tl{N}_le_contribution"] = df.apply(
+        lambda r: r[f"AP3-des-tl{N} TOTAL"]
+        * r["Num. Rep. (#) sapt0-dz-aug"]
+        / int(r[f"N-mer Name {v}"][0]),
+        axis=1,
+    )
+    df[f"ap2-des-tl{N}_le_contribution"] = df.apply(
+        lambda r: r[f"AP2-des-tl{N} TOTAL"]
+        * r["Num. Rep. (#) sapt0-dz-aug"]
+        / int(r[f"N-mer Name {v}"][0]),
+        axis=1,
+    )
+    df.to_pickle(pkl_fn)
 
     if v == "apprx":
         pp(df.columns.tolist())
@@ -2884,6 +2881,299 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100):
     return
 
 
+def plot_crystal_violin_errors(N=1, sft=False, tl_N=100):
+    """
+    Create violin plots showing error distributions for each crystal.
+    Uses the same energy computation logic as plot_crystal_lattice_energies_with_N,
+    but creates a subplot violin distribution for each crystal.
+    
+    Parameters:
+    -----------
+    N : int
+        Number of points to use as reference (hybrid approach)
+    sft : bool
+        Whether to use SFT (supervised fine-tuning) models
+    tl_N : int
+        Transfer learning parameter N for DES models
+    """
+    # Load dataframes
+    if sft:
+        df_apprx = pd.read_pickle("./sft_crystals_ap2_ap3_results_mol_apprx.pkl")
+        df_bm = pd.read_pickle("./sft_crystals_ap2_ap3_results_mol_bm.pkl")
+        output_path_apprx = f"./x23_plots/N{N}_crystal_violin_errors_apprx_sft.png"
+        output_path_bm = f"./x23_plots/N{N}_crystal_violin_errors_bm_sft.png"
+    else:
+        df_apprx = pd.read_pickle("./crystals_ap2_ap3_des_results_mol_apprx.pkl")
+        df_bm = pd.read_pickle("./crystals_ap2_ap3_des_results_mol_bm.pkl")
+        output_path_apprx = f"./x23_plots/N{N}_crystal_violin_errors_apprx.png"
+        output_path_bm = f"./x23_plots/N{N}_crystal_violin_errors_bm.png"
+
+    # Load UMA data
+    for i in ["uma-s-1p1", "uma-m-1p1"]:
+        df_uma_bm = pd.read_pickle(f"./crystals_ap2_ap3_results_{i}_mol_bm.pkl")
+        df_bm[f"{i} IE (kJ/mol)"] = df_uma_bm[f"{i} IE (kJ/mol)"]
+        df_uma_apprx = pd.read_pickle(
+            f"./crystals_ap2_ap3_results_{i}_mol_apprx.pkl"
+        )
+        df_apprx[f"{i} IE (kJ/mol)"] = df_uma_apprx[f"{i} IE (kJ/mol)"]
+        
+        # Add AP3-LR hybrid for long-range
+        uma_ap3_lr = []
+        df_bm_sorted = df_bm.sort_values(by="Minimum Monomer Separations (A) CCSD(T)/CBS")
+        for n, r in df_bm_sorted.iterrows():
+            # if r['Minimum Monomer Separations (A) CCSD(T)/CBS'] > 6.0:
+            if r[f"{i} IE (kJ/mol)"] == 0.0:
+                val = r["ap3_d_elst"] + r["ap3_classical_ind_energy"]
+                uma_ap3_lr.append(val)
+            else:
+                uma_ap3_lr.append(r[f"{i} IE (kJ/mol)"])
+        df_bm[f"{i}+ap3_lr IE (kJ/mol)"] = uma_ap3_lr
+        
+        uma_ap3_lr = []
+        for n, r in df_apprx.iterrows():
+            # if r['Minimum Monomer Separations (A) CCSD(T)/CBS'] > 6.0:
+            if r[f"{i} IE (kJ/mol)"] == 0.0:
+                val = r["ap3_d_elst"] + r["ap3_classical_ind_energy"]
+                uma_ap3_lr.append(val)
+            else:
+                uma_ap3_lr.append(r[f"{i} IE (kJ/mol)"])
+        df_apprx[f"{i}+ap3_lr IE (kJ/mol)"] = uma_ap3_lr
+
+    # Get unique crystals
+    crystals_apprx = sorted(df_apprx["crystal apprx"].dropna().unique())
+    crystals_bm = sorted(df_bm["crystal bm"].dropna().unique())
+
+    # Process apprx (vs SAPT0/aDZ)
+    print(f"Processing approximate methods (vs SAPT0/aDZ) with N={N}")
+    crystal_errors_apprx = {}
+    
+    for crystal in crystals_apprx:
+        df_c = df_apprx[df_apprx["crystal apprx"] == crystal].copy()
+        
+        # Reference method
+        ref_col = "Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"
+        num_rep_col = "Num. Rep. (#) sapt0-dz-aug"
+        nmer_col = "N-mer Name apprx"
+        mms_col = "Minimum Monomer Separations (A) sapt0-dz-aug"
+        
+        if ref_col not in df_c.columns or "AP2 TOTAL" not in df_c.columns:
+            continue
+            
+        # Sort by minimum monomer separation
+        df_c = df_c.sort_values(by=mms_col, ascending=True)
+        
+        # Split into N closest points (reference) and rest (ML)
+        # Calculate CLE contributions
+        for col_suffix, method_col in [
+            ("ap2_cle", "AP2 TOTAL"),
+            ("ap3_cle", "AP3 TOTAL"),
+            ("ap2_des_cle", f"AP2-des-tl{tl_N} TOTAL"),
+            ("ap3_des_cle", f"AP3-des-tl{tl_N} TOTAL"),
+        ]:
+            if method_col in df_c.columns:
+                df_c[col_suffix] = df_c.apply(
+                    lambda r: r[method_col] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col])
+                    else 0,
+                    axis=1,
+                )
+        
+        df_c["ref_cle"] = df_c.apply(
+            lambda r: r[ref_col] * r[num_rep_col] / int(r[nmer_col][0])
+            if pd.notnull(r[nmer_col])
+            else 0,
+            axis=1,
+        )
+        
+        for uma_method in ["uma-s-1p1", "uma-m-1p1", "uma-s-1p1+ap3_lr"]:
+            if f"{uma_method} IE (kJ/mol)" in df_c.columns:
+                df_c[f"{uma_method}_cle"] = df_c.apply(
+                    lambda r: r[f"{uma_method} IE (kJ/mol)"] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col]) and f"{uma_method} IE (kJ/mol)" in r
+                    else 0,
+                    axis=1,
+                )
+        
+        df_c_N = df_c.iloc[:N]
+        df_c_above = df_c.iloc[N:]
+        
+        if len(df_c_above) == 0:
+            continue
+        
+        # Calculate errors for each point in df_c_above
+        ref_N_total = df_c_N["ref_cle"].sum()
+        ref_total = df_c["ref_cle"].sum()
+        
+        errors = {}
+        for method, col in [
+            ("AP2", "ap2_cle"),
+            ("AP3", "ap3_cle"),
+            (f"AP2-DES-tl{tl_N}", "ap2_des_cle"),
+            (f"AP3-DES-tl{tl_N}", "ap3_des_cle"),
+            ("UMA-s", "uma-s-1p1_cle"),
+            ("UMA-m", "uma-m-1p1_cle"),
+            ("UMA-s+AP3-LR", "uma-s-1p1+ap3_lr_cle"),
+        ]:
+            if col in df_c_above.columns:
+                # Hybrid total = ML predictions for points > N + reference for points <= N
+                ml_total = df_c_above[col]
+                ref_total = df_c_above["ref_cle"]
+                error = ml_total - ref_total
+                errors[method] = error
+        
+        crystal_errors_apprx[crystal] = errors
+    
+    # Process bm (vs CCSD(T)/CBS)
+    print(f"Processing benchmark (vs CCSD(T)/CBS) with N={N}")
+    crystal_errors_bm = {}
+    ylims=[-20, 20]
+    for crystal in crystals_bm:
+        df_c = df_bm[df_bm["crystal bm"] == crystal].copy()
+        
+        # Reference method
+        ref_col = "Non-Additive MB Energy (kJ/mol) CCSD(T)/CBS"
+        num_rep_col = "Num. Rep. (#) CCSD(T)/CBS"
+        nmer_col = "N-mer Name bm"
+        mms_col = "Minimum Monomer Separations (A) CCSD(T)/CBS"
+        
+        if ref_col not in df_c.columns or "AP2 TOTAL" not in df_c.columns:
+            continue
+            
+        # Sort by minimum monomer separation
+        df_c = df_c.sort_values(by=mms_col, ascending=True)
+        
+        # Split into N closest points (reference) and rest (ML)
+        
+        if len(df_c_above) == 0:
+            continue
+        
+        # Calculate CLE contributions
+        for col_suffix, method_col in [
+            ("ap2_cle", "AP2 TOTAL"),
+            ("ap3_cle", "AP3 TOTAL"),
+            ("ap2_des_cle", f"AP2-des-tl{tl_N} TOTAL"),
+            ("ap3_des_cle", f"AP3-des-tl{tl_N} TOTAL"),
+        ]:
+            if method_col in df_c.columns:
+                df_c[col_suffix] = df_c.apply(
+                    lambda r: r[method_col] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col])
+                    else 0,
+                    axis=1,
+                )
+        
+        df_c["ref_cle"] = df_c.apply(
+            lambda r: r[ref_col] * r[num_rep_col] / int(r[nmer_col][0])
+            if pd.notnull(r[nmer_col])
+            else 0,
+            axis=1,
+        )
+        
+        for uma_method in ["uma-s-1p1", "uma-m-1p1", "uma-s-1p1+ap3_lr"]:
+            if f"{uma_method} IE (kJ/mol)" in df_c.columns:
+                df_c[f"{uma_method}_cle"] = df_c.apply(
+                    lambda r: r[f"{uma_method} IE (kJ/mol)"] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col]) and f"{uma_method} IE (kJ/mol)" in r
+                    else 0,
+                    axis=1,
+                )
+        df_c_N = df_c.iloc[:N]
+        df_c_above = df_c.iloc[N:]
+        
+        errors = {}
+        for method, col in [
+            ("AP2", "ap2_cle"),
+            ("AP3", "ap3_cle"),
+            (f"AP2-DES-tl{tl_N}", "ap2_des_cle"),
+            (f"AP3-DES-tl{tl_N}", "ap3_des_cle"),
+            ("UMA-s", "uma-s-1p1_cle"),
+            ("UMA-m", "uma-m-1p1_cle"),
+            ("UMA-s+AP3-LR", "uma-s-1p1+ap3_lr_cle"),
+        ]:
+            if col in df_c_above.columns:
+                # Hybrid total = ML predictions for points > N + reference for points <= N
+                ml_total = df_c_above[col]
+                ref_total = df_c_above["ref_cle"]
+                error = ml_total - ref_total
+                errors[method] = error
+        
+        crystal_errors_bm[crystal] = errors
+    
+    # Plot for apprx
+    if crystal_errors_apprx:
+        # Convert to DataFrame format expected by violin plot
+        all_methods = list(next(iter(crystal_errors_apprx.values())).keys())
+        
+        fig, axes = plt.subplots(1, len(crystal_errors_apprx), 
+                                figsize=(3*len(crystal_errors_apprx), 4),
+                                sharey=True)
+        if len(crystal_errors_apprx) == 1:
+            axes = [axes]
+        
+        for idx, (crystal, errors) in enumerate(sorted(crystal_errors_apprx.items())):
+            ax = axes[idx]
+            
+            # Create violin plot for this crystal
+            positions = list(range(len(all_methods)))
+            data_to_plot = [[errors.get(method, 0)] for method in all_methods]
+            
+            parts = ax.violinplot(data_to_plot, positions=positions, 
+                                 showmeans=True, showmedians=True)
+            
+            ax.set_xticks(positions)
+            ax.set_xticklabels(all_methods, rotation=45, ha='right', fontsize=8)
+            ax.set_ylim(ylims)
+            ax.set_title(crystal, fontsize=10)
+            ax.axhline(y=0, color='black', linestyle='--', linewidth=0.5, alpha=0.5)
+            ax.grid(True, alpha=0.3, linestyle=':')
+            
+            if idx == 0:
+                ax.set_ylabel(r"Error (kJ$\cdot$mol$^{-1}$)", fontsize=11)
+        
+        plt.tight_layout()
+        plt.savefig(output_path_apprx, dpi=300, bbox_inches='tight')
+        print(f"Saved: {output_path_apprx}")
+        plt.close()
+    
+    # Plot for bm
+    if crystal_errors_bm:
+        # Convert to DataFrame format expected by violin plot
+        all_methods = list(next(iter(crystal_errors_bm.values())).keys())
+        
+        fig, axes = plt.subplots(1, len(crystal_errors_bm), 
+                                figsize=(3*len(crystal_errors_bm), 4),
+                                sharey=True)
+        if len(crystal_errors_bm) == 1:
+            axes = [axes]
+        
+        for idx, (crystal, errors) in enumerate(sorted(crystal_errors_bm.items())):
+            ax = axes[idx]
+            
+            # Create violin plot for this crystal
+            positions = list(range(len(all_methods)))
+            data_to_plot = [[errors.get(method, 0)] for method in all_methods]
+            
+            parts = ax.violinplot(data_to_plot, positions=positions, 
+                                 showmeans=True, showmedians=True)
+            
+            ax.set_xticks(positions)
+            ax.set_xticklabels(all_methods, rotation=45, ha='right', fontsize=8)
+            ax.set_title(crystal, fontsize=10)
+            ax.axhline(y=0, color='black', linestyle='--', linewidth=0.5, alpha=0.5)
+            ax.set_ylim(ylims)
+            ax.grid(True, alpha=0.3, linestyle=':')
+            
+            if idx == 0:
+                ax.set_ylabel(r"Error (kJ$\cdot$mol$^{-1}$)", fontsize=11)
+        
+        plt.tight_layout()
+        plt.savefig(output_path_bm, dpi=300, bbox_inches='tight')
+        print(f"Saved: {output_path_bm}")
+        plt.close()
+    
+    return crystal_errors_apprx, crystal_errors_bm
+
+
 def main():
     # plot_all_systems()
     # plot_full_crystal_errors()
@@ -2905,9 +3195,11 @@ def main():
     # plot_crystal_lattice_energies(sft=True)
 
     # ap2_ap3_df_energies_des370k_tl(N=100)
-    # ap2_ap3_df_energies_des370k_tl(v='apprx', N=100)
-
-    plot_crystal_lattice_energies_with_N(0, sft=False)
+    # for tl_N in [100, 1000, 10000]:
+    #     ap2_ap3_df_energies_des370k_tl(v='bm', N=tl_N)
+    #     ap2_ap3_df_energies_des370k_tl(v='apprx', N=tl_N)
+    plot_crystal_violin_errors(0, sft=False, tl_N=1000)
+    # plot_crystal_lattice_energies_with_N(0, sft=False, tl_N=10000)
     # plot_crystal_lattice_energies_with_N(5, sft=False)
     return
 
