@@ -6,6 +6,7 @@ import numpy as np
 from time import time
 import subprocess
 import json
+from qm_tools_aw import tools
 
 eV_to_kcalmol = qcel.constants.conversion_factor("eV", "kcal/mol")
 eV_to_kJmol = qcel.constants.conversion_factor("eV", "kJ/mol")
@@ -51,6 +52,86 @@ def write_xyz_from_np(atom_numbers, carts, outfile="dat.xyz", charges=[0, 1]) ->
             line = "%s    %s\n" % (el, v)
             f.write(line)
     return
+
+
+def generate_D4_data(df):
+    xyzs = df["Geometry"].to_list()
+    monAs = df["monAs"].to_list()
+    monBs = df["monBs"].to_list()
+    charges = df["charges"].to_list()
+    (
+        C6s,
+        C6_A,
+        C6_B,
+        C6_ATMs,
+        C6_ATM_A,
+        C6_ATM_B,
+        disp_d,
+        disp_a,
+        disp_b,
+    ) = calc_c6s_c8s_pairDisp2_for_df(xyzs, monAs, monBs, charges)
+    df["C6s"] = C6s
+    df["C6_A"] = C6_A
+    df["C6_B"] = C6_B
+    df["C6_ATM"] = C6_ATMs
+    df["C6_ATM_A"] = C6_ATM_A
+    df["C6_ATM_B"] = C6_ATM_B
+    df["disp_d"] = disp_d
+    df["disp_a"] = disp_a
+    df["disp_b"] = disp_b
+    return df
+
+
+def calc_c6s_c8s_pairDisp2_for_df(xyzs, monAs, monBs, charges) -> ([], [], []):
+    """
+    runs pairDisp2 for all xyzs to accumulate C6s
+    """
+    C6s = [np.array([]) for i in range(len(xyzs))]
+    C6_A = [np.array([]) for i in range(len(xyzs))]
+    C6_B = [np.array([]) for i in range(len(xyzs))]
+    C6_ATMs = [np.array([]) for i in range(len(xyzs))]
+    C6_ATM_A = [np.array([]) for i in range(len(xyzs))]
+    C6_ATM_B = [np.array([]) for i in range(len(xyzs))]
+    disp_d = [np.array([]) for i in range(len(xyzs))]
+    disp_a = [np.array([]) for i in range(len(xyzs))]
+    disp_b = [np.array([]) for i in range(len(xyzs))]
+    for n, c in enumerate(
+        tqdm(
+            xyzs[:],
+            desc="DFTD4 Props",
+            ascii=True,
+            bar_format="{l_bar}{bar:10}{r_bar}{bar:-10b}",
+        )
+    ):
+        g3 = np.array(c)
+        pos = g3[:, 0]
+        carts = g3[:, 1:]
+        c = charges[n]
+        C6, _, _, dispd, C6_ATM = locald4.calc_dftd4_c6_c8_pairDisp2(
+            pos, carts, c[0], C6s_ATM=True
+        )
+        C6s[n] = C6
+        C6_ATMs[n] = C6_ATM
+        disp_d[n] = dispd
+
+        Ma = monAs[n]
+        mon_pa, mon_ca = create_mon_geom(pos, carts, Ma)
+        C6a, _, _, dispa, C6_ATMa = locald4.calc_dftd4_c6_c8_pairDisp2(
+            mon_pa, mon_ca, c[1], C6s_ATM=True
+        )
+        C6_A[n] = C6a
+        C6_ATM_A[n] = C6_ATMa
+        disp_a[n] = dispa
+
+        Mb = monBs[n]
+        mon_pb, mon_cb = create_mon_geom(pos, carts, Mb)
+        C6b, _, _, dispb, C6_ATMb = locald4.calc_dftd4_c6_c8_pairDisp2(
+            mon_pb, mon_cb, c[2], C6s_ATM=True
+        )
+        C6_B[n] = C6b
+        C6_ATM_B[n] = C6_ATMb
+        disp_b[n] = dispb
+    return C6s, C6_A, C6_B, C6_ATMs, C6_ATM_A, C6_ATM_B, disp_d, disp_a, disp_b
 
 
 def calc_dftd4_c6_c8_pairDisp2(
@@ -122,6 +203,7 @@ def calc_dftd4_c6_c8_pairDisp2(
     else:
         return C6s, C8s, pairs, e
 
+
 def calc_dftd4_c6_for_d_a_b(
     cD,
     pD,
@@ -159,7 +241,45 @@ def calc_dftd4_c6_for_d_a_b(
     return C6s_dimer, C6s_mA, C6s_mB
 
 
-def uma_df_energies_sft(generate=False, v="apprx", dftd4_type="d4_i"):
+def dftd4_df_c6s(generate=False, v="apprx", dftd4_type="d4_i"):
+    # v = "bm"
+    mol_str = "mol " + v
+    pkl_fn = f"crystals_c6s_{dftd4_type}_{mol_str.replace(' ', '_')}.pkl"
+    df = pd.read_pickle(f"./crystals_ap2_ap3_des_results_mol_{v}.pkl")
+    table = {
+        "Geometry": [],
+        "charges": [],
+        "Geometry_bohr": [],
+        "monAs": [],
+        "monBs": [],
+        "C6s": [],
+        "C6_A": [],
+        "C6_B": [],
+    }
+    ang_to_bohr = qcel.constants.conversion_factor("angstrom", "bohr")
+    for n, r in df.iterrows():
+        geom, pD, cD, ma, mb, charges = tools.mol_to_pos_carts_ma_mb(r[mol_str])
+        table["Geometry_bohr"].append(geom.copy())
+        geom[:, 1:] *= ang_to_bohr
+        table["Geometry"].append(geom)
+        table["monAs"].append(ma)
+        table["monBs"].append(mb)
+        pA, cA = pD[ma], cD[ma, :]
+        pB, cB = pD[mb], cD[mb, :]
+        C6s_dimer, C6s_mA, C6s_mB = calc_dftd4_c6_for_d_a_b(
+            cD, pD, pA, cA, pB, cB, charges
+        )
+        table["C6s"].append(C6s_dimer)
+        table["C6_A"].append(C6s_mA)
+        table["C6_B"].append(C6s_mB)
+        table["charges"].append(charges)
+    for k, v in table.items():
+        df[k] = v
+    df.to_pickle(pkl_fn)
+    return df
+
+
+def dftd4_df_energies(generate=False, v="apprx", dftd4_type="d4_i"):
     # v = "bm"
     mol_str = "mol " + v
     pkl_fn = f"crystals_ap2_ap3_results_{dftd4_type}_{mol_str.replace(' ', '_')}.pkl"
@@ -175,30 +295,6 @@ def uma_df_energies_sft(generate=False, v="apprx", dftd4_type="d4_i"):
         "AP2 INDU",
         "AP2 DISP",
     ]
-
-    def energy(mol):
-        symbols = mol.symbols
-        positions = mol.geometry * qcel.constants.bohr2angstroms
-        atoms = Atoms(
-            symbols,
-            positions=positions,
-            info={
-                "charge": int(mol.molecular_charge),
-                "spin": int(mol.molecular_multiplicity),
-            },
-        )
-        atoms.calc = calc
-        energy = atoms.get_potential_energy()
-        return energy
-
-    def interaction_energy(mol):
-        monA = mol.get_fragment(0)
-        monB = mol.get_fragment(1)
-        eAB = energy(mol) * eV_to_kcalmol
-        eA = energy(monA) * eV_to_kcalmol
-        eB = energy(monB) * eV_to_kcalmol
-        int_energy = eAB - (eA + eB)
-        return int_energy, eAB, eA, eB
 
     if not os.path.exists(pkl_fn) or generate:
         t1 = time()
@@ -228,7 +324,9 @@ def uma_df_energies_sft(generate=False, v="apprx", dftd4_type="d4_i"):
             uma_energies = []
             cnt = 0
             for i, row in df_c_a.iterrows():
-                print(f"{cnt:4d} / {len(df_c_a):4d}, {time() - t1:.2f} seconds", end="\r")
+                print(
+                    f"{cnt:4d} / {len(df_c_a):4d}, {time() - t1:.2f} seconds", end="\r"
+                )
                 cnt += 1
                 mol = row[mol_str]
                 int_energy, eAB, eA, eB = interaction_energy(mol)
@@ -276,11 +374,13 @@ def main():
     # print(df_uma.head())
     # df_uma = uma_df_energies_sft(generate=True, v="bm", uma_type="uma-s-1p1")
     # print(df_uma.head())
+    df_d4 = dftd4_df_c6s(generate=True, v="apprx", dftd4_type="d4_i")
+    df_d4 = dftd4_df_c6s(generate=True, v="bm", dftd4_type="d4_i")
 
-    df_uma = uma_df_energies_sft(generate=True, v="apprx", dftd4_type="uma-m-1p1")
-    print(df_uma.head())
-    df_uma = uma_df_energies_sft(generate=True, v="bm", dftd4_type="uma-m-1p1")
-    print(df_uma.head())
+    # df_uma = dftd4_df_energies(generate=True, v="apprx", dftd4_type="d4_i")
+    # print(df_uma.head())
+    # df_uma = dftd4_df_energies(generate=True, v="bm", dftd4_type="d4_i")
+    # print(df_uma.head())
     # uma-m-1p1 took ~23K s on apprx and ~48K on bm
 
 
