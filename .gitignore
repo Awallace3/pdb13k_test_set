@@ -190,3 +190,4 @@ pdb13k_errors_pt_top_errors.pkl
 *.pkl
 *.zip
 data_dir
+DES370K.csv

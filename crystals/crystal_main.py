@@ -50,7 +50,7 @@ crystal_names_all = [
 ]
 
 
-def ap2_energies(mols, compile=True, finetune_mols=[], finetune_labels=[]):
+def ap2_energies(mols, compile=False, finetune_mols=[], finetune_labels=[], pretrained_ap2_path=None, data_dir="data_dir"):
     if len(finetune_mols) > 0 and len(finetune_labels) > 0:
         print("Finetuning to crystal...")
         ds_qcel_molecules = finetune_mols
@@ -65,13 +65,16 @@ def ap2_energies(mols, compile=True, finetune_mols=[], finetune_labels=[]):
 
     if os.path.exists("data_dir"):
         shutil.rmtree("data_dir")
+    if pretrained_ap2_path is None:
+        pretrained_ap2_path = f"{qcml_model_dir}/ap2-fused_ensemble/ap2_1.pt"
 
     ap2 = apnet_pt.AtomPairwiseModels.apnet2_fused.APNet2_AM_Model(
-        ds_root="data_dir",
+        ds_root=data_dir,
         atom_model=apnet_pt.AtomModels.ap2_atom_model.AtomModel(
             pre_trained_model_path=f"{qcml_model_dir}/am_ensemble/am_1.pt",
         ).model,
-        pre_trained_model_path=f"{qcml_model_dir}/ap2-fused_ensemble/ap2_1.pt",
+        # pre_trained_model_path=f"{qcml_model_dir}/ap2-fused_ensemble/ap2_1.pt",
+        pre_trained_model_path=pretrained_ap2_path,
         ds_qcel_molecules=ds_qcel_molecules,
         ds_energy_labels=ds_energy_labels,
         ds_spec_type=None,
@@ -94,7 +97,7 @@ def ap2_energies(mols, compile=True, finetune_mols=[], finetune_labels=[]):
     return pred
 
 
-def ap3_d_elst_classical_energies(mols, finetune_mols=[], finetune_labels=[]):
+def ap3_d_elst_classical_energies(mols, finetune_mols=[], finetune_labels=[], pretrained_ap3_path=None, data_dir="data_dir"):
     if len(finetune_mols) > 0 and len(finetune_labels) > 0:
         print("Finetuning to crystal...")
         ds_qcel_molecules = finetune_mols
@@ -111,7 +114,8 @@ def ap3_d_elst_classical_energies(mols, finetune_mols=[], finetune_labels=[]):
     am_path = f"{path_to_qcml}/../models/ap3_ensemble/1/am_3.pt"
     at_hf_vw_path = f"{path_to_qcml}/../models/ap3_ensemble/1/am_h+1_3.pt"
     at_elst_path = f"{path_to_qcml}/../models/ap3_ensemble/1/am_elst_h+1_3.pt"
-    ap3_path = f"{path_to_qcml}/../models/ap3_ensemble/0/ap3_.pt"
+    if pretrained_ap3_path is None:
+        pretrained_ap3_path = f"{path_to_qcml}/../models/ap3_ensemble/0/ap3_.pt"
     atom_type_hf_vw_model = apnet_pt.AtomPairwiseModels.mtp_mtp.AtomTypeParamModel(
         ds_root=None,
         use_GPU=False,
@@ -133,10 +137,10 @@ def ap3_d_elst_classical_energies(mols, finetune_mols=[], finetune_labels=[]):
         shutil.rmtree("data_dir")
 
     ap3 = apnet_pt.AtomPairwiseModels.apnet3_fused.APNet3_AtomType_Model(
-        ds_root="data_dir",
+        ds_root=data_dir,
         atom_type_model=atom_type_hf_vw_model.model,
         dimer_prop_model=atom_type_elst_model.dimer_model,
-        pre_trained_model_path=ap3_path,
+        pre_trained_model_path=pretrained_ap3_path,
         ds_spec_type=None,
         ignore_database_null=ignore_database_null,
         ds_qcel_molecules=ds_qcel_molecules,
@@ -223,6 +227,86 @@ def ap2_ap3_df_energies(generate=False):
         )
         df["AP2 total error"] = (
             df["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"] - df["AP2 TOTAL"]
+        )
+        mae_total_ap3 = df["AP3 total error"].abs().mean()
+        print(f"MAE AP3 Total: {mae_total_ap3:.4f} kJ/mol")
+        mae_total_ap2 = df["AP2 total error"].abs().mean()
+        print(f"MAE AP2 Total: {mae_total_ap2:.4f} kJ/mol")
+        print(
+            df[
+                [
+                    "AP3 total error",
+                    "AP2 total error",
+                ]
+            ].describe()
+        )
+    return df
+
+
+def ap2_ap3_df_energies_des370k_tl(v='bm', generate=False, N=100):
+    # NOTE: pkl_fn uses _des_, so ensure that other AP energies are already in that df
+    mol_str = "mol " + v
+    pkl_fn = f"crystals_ap2_ap3_des_results_{mol_str.replace(' ', '_')}.pkl"
+    if not os.path.exists(pkl_fn) or generate:
+        df = pd.read_pickle(f"crystals_ap2_ap3_des_results_{mol_str.replace(' ', '_')}.pkl")
+        df = df.dropna(subset=[mol_str])
+        print("AP2 start")
+        mols = df[mol_str].tolist()
+        pred_ap2 = ap2_energies(
+            mols,
+            pretrained_ap2_path=f"./sft_models/ap2_des370k_{N}.pt",
+            data_dir="data_des370k",
+            compile=False,
+        )
+        pred_ap2 *= kcalmol_to_kjmol
+        df[f"AP2-des-tl{N} TOTAL"] = np.sum(pred_ap2[:, 0:4], axis=1)
+        df[f"AP2-des-tl{N} ELST"] = pred_ap2[:, 0]
+        df[f"AP2-des-tl{N} EXCH"] = pred_ap2[:, 1]
+        df[f"AP2-des-tl{N} INDU"] = pred_ap2[:, 2]
+        df[f"AP2-des-tl{N} DISP"] = pred_ap2[:, 3]
+        df.to_pickle(pkl_fn)
+        print("AP3 start")
+        pred_ap3, pair_elst, pair_ind = ap3_d_elst_classical_energies(
+            mols,
+            pretrained_ap3_path=f"./sft_models/ap3_des370k_{N}.pt",
+            data_dir="data_des370k",
+        )
+        pred_ap3 *= kcalmol_to_kjmol
+        elst_energies = [np.sum(e) * kcalmol_to_kjmol for e in pair_elst]
+        ind_energies = [np.sum(e) * kcalmol_to_kjmol for e in pair_ind]
+        # df["mtp_elst_energies"] = elst_undamped
+        df[f"ap3_d_elst-des-tl{N}"] = elst_energies
+        df[f"ap3_classical_ind_energy-des-tl{N}"] = ind_energies
+        df[f"AP3-des-tl{N} TOTAL"] = np.sum(pred_ap3[:, 0:4], axis=1)
+        df[f"AP3-des-tl{N} ELST"] = pred_ap3[:, 0]
+        df[f"AP3-des-tl{N} EXCH"] = pred_ap3[:, 1]
+        df[f"AP3-des-tl{N} INDU"] = pred_ap3[:, 2]
+        df[f"AP3-des-tl{N} DISP"] = pred_ap3[:, 3]
+        # LE
+        df[f"ap3-des-tl{N}_le_contribution"] = df.apply(
+            lambda r: r[f"AP3-des-tl{N} TOTAL"]
+            * r["Num. Rep. (#) sapt0-dz-aug"]
+            / int(r[f"N-mer Name {v}"][0]),
+            axis=1,
+        )
+        df[f"ap2-des-tl{N}_le_contribution"] = df.apply(
+            lambda r: r[f"AP2-des-tl{N} TOTAL"]
+            * r["Num. Rep. (#) sapt0-dz-aug"]
+            / int(r[f"N-mer Name {v}"][0]),
+            axis=1,
+        )
+        df.to_pickle(pkl_fn)
+    else:
+        df = pd.read_pickle(pkl_fn)
+
+    if v == "apprx":
+        pp(df.columns.tolist())
+        print("\nResults\n")
+        df["AP3 total error"] = (
+            df["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"] - df[f"AP3-des-tl{N} TOTAL"]
+        )
+        df["AP2 total error"] = (
+            df["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"] - df[f"AP2-des-tl{N} TOTAL"]
         )
         mae_total_ap3 = df["AP3 total error"].abs().mean()
         print(f"MAE AP3 Total: {mae_total_ap3:.4f} kJ/mol")
@@ -2075,7 +2159,7 @@ def plot_crystal_lattice_energies_with_switchover(switchover=2.5):
     return fig, axes
 
 
-def plot_crystal_lattice_energies_with_N(N=1, sft=False):
+def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100):
     """
     For each crystal, plot rolling sum of CLE energy errors from all points
     above X. Creates subplots showing AP2/AP3
@@ -2094,12 +2178,15 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
     if sft:
         df_apprx = pd.read_pickle("./sft_crystals_ap2_ap3_results_mol_apprx.pkl")
         df_bm = pd.read_pickle("./sft_crystals_ap2_ap3_results_mol_bm.pkl")
+        # df_bm = pd.read_pickle("./sft_crystals_ap2_ap3_des_results_mol_bm.pkl")
         output_path = f"./x23_plots/CLE_all_crystals_N{N}_sft.png"
         output_violin_apprx = f"./x23_plots/N{N}_ap2_ap3_errors_vs_sapt0_sft.png"
         output_violin_bm = f"./x23_plots/N{N}_ap2_ap3_errors_vs_ccsdt_cbs_sft.png"
     else:
-        df_apprx = pd.read_pickle("./crystals_ap2_ap3_results_mol_apprx.pkl")
-        df_bm = pd.read_pickle("./crystals_ap2_ap3_results_mol_bm.pkl")
+        # df_apprx = pd.read_pickle("./crystals_ap2_ap3_results_mol_apprx.pkl")
+        # df_bm = pd.read_pickle("./crystals_ap2_ap3_results_mol_bm.pkl")
+        df_apprx = pd.read_pickle("./crystals_ap2_ap3_des_results_mol_apprx.pkl")
+        df_bm = pd.read_pickle("./crystals_ap2_ap3_des_results_mol_bm.pkl")
         output_path = f"./x23_plots/CLE_all_crystals_N{N}.png"
         output_violin_apprx = f"./x23_plots/N{N}_ap2_ap3_errors_vs_sapt0.png"
         output_violin_bm = f"./x23_plots/N{N}_ap2_ap3_errors_vs_ccsdt_cbs.png"
@@ -2159,11 +2246,15 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
 
     ap2_full_cle_errors_sapt0_aDZ = []
     ap3_full_cle_errors_sapt0_aDZ = []
+    ap2_des_full_cle_errors_sapt0_aDZ = []
+    ap3_des_full_cle_errors_sapt0_aDZ = []
     uma_s_full_cle_errors_sapt0_aDZ = []
     uma_s_ap3lr_full_cle_errors_sapt0_aDZ = []
     uma_m_full_cle_errors_sapt0_aDZ = []
     ap2_full_cle_errors_ccsd_t_CBS = []
     ap3_full_cle_errors_ccsd_t_CBS = []
+    ap2_des_full_cle_errors_ccsd_t_CBS = []
+    ap3_des_full_cle_errors_ccsd_t_CBS = []
     uma_s_full_cle_errors_ccsd_t_CBS = []
     uma_s_ap3lr_full_cle_errors_ccsd_t_CBS = []
     uma_m_full_cle_errors_ccsd_t_CBS = []
@@ -2203,6 +2294,18 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                     else 0,
                     axis=1,
                 )
+                df_c["ap2_des_cle"] = df_c.apply(
+                    lambda r: r[f"AP2-des-tl{tl_N} TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col])
+                    else 0,
+                    axis=1,
+                )
+                df_c["ap3_des_cle"] = df_c.apply(
+                    lambda r: r[f"AP3-des-tl{tl_N} TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col])
+                    else 0,
+                    axis=1,
+                )
                 df_c['uma-s-1p1_cle'] = df_c.apply(
                     lambda r: r["uma-s-1p1 IE (kJ/mol)"] * r[num_rep_col] / int(r[nmer_col][0])
                     if pd.notnull(r[nmer_col]) and "uma-s-1p1 IE (kJ/mol)" in r
@@ -2234,6 +2337,8 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                 uma_s_ap3lr_2b_energies = []
                 uma_m_2b_energies = []
                 ref_2b_energies = []
+                ap2_des_2b_energies = []
+                ap3_des_2b_energies = []
                 df_c = df_c.sort_values(by=mms_col, ascending=True)
                 df_c_N = df_c.iloc[:N]
                 df_c_above = df_c.iloc[N:]
@@ -2245,6 +2350,12 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
 
                     ap3_above = df_c_above[df_c_above[mms_col] < d]["ap3_cle"].sum()
                     ap3_hybrid_total = ap3_above + ref_N
+
+                    ap2_des_above = df_c_above[df_c_above[mms_col] < d]["ap2_des_cle"].sum()
+                    ap2_des_hybrid_total = ap2_des_above + ref_N
+
+                    ap3_des_above = df_c_above[df_c_above[mms_col] < d]["ap3_des_cle"].sum()
+                    ap3_des_hybrid_total = ap3_des_above + ref_N
 
                     uma_s_above = df_c_above[df_c_above[mms_col] < d]["uma-s-1p1_cle"].sum()
                     uma_s_hybrid_total = uma_s_above + ref_N
@@ -2264,6 +2375,8 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                         uma_s_2b_energies.append(uma_s_hybrid_total)
                         uma_s_ap3lr_2b_energies.append(uma_s_ap3lr_hybrid_total)
                         uma_m_2b_energies.append(uma_m_hybrid_total)
+                        ap2_des_2b_energies.append(ap2_des_hybrid_total)
+                        ap3_des_2b_energies.append(ap3_des_hybrid_total)
                     ref_2b_energies.append(ref_below)
 
                 # Plot
@@ -2315,6 +2428,24 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                         alpha=0.8,
                     )
                     ax_apprx.plot(
+                        ml_sep_distances,
+                        ap2_des_2b_energies,
+                        "o-",
+                        label=f"AP2-DES{tl_N}",
+                        markersize=4,
+                        linewidth=1.5,
+                        alpha=0.8,
+                    )
+                    ax_apprx.plot(
+                        ml_sep_distances,
+                        ap3_des_2b_energies,
+                        "s-",
+                        label=f"AP3-DES{tl_N}",
+                        markersize=4,
+                        linewidth=1.5,
+                        alpha=0.8,
+                    )
+                    ax_apprx.plot(
                         sep_distances,
                         ref_2b_energies,
                         "-",
@@ -2352,6 +2483,12 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                     uma_s_ap3lr_full_cle_errors_sapt0_aDZ.append(
                         uma_s_ap3lr_2b_energies[-1] - ref_2b_energies[-1]
                     )
+                    ap2_des_full_cle_errors_sapt0_aDZ.append(
+                        ap2_des_2b_energies[-1] - ref_2b_energies[-1]
+                    )
+                    ap3_des_full_cle_errors_sapt0_aDZ.append(
+                        ap3_des_2b_energies[-1] - ref_2b_energies[-1]
+                    )
                 # ax_apprx.set_ylim(-5, 5)
 
         # Right plot: bm (vs CCSD(T)/CBS)
@@ -2386,6 +2523,18 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                     else 0,
                     axis=1,
                 )
+                df_c["ap2_des_cle"] = df_c.apply(
+                    lambda r: r[f"AP2-des-tl{tl_N} TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col])
+                    else 0,
+                    axis=1,
+                )
+                df_c["ap3_des_cle"] = df_c.apply(
+                    lambda r: r[f"AP3-des-tl{tl_N} TOTAL"] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col])
+                    else 0,
+                    axis=1,
+                )
                 df_c['uma-s-1p1_cle'] = df_c.apply(
                     lambda r: r["uma-s-1p1 IE (kJ/mol)"] * r[num_rep_col] / int(r[nmer_col][0])
                     if pd.notnull(r[nmer_col]) and "uma-s-1p1 IE (kJ/mol)" in r
@@ -2404,6 +2553,12 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                     else 0,
                     axis=1,
                 )
+                # Determine relevant sep_distances per crystal starting point based on ref_cle non-zero
+                for d in sep_distances_full:
+                    ref_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
+                    if ref_below != 0.0:
+                        sep_distances = np.arange(d, sep_distances_full[-1], increment)
+                        break
 
                 ap2_2b_energies = []
                 ap3_2b_energies = []
@@ -2411,6 +2566,8 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                 uma_s_ap3lr_2b_energies = []
                 uma_m_2b_energies = []
                 ref_2b_energies = []
+                ap2_des_2b_energies = []
+                ap3_des_2b_energies = []
                 df_c = df_c.sort_values(by=mms_col, ascending=True)
                 df_c_N = df_c.iloc[:N]
                 df_c_above = df_c.iloc[N:]
@@ -2422,6 +2579,12 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
 
                     ap3_above = df_c_above[df_c_above[mms_col] < d]["ap3_cle"].sum()
                     ap3_hybrid_total = ap3_above + ref_N
+
+                    ap2_des_above = df_c_above[df_c_above[mms_col] < d]["ap2_des_cle"].sum()
+                    ap2_des_hybrid_total = ap2_des_above + ref_N
+
+                    ap3_des_above = df_c_above[df_c_above[mms_col] < d]["ap3_des_cle"].sum()
+                    ap3_des_hybrid_total = ap3_des_above + ref_N
 
                     uma_s_above = df_c_above[df_c_above[mms_col] < d]["uma-s-1p1_cle"].sum()
                     uma_s_hybrid_total = uma_s_above + ref_N
@@ -2441,6 +2604,8 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                         uma_s_2b_energies.append(uma_s_hybrid_total)
                         uma_s_ap3lr_2b_energies.append(uma_s_ap3lr_hybrid_total)
                         uma_m_2b_energies.append(uma_m_hybrid_total)
+                        ap2_des_2b_energies.append(ap2_des_hybrid_total)
+                        ap3_des_2b_energies.append(ap3_des_hybrid_total)
                     ref_2b_energies.append(ref_below)
 
                 # Plot
@@ -2491,6 +2656,24 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                         alpha=0.8,
                     )
                     ax_bm.plot(
+                        ml_sep_distances,
+                        ap2_des_2b_energies,
+                        "o-",
+                        label=f"AP2-DES{tl_N}",
+                        markersize=4,
+                        linewidth=1.5,
+                        alpha=0.8,
+                    )
+                    ax_bm.plot(
+                        ml_sep_distances,
+                        ap3_des_2b_energies,
+                        "s-",
+                        label=f"AP3-DES{tl_N}",
+                        markersize=4,
+                        linewidth=1.5,
+                        alpha=0.8,
+                    )
+                    ax_bm.plot(
                         sep_distances,
                         ref_2b_energies,
                         "k-",
@@ -2528,6 +2711,12 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
                     )
                     uma_s_ap3lr_full_cle_errors_ccsd_t_CBS.append(
                         uma_s_ap3lr_2b_energies[-1] - ref_2b_energies[-1]
+                    )
+                    ap2_des_full_cle_errors_ccsd_t_CBS.append(
+                        ap2_des_2b_energies[-1] - ref_2b_energies[-1]
+                    )
+                    ap3_des_full_cle_errors_ccsd_t_CBS.append(
+                        ap3_des_2b_energies[-1] - ref_2b_energies[-1]
                     )
                     # difference between uma_s and uma_s_ap3lr
                     print(f"{crystal:19s} bm|UMA-s: {uma_s_2b_energies[-1]:.4f}, UMA-s+AP3-LR: {uma_s_ap3lr_2b_energies[-1]:.4f}, diff: {uma_s_2b_energies[-1]-uma_s_ap3lr_2b_energies[-1]:.8f}, ref: {ref_2b_energies[-1]:.4f} kJ/mol")
@@ -2589,6 +2778,8 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
         {
             "AP2 vs SAPT0 error": ap2_full_cle_errors_sapt0_aDZ,
             "AP3 vs SAPT0 error": ap3_full_cle_errors_sapt0_aDZ,
+            f"AP2-DES-tl{tl_N} vs SAPT0 error": ap2_des_full_cle_errors_sapt0_aDZ,
+            f"AP3-DES-tl{tl_N} vs SAPT0 error": ap3_des_full_cle_errors_sapt0_aDZ,
             "UMA-s vs SAPT0 error": uma_s_full_cle_errors_sapt0_aDZ,
             "UMA-m vs SAPT0 error": uma_m_full_cle_errors_sapt0_aDZ,
             "UMA-s+AP3-LR vs SAPT0 error": uma_s_ap3lr_full_cle_errors_sapt0_aDZ,
@@ -2609,6 +2800,8 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
     df1_labels = {
         "AP2": "AP2 vs SAPT0 error",
         "AP3": "AP3 vs SAPT0 error",
+        f"AP2-DES-tl{tl_N}": f"AP2-DES-tl{tl_N} vs SAPT0 error",
+        f"AP3-DES-tl{tl_N}": f"AP3-DES-tl{tl_N} vs SAPT0 error",
         "UMA-s": "UMA-s vs SAPT0 error",
         "UMA-m": "UMA-m vs SAPT0 error",
         "UMA-s+AP3-LR": "UMA-s+AP3-LR vs SAPT0 error",
@@ -2629,6 +2822,8 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
         {
             "AP2 vs CCSD(T)/CBS error": ap2_full_cle_errors_ccsd_t_CBS,
             "AP3 vs CCSD(T)/CBS error": ap3_full_cle_errors_ccsd_t_CBS,
+            f"AP2-DES-tl{tl_N} vs CCSD(T)/CBS error": ap2_des_full_cle_errors_ccsd_t_CBS,
+            f"AP3-DES-tl{tl_N} vs CCSD(T)/CBS error": ap3_des_full_cle_errors_ccsd_t_CBS,
             "UMA-s vs CCSD(T)/CBS error": uma_s_full_cle_errors_ccsd_t_CBS,
             "UMA-m vs CCSD(T)/CBS error": uma_m_full_cle_errors_ccsd_t_CBS,
             "UMA-s+AP3-LR vs CCSD(T)/CBS error": uma_s_ap3lr_full_cle_errors_ccsd_t_CBS,
@@ -2649,6 +2844,8 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False):
     df2_labels = {
         "AP2": "AP2 vs CCSD(T)/CBS error",
         "AP3": "AP3 vs CCSD(T)/CBS error",
+        f"AP2-DES-tl{tl_N}": f"AP2-DES-tl{tl_N} vs CCSD(T)/CBS error",
+        f"AP3-DES-tl{tl_N}": f"AP3-DES-tl{tl_N} vs CCSD(T)/CBS error",
         "UMA-s": "UMA-s vs CCSD(T)/CBS error",
         "UMA-m": "UMA-m vs CCSD(T)/CBS error",
         "UMA-s+AP3-LR": "UMA-s+AP3-LR vs CCSD(T)/CBS error",
@@ -2694,17 +2891,23 @@ def main():
     # plot_crystal_lattice_energies_with_switchover(2.9)
 
     # GENERATE DATAFRAMES
-    ap2_ap3_df_energies_sft(
-        generate=True,
-        v='apprx'
-    )
-    ap2_ap3_df_energies_sft(
-        generate=True,
-        v='bm'
-    )
+    # ap2_ap3_df_energies_sft(
+    #     generate=True,
+    #     v='apprx'
+          # N=10,
+    # )
+    # ap2_ap3_df_energies_sft(
+    #     generate=True,
+    #     v='bm'
+          # N=10,
+    # )
     # plot_crystal_lattice_energies(sft=False)
     # plot_crystal_lattice_energies(sft=True)
-    plot_crystal_lattice_energies_with_N(10, sft=True)
+
+    # ap2_ap3_df_energies_des370k_tl(N=100)
+    # ap2_ap3_df_energies_des370k_tl(v='apprx', N=100)
+
+    plot_crystal_lattice_energies_with_N(0, sft=False)
     # plot_crystal_lattice_energies_with_N(5, sft=False)
     return
 
