@@ -34,13 +34,16 @@ def ap2_energies(
 
     if os.path.exists(data_dir):
         shutil.rmtree(data_dir)
+    pre_trained_model_path=f"./sft_models/ap2_des370k_{len(finetune_mols)}.pt"
+    if not os.path.exists(pre_trained_model_path):
+        pre_trained_model_path=f"{qcml_model_dir}/ap2-fused_ensemble/ap2_1.pt"
 
     ap2 = apnet_pt.AtomPairwiseModels.apnet2_fused.APNet2_AM_Model(
         ds_root=data_dir,
         atom_model=apnet_pt.AtomModels.ap2_atom_model.AtomModel(
             pre_trained_model_path=f"{qcml_model_dir}/am_ensemble/am_1.pt",
         ).model,
-        pre_trained_model_path=f"{qcml_model_dir}/ap2-fused_ensemble/ap2_1.pt",
+        pre_trained_model_path=pre_trained_model_path,
         ds_qcel_molecules=ds_qcel_molecules,
         ds_energy_labels=ds_energy_labels,
         ds_spec_type=None,
@@ -169,7 +172,10 @@ def main():
             finetune_labels = df["ref"].to_list()
             print(finetune_mols[0].to_string("psi4"))
         else:
-            df_sample = df.sample(n=n, random_state=42).reset_index(drop=True)
+            random_state = 42
+            if n==100:
+                random_state = 38
+            df_sample = df.sample(n=n, random_state=random_state).reset_index(drop=True)
             finetune_mols = df_sample["qcel_mol"].to_list()
             finetune_labels = df_sample["ref"].to_list()
         ap2_energies(
@@ -218,7 +224,7 @@ def run_finetuning(n_samples, model_type, sft_n_epochs, sft_lr):
             compile=False,
             finetune_mols=finetune_mols,
             finetune_labels=finetune_labels,
-            data_dir=data_dir,
+            data_dir=data_dir + "_ap2",
             sft_n_epochs=sft_n_epochs,
             sft_lr=sft_lr,
         )
@@ -230,7 +236,7 @@ def run_finetuning(n_samples, model_type, sft_n_epochs, sft_lr):
         ap3_d_elst_classical_energies(
             finetune_mols=finetune_mols,
             finetune_labels=finetune_labels,
-            data_dir=data_dir,
+            data_dir=data_dir + "_ap3",
             sft_n_epochs=sft_n_epochs,
             sft_lr=sft_lr,
         )
