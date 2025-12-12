@@ -3199,7 +3199,7 @@ def main():
     #     ap2_ap3_df_energies_des370k_tl(v='bm', N=tl_N)
     #     ap2_ap3_df_energies_des370k_tl(v='apprx', N=tl_N)
     # plot_crystal_violin_errors(0, sft=False, tl_N=1000)
-    plot_crystal_lattice_energies_with_N(0, sft=False, tl_N=1000)
+    plot_crystal_lattice_energies_with_N(0, sft=False, tl_N=100)
     # plot_crystal_lattice_energies_with_N(5, sft=False)
     return
 
