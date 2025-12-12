@@ -194,3 +194,4 @@ DES370K.csv
 *.sbatch
 data_dir*
 tmp.py
+.nfs*
