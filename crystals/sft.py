@@ -52,8 +52,6 @@ def ap2_energies(
     if compile:
         ap2.compile_model()
     if finetune:
-        print(ds_qcel_molecules)
-        print(ds_energy_labels)
         # ap2.freeze_parameters_except_readouts()
         ap2.train(
             n_epochs=sft_n_epochs,
