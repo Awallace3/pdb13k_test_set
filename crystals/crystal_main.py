@@ -18,6 +18,7 @@ import shutil
 qcml_model_dir = os.path.expanduser("~/gits/qcmlforge/models")
 
 kcalmol_to_kjmol = qcel.constants.conversion_factor("kcal/mol", "kJ/mol")
+ha_to_kjmol = qcel.constants.conversion_factor("hartree", "kJ/mol")
 
 sft_n_epochs = 300
 sft_lr = 5e-5
@@ -2188,6 +2189,9 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100):
         output_violin_apprx = f"./x23_plots/N{N}_ap2_ap3_errors_vs_sapt0.png"
         output_violin_bm = f"./x23_plots/N{N}_ap2_ap3_errors_vs_ccsdt_cbs.png"
 
+    df_bm["d4_s IE (kJ/mol)"] *= ha_to_kjmol
+    df_apprx["d4_s IE (kJ/mol)"] *= ha_to_kjmol
+
     for i in ["uma-s-1p1", "uma-m-1p1"]:
         df_uma_bm = pd.read_pickle(f"./crystals_ap2_ap3_results_{i}_mol_bm.pkl")
         df_bm[f"{i} IE (kJ/mol)"] = df_uma_bm[f"{i} IE (kJ/mol)"]
@@ -2199,9 +2203,10 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100):
         uma_ap3_lr = []
         df_bm.sort_values(by="Minimum Monomer Separations (A) CCSD(T)/CBS", inplace=True)
         for n, r in df_bm.iterrows():
-            if r['Minimum Monomer Separations (A) CCSD(T)/CBS'] > 6.0:
-            # if r[f"{i} IE (kJ/mol)"] == 0.0:
-                val = r["ap3_d_elst"] + r["ap3_classical_ind_energy"]
+            # if r['Minimum Monomer Separations (A) CCSD(T)/CBS'] > 6.0:
+            if r[f"{i} IE (kJ/mol)"] == 0.0:
+                # val = r["ap3_d_elst"] + r["ap3_classical_ind_energy"]
+                val = r["ap3_d_elst"] + r["ap3_classical_ind_energy"] + r["d4_s IE (kJ/mol)"]
                 uma_ap3_lr.append(val)
             else:
                 uma_ap3_lr.append(r[f"{i} IE (kJ/mol)"])
@@ -2210,13 +2215,14 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100):
         pd.set_option('display.float_format', '{:.4f}'.format)
         df_bm['d'] = df_bm["Minimum Monomer Separations (A) CCSD(T)/CBS"]
         df_bm['ref'] = df_bm["Non-Additive MB Energy (kJ/mol) CCSD(T)/CBS"]
-        print(df_bm[['crystal bm', 'd', 'ref', f"{i} IE (kJ/mol)", "ap3_d_elst", "ap3_classical_ind_energy"]])
+        # print(df_bm[['crystal bm', 'd', 'ref', f"{i} IE (kJ/mol)", "ap3_d_elst", "ap3_classical_ind_energy"]])
+        print(df_bm[['crystal bm', 'd', 'ref', f"{i} IE (kJ/mol)", "ap3_d_elst", "d4_s IE (kJ/mol)"]])
         df_bm[f"{i}+ap3_lr IE (kJ/mol)"] = uma_ap3_lr
         uma_ap3_lr = []
         for n, r in df_apprx.iterrows():
-            # if r[f"{i} IE (kJ/mol)"] == 0.0:
-            if r['Minimum Monomer Separations (A) CCSD(T)/CBS'] > 6.0:
-                val = r["ap3_d_elst"] + r["ap3_classical_ind_energy"]
+            if r[f"{i} IE (kJ/mol)"] == 0.0:
+            # if r['Minimum Monomer Separations (A) CCSD(T)/CBS'] > 6.0:
+                val = r["ap3_d_elst"] + r["ap3_classical_ind_energy"] + r["d4_s IE (kJ/mol)"]
                 uma_ap3_lr.append(val)
             else:
                 uma_ap3_lr.append(r[f"{i} IE (kJ/mol)"])
