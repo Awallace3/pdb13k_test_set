@@ -243,6 +243,7 @@ def calc_dftd4_c6_for_d_a_b(
 
 
 def dftd4_df_c6s(generate=False, v="apprx", dftd4_type="d4_i"):
+    print(f"DFTD4 C6s for {v} - {dftd4_type}")
     # v = "bm"
     mol_str = "mol " + v
     pkl_fn = f"crystals_c6s_{dftd4_type}_{mol_str.replace(' ', '_')}.pkl"
@@ -268,7 +269,7 @@ def dftd4_df_c6s(generate=False, v="apprx", dftd4_type="d4_i"):
         ascii=True,
         bar_format="{l_bar}{bar:10}{r_bar}{bar:-10b}",
     ):
-        geom, pD, cD, ma, mb, charges = tools.mol_to_pos_carts_ma_mb(r[mol_str])
+        geom, pD, cD, ma, mb, charges = tools.mol_to_pos_carts_ma_mb(r[mol_str], units_angstroms=False)
         table["Geometry_bohr"].append(geom.copy())
         geom[:, 1:] *= ang_to_bohr
         table["Geometry"].append(geom)
@@ -290,6 +291,7 @@ def dftd4_df_c6s(generate=False, v="apprx", dftd4_type="d4_i"):
 
 
 def dftd4_df_energies_supermolecular(v="apprx"):
+    print(f"DFTD4 Energies Supermolecular for {v}")
     # v = "bm"
     dftd4_type = "d4_s"
     mol_str = "mol " + v
@@ -411,11 +413,11 @@ def merge_dftd4_results(v="apprx"):
 
 
 def main():
-    # df_d4 = dftd4_df_c6s(generate=True, v="apprx", dftd4_type="d4_i")
-    # df_d4 = dftd4_df_c6s(generate=True, v="bm", dftd4_type="d4_i")
-
-    # df_d4 = dftd4_df_energies_supermolecular(v="apprx")
-    # df_d4 = dftd4_df_energies_supermolecular(v="bm")
+    df_d4 = dftd4_df_c6s(generate=True, v="apprx", dftd4_type="d4_i")
+    df_d4 = dftd4_df_c6s(generate=True, v="bm", dftd4_type="d4_i")
+    df_d4 = dftd4_df_energies_supermolecular(v="apprx")
+    df_d4 = dftd4_df_energies_supermolecular(v="bm")
+    print("Merging results")
     df_merged = merge_dftd4_results('bm')
     df_merged = merge_dftd4_results('apprx')
 
