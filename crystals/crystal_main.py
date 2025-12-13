@@ -1185,7 +1185,7 @@ def plot_switchover_errors():
     pd.set_option('display.float_format', '{:.4f}'.format)
     df_bm['ap3+d4'] = df_bm['AP3 TOTAL'] + df_bm["d4_s IE (kJ/mol)"] - df_bm['AP3 DISP']
     df_apprx['ap3+d4'] = df_apprx['AP3 TOTAL'] + df_apprx["d4_s IE (kJ/mol)"] - df_apprx['AP3 DISP']
-    print(df_apprx[['crystal apprx', 'd', "d4_s IE (kJ/mol)", 'AP3 DISP']])
+    # print(df_apprx[['crystal apprx', 'd', "d4_s IE (kJ/mol)", 'AP3 DISP']])
 
 
     # Get unique crystals

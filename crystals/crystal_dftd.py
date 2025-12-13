@@ -216,8 +216,8 @@ def dftd4_df_energies_supermolecular(v="apprx"):
     mol_str = "mol " + v
     pkl_fn = f"crystals_c6s_d4_i_{mol_str.replace(' ', '_')}.pkl"
     df = pd.read_pickle(pkl_fn)
-    # params = np.array([1.0, 0.829861, 0.706055, 1.123903], dtype=np.float64)
-    params = np.array([1.0, 1.61679827, 0.44959224, 3.35743605], dtype=np.float64)
+    params = np.array([1.0, 0.829861, 0.706055, 1.123903], dtype=np.float64)
+    # params = np.array([1.0, 1.61679827, 0.44959224, 3.35743605], dtype=np.float64)
     def interaction_energy(mol, c6s, c6s_A, c6s_B):
         geom, pD, cD, ma, mb, charges = tools.mol_to_pos_carts_ma_mb(
             mol, units_angstroms=False
