@@ -195,3 +195,8 @@ DES370K.csv
 data_dir*
 tmp.py
 .nfs*
+
+C_n.json
+C_n_ATM.json
+pairs.json
+.EDISP
