@@ -1,5 +1,4 @@
 import qcelemental as qcel
-from ase import Atoms
 import os
 import pandas as pd
 import numpy as np
