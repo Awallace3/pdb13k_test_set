@@ -8,10 +8,12 @@ import subprocess
 import json
 from qm_tools_aw import tools
 import pydispersion
+from pprint import pprint as pp
 
 eV_to_kcalmol = qcel.constants.conversion_factor("eV", "kcal/mol")
 eV_to_kJmol = qcel.constants.conversion_factor("eV", "kJ/mol")
 kcalmol_to_kjmol = qcel.constants.conversion_factor("kcal/mol", "kJ/mol")
+ha_to_kjmol = qcel.constants.conversion_factor("hartree", "kJ/mol")
 
 crystal_names_all = [
     "14-cyclohexanedione",
@@ -93,7 +95,7 @@ def calc_dftd4_c6_c8_pairDisp2(
         str(charges[0]),
         "--pair-resolved",
     ]
-    # print(" ".join(args))
+    print(" ".join(args))
     v = subprocess.call(
         args=args,
         shell=False,
@@ -115,7 +117,7 @@ def calc_dftd4_c6_c8_pairDisp2(
     # os.remove(input_xyz)
     # os.remove("C_n.json")
     # os.remove("pairs.json")
-    os.remove(".EDISP")
+    # os.remove(".EDISP")
     if C6s_ATM:
         with open("C_n_ATM.json") as f:
             cs = json.load(f)
@@ -145,6 +147,7 @@ def calc_dftd4_c6_for_d_a_b(
         charges[1],
         p=p,
         dftd4_bin=dftd4_bin,
+        input_xyz="monA.xyz",
     )
     C6s_mB, _, _, _ = calc_dftd4_c6_c8_pairDisp2(
         pB,
@@ -152,6 +155,7 @@ def calc_dftd4_c6_for_d_a_b(
         charges[2],
         p=p,
         dftd4_bin=dftd4_bin,
+        input_xyz="monB.xyz",
     )
     C6s_dimer, _, _, df_c_e = calc_dftd4_c6_c8_pairDisp2(
         pD,
@@ -159,6 +163,7 @@ def calc_dftd4_c6_for_d_a_b(
         charges[0],
         p=p,
         dftd4_bin=dftd4_bin,
+        input_xyz="dimer.xyz",
     )
     return C6s_dimer, C6s_mA, C6s_mB
 
@@ -212,8 +217,8 @@ def dftd4_df_energies_supermolecular(v="apprx"):
     mol_str = "mol " + v
     pkl_fn = f"crystals_c6s_d4_i_{mol_str.replace(' ', '_')}.pkl"
     df = pd.read_pickle(pkl_fn)
-    params = np.array([1.0, 0.829861, 0.706055, 1.123903], dtype=np.float64)
-
+    # params = np.array([1.0, 0.829861, 0.706055, 1.123903], dtype=np.float64)
+    params = np.array([1.0, 1.61679827, 0.44959224, 3.35743605], dtype=np.float64)
     def interaction_energy(mol, c6s, c6s_A, c6s_B):
         geom, pD, cD, ma, mb, charges = tools.mol_to_pos_carts_ma_mb(
             mol, units_angstroms=False
@@ -259,7 +264,7 @@ def dftd4_df_energies_supermolecular(v="apprx"):
         df_c_a = df.loc[crystal_indices].copy()
         df_c_a.sort_values(by=mms_col, inplace=True)
         print(f"\nProcessing crystal: {n} {c} with {len(df_c_a)} entries")
-        uma_energies = []
+        dftd4_energies = []
         cnt = 0
         for i, row in df_c_a.iterrows():
             print(f"{cnt:4d} / {len(df_c_a):4d}, {time() - t1:.2f} seconds", end="\r")
@@ -269,26 +274,26 @@ def dftd4_df_energies_supermolecular(v="apprx"):
             c6s_A = row["C6_A"]
             c6s_B = row["C6_B"]
             int_energy, eAB, eA, eB = interaction_energy(mol, c6s, c6s_A, c6s_B)
-            uma_energies.append(
+            dftd4_energies.append(
                 {
                     "index": i,
-                    "int_energy": int_energy * kcalmol_to_kjmol,
-                    "eAB": eAB * kcalmol_to_kjmol,
-                    "eA": eA * kcalmol_to_kjmol,
-                    "eB": eB * kcalmol_to_kjmol,
+                    "int_energy": int_energy * ha_to_kjmol,
+                    "eAB": eAB * ha_to_kjmol,
+                    "eA": eA * ha_to_kjmol,
+                    "eB": eB * ha_to_kjmol,
                 }
             )
         df.loc[df_c_a.index, f"{dftd4_type} IE (kJ/mol)"] = [
-            ue["int_energy"] for ue in uma_energies
+            ue["int_energy"] for ue in dftd4_energies
         ]
         df.loc[df_c_a.index, f"{dftd4_type} dimer (kJ/mol)"] = [
-            ue["eAB"] for ue in uma_energies
+            ue["eAB"] for ue in dftd4_energies
         ]
         df.loc[df_c_a.index, f"{dftd4_type} monomer A (kJ/mol)"] = [
-            ue["eA"] for ue in uma_energies
+            ue["eA"] for ue in dftd4_energies
         ]
         df.loc[df_c_a.index, f"{dftd4_type} monomer B (kJ/mol)"] = [
-            ue["eB"] for ue in uma_energies
+            ue["eB"] for ue in dftd4_energies
         ]
         print(f"Completed crystal in {time() - t1:.2f} seconds")
 
@@ -311,6 +316,11 @@ def merge_dftd4_results(v="apprx"):
     pkl_fn_d4_i = f"crystals_c6s_d4_i_mol_{v}.pkl"
     df_d4_i = pd.read_pickle(pkl_fn_d4_i)
     # merge by index
+    df.drop(
+        ['d4_s IE (kJ/mol)', 'd4_s dimer (kJ/mol)', 'd4_s monomer A (kJ/mol)', 'd4_s monomer B (kJ/mol)', 'd4_s_le_contribution'],
+        axis=1,
+        inplace=True,
+    )
     df = df.join(
         df_d4_i[
             [
@@ -322,18 +332,24 @@ def merge_dftd4_results(v="apprx"):
             ]
         ],
     )
+    # pd print .4f 
+    print_options = pd.get_option("display.float_format")
+    pd.set_option("display.float_format", "{:.4f}".format)
+    df['d'] = df["Minimum Monomer Separations (A) sapt0-dz-aug"]
+    print(df[[f'crystal {v}', 'd', 'd4_s IE (kJ/mol)', 'AP3 DISP']])
+    print(df[['d', 'd4_s IE (kJ/mol)', 'AP3 DISP', 'd4_s dimer (kJ/mol)', 'd4_s monomer A (kJ/mol)', 'd4_s monomer B (kJ/mol)']])
     print(df)
     df.to_pickle(f"./crystals_ap2_ap3_des_results_mol_{v}.pkl")
     return df
 
 
 def main():
-    df_d4 = dftd4_df_c6s(generate=True, v="apprx", dftd4_type="d4_i")
+    # df_d4 = dftd4_df_c6s(generate=True, v="apprx", dftd4_type="d4_i")
     df_d4 = dftd4_df_energies_supermolecular(v="apprx")
     df_merged = merge_dftd4_results('apprx')
 
-    print("BM")
-    df_d4 = dftd4_df_c6s(generate=True, v="bm", dftd4_type="d4_i")
+    # print("BM")
+    # df_d4 = dftd4_df_c6s(generate=True, v="bm", dftd4_type="d4_i")
     df_d4 = dftd4_df_energies_supermolecular(v="bm")
     df_merged = merge_dftd4_results('bm')
 
