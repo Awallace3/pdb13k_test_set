@@ -3515,11 +3515,10 @@ def main():
     # for tl_N in [100, 1000, 10000]:
     #     ap2_ap3_df_energies_des370k_tl(v='bm', N=tl_N)
     #     ap2_ap3_df_energies_des370k_tl(v='apprx', N=tl_N)
-    # plot_crystal_lattice_energies_with_N(0, sft=False, tl_N=tl_N)
-    # plot_crystal_lattice_energies_with_N(0, sft=False, tl_N=tl_N)
-    # plot_crystal_lattice_energies_with_N(1, sft=False, tl_N=tl_N)
-    # plot_crystal_lattice_energies_with_N(5, sft=False, tl_N=tl_N)
-    # plot_crystal_lattice_energies_with_N(10, sft=False, tl_N=tl_N)
+    plot_crystal_lattice_energies_with_N(0, sft=False, tl_N=tl_N)
+    plot_crystal_lattice_energies_with_N(1, sft=False, tl_N=tl_N)
+    plot_crystal_lattice_energies_with_N(5, sft=False, tl_N=tl_N)
+    plot_crystal_lattice_energies_with_N(10, sft=False, tl_N=tl_N)
 
     plot_switchover_errors()
     return
