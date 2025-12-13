@@ -191,9 +191,9 @@ def calc_dftd4_c6_c8_pairDisp2(
         pairs = np.array(pairs["pairs2"])
     with open(".EDISP", "r") as f:
         e = float(f.read())
-    os.remove(input_xyz)
-    os.remove("C_n.json")
-    os.remove("pairs.json")
+    # os.remove(input_xyz)
+    # os.remove("C_n.json")
+    # os.remove("pairs.json")
     os.remove(".EDISP")
     if C6s_ATM:
         with open("C_n_ATM.json") as f:
