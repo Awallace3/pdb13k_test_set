@@ -3444,6 +3444,8 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
     ap3_d4_full_cle_errors_sapt0_aDZ = []
     ap3_des_d4_full_cle_errors_ccsd_t_CBS = []
     ap3_des_d4_full_cle_errors_sapt0_aDZ = []
+    opls_full_cle_errors_sapt0_aDZ = []
+    opls_full_cle_errors_ccsd_t_CBS = []
 
     # Process each crystal
     for idx, crystal in enumerate(all_crystals):
@@ -3528,6 +3530,12 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                     else 0,
                     axis=1,
                 )
+                df_c['opls_cle'] = df_c.apply(
+                    lambda r: r["OPLS Interaction Energy (kJ/mol)"] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col]) and "OPLS Interaction Energy (kJ/mol)" in r
+                    else 0,
+                    axis=1,
+                )
                 # Determine relevant sep_distances per crystal starting point based on ref_cle non-zero
                 for d in sep_distances_full:
                     ref_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
@@ -3546,6 +3554,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                 ref_2b_energies = []
                 ap2_des_2b_energies = []
                 ap3_des_2b_energies = []
+                opls_2b_energies = []
                 df_c = df_c.sort_values(by=mms_col, ascending=True)
                 df_c_N = df_c.iloc[:N]
                 df_c_above = df_c.iloc[N:]
@@ -3562,6 +3571,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                     uma_s_ap3lr_above = df_c_above[df_c_above[mms_col] < d]['uma-s-1p1+ap3_lr_cle'].sum()
                     uma_m_ap3lr_above = df_c_above[df_c_above[mms_col] < d]['uma-m-1p1+ap3_lr_cle'].sum()
                     uma_m_above = df_c_above[df_c_above[mms_col] < d]["uma-m-1p1_cle"].sum()
+                    opls_above = df_c_above[df_c_above[mms_col] < d]['opls_cle'].sum()
 
                     ref_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
 
@@ -3577,6 +3587,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                         ap3_des_2b_energies.append(ap3_des_above + ref_N)
                         ap3_d4_2b_energies.append(ap3_d4_above + ref_N)
                         ap3_des_d4_2b_energies.append(ap3_des_d4_above + ref_N)
+                        opls_2b_energies.append(opls_above + ref_N)
                     ref_2b_energies.append(ref_below)
 
                 # Plot
@@ -3605,6 +3616,16 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                         ap3_d4_2b_energies,
                         "s-",
                         label="AP3+D4",
+                        markersize=4,
+                        linewidth=1.5,
+                        alpha=0.8,
+                    )
+                    ax_apprx.plot(
+                        ml_sep_distances,
+                        opls_2b_energies,
+                        "d-",
+                        c='grey',
+                        label="OPLS",
                         markersize=4,
                         linewidth=1.5,
                         alpha=0.8,
@@ -3716,6 +3737,9 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                     ap3_des_d4_full_cle_errors_sapt0_aDZ.append(
                         ap3_des_d4_2b_energies[-1] - ref_2b_energies[-1]
                     )
+                    opls_full_cle_errors_sapt0_aDZ.append(
+                        opls_2b_energies[-1] - ref_2b_energies[-1]
+                    )
                 # ax_apprx.set_ylim(-5, 5)
 
         # Right plot: bm (vs CCSD(T)/CBS)
@@ -3798,6 +3822,12 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                     else 0,
                     axis=1,
                 )
+                df_c['opls_cle'] = df_c.apply(
+                    lambda r: r["OPLS Interaction Energy (kJ/mol)"] * r[num_rep_col] / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col]) and "OPLS Interaction Energy (kJ/mol)" in r
+                    else 0,
+                    axis=1,
+                )
                 # Determine relevant sep_distances per crystal starting point based on ref_cle non-zero
                 for d in sep_distances_full:
                     ref_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
@@ -3816,6 +3846,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                 ref_2b_energies = []
                 ap2_des_2b_energies = []
                 ap3_des_2b_energies = []
+                opls_2b_energies = []
                 df_c = df_c.sort_values(by=mms_col, ascending=True)
                 df_c_N = df_c.iloc[:N]
                 df_c_above = df_c.iloc[N:]
@@ -3832,6 +3863,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                     uma_s_ap3lr_above = df_c_above[df_c_above[mms_col] < d]['uma-s-1p1+ap3_lr_cle'].sum()
                     uma_m_ap3lr_above = df_c_above[df_c_above[mms_col] < d]['uma-m-1p1+ap3_lr_cle'].sum()
                     uma_m_above = df_c_above[df_c_above[mms_col] < d]["uma-m-1p1_cle"].sum()
+                    opls_above = df_c_above[df_c_above[mms_col] < d]['opls_cle'].sum()
 
                     ref_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
 
@@ -3847,7 +3879,9 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                         ap3_des_2b_energies.append(ap3_des_above + ref_N)
                         ap3_d4_2b_energies.append(ap3_d4_above + ref_N)
                         ap3_des_d4_2b_energies.append(ap3_des_d4_above + ref_N)
+                        opls_2b_energies.append(opls_above + ref_N)
                     ref_2b_energies.append(ref_below)
+
 
                 # Plot
                 if ref_2b_energies[-1] != 0.0:
@@ -3892,6 +3926,16 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                         ap3_d4_2b_energies,
                         "v-",
                         label=f"AP3+D4",
+                        markersize=4,
+                        linewidth=1.5,
+                        alpha=0.8,
+                    )
+                    ax_bm.plot(
+                        ml_sep_distances,
+                        opls_2b_energies,
+                        "d-",
+                        label="OPLS",
+                        c='grey',
                         markersize=4,
                         linewidth=1.5,
                         alpha=0.8,
@@ -3986,6 +4030,9 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                     ap3_des_d4_full_cle_errors_ccsd_t_CBS.append(
                         ap3_des_d4_2b_energies[-1] - ref_2b_energies[-1]
                     )
+                    opls_full_cle_errors_ccsd_t_CBS.append(
+                        opls_2b_energies[-1] - ref_2b_energies[-1]
+                    )
                     # difference between uma_s and uma_s_ap3lr
                     print(f"{crystal:19s} bm|UMA-s: {uma_s_2b_energies[-1]:.4f}, UMA-s+AP3-LR: {uma_s_ap3lr_2b_energies[-1]:.4f}, diff: {uma_s_2b_energies[-1]-uma_s_ap3lr_2b_energies[-1]:.8f}, ref: {ref_2b_energies[-1]:.4f} kJ/mol")
                 # ax_bm.set_ylim(-5, 5)
@@ -4054,6 +4101,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
             "UMA-m vs SAPT0 error": uma_m_full_cle_errors_sapt0_aDZ,
             "UMA-s+AP3-LR vs SAPT0 error": uma_s_ap3lr_full_cle_errors_sapt0_aDZ,
             "UMA-m+AP3-LR vs SAPT0 error": uma_m_ap3lr_full_cle_errors_sapt0_aDZ,
+            "OPLS vs SAPT0 error": opls_full_cle_errors_sapt0_aDZ,
         }
     )
 
@@ -4079,6 +4127,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
         "UMA-m": "UMA-m vs SAPT0 error",
         "UMA-s+AP3-LR": "UMA-s+AP3-LR vs SAPT0 error",
         "UMA-m+AP3-LR": "UMA-m+AP3-LR vs SAPT0 error",
+        "OPLS": "OPLS vs SAPT0 error",
     }
 
     method_cols = [
@@ -4104,6 +4153,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
             "UMA-m vs CCSD(T)/CBS error": uma_m_full_cle_errors_ccsd_t_CBS,
             "UMA-s+AP3-LR vs CCSD(T)/CBS error": uma_s_ap3lr_full_cle_errors_ccsd_t_CBS,
             "UMA-m+AP3-LR vs CCSD(T)/CBS error": uma_m_ap3lr_full_cle_errors_ccsd_t_CBS,
+            "OPLS vs CCSD(T)/CBS error": opls_full_cle_errors_ccsd_t_CBS,
         }
     )
 
@@ -4129,6 +4179,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
         "UMA-m": "UMA-m vs CCSD(T)/CBS error",
         "UMA-s+AP3-LR": "UMA-s+AP3-LR vs CCSD(T)/CBS error",
         "UMA-m+AP3-LR": "UMA-m+AP3-LR vs CCSD(T)/CBS error",
+        "OPLS": "OPLS vs CCSD(T)/CBS error",
     }
 
     # Create violin plot for df1
@@ -4484,14 +4535,14 @@ def main():
     #     ap2_ap3_df_energies_des370k_tl(v='bm', N=tl_N)
     #     ap2_ap3_df_energies_des370k_tl(v='apprx', N=tl_N)
     uma_cutoff = 3.8
-    plot_switchover_errors_reverse(uma_cutoff)
-    return
-    plot_switchover_errors(uma_cutoff)
     # return
     plot_crystal_lattice_energies_with_N(0, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff)
     plot_crystal_lattice_energies_with_N(1, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff)
     plot_crystal_lattice_energies_with_N(5, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff)
     plot_crystal_lattice_energies_with_N(10, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff)
+    return
+    plot_switchover_errors_reverse(uma_cutoff)
+    plot_switchover_errors(uma_cutoff)
 
     return
 

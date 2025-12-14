@@ -58,10 +58,74 @@ def generate_paramaters():
         ligpargen_cmd = f'''docker run --rm -v $(pwd)/{c_path}:/opt/output awallace43/ligpargen bash -c "ligpargen -s '{smiles}'"'''
         result = subprocess.run(ligpargen_cmd, shell=True)
         print(result)
+
+        openmm_pdb = f"{c_path}/mol_A.openmm.pdb"
+        debug_pdb = f"{c_path}/mol_A-debug.pdb"
+        merged_pdb = f"{c_path}/mol_A.openmm_merged.pdb"
+
+        if not os.path.exists(openmm_pdb):
+            print(f"Skipping {c}: {openmm_pdb} not found")
+            continue
+
+        if not os.path.exists(debug_pdb):
+            print(f"Skipping {c}: {debug_pdb} not found")
+            continue
+
+        try:
+            merge_pdb_files(openmm_pdb, debug_pdb, merged_pdb)
+            print(f"Created: {merged_pdb}")
+        except Exception as e:
+            print(f"Error processing {c}: {e}")
     return
 
 
-def create_openmm_system(xml_file, pdb_file):
+def merge_pdb_files(openmm_pdb, debug_pdb, output_pdb):
+    """
+    Merge atom types from openmm PDB with connectivity from debug PDB.
+
+    Parameters
+    ----------
+    openmm_pdb : str
+        Path to mol_A.openmm.pdb with correct atom types
+    debug_pdb : str
+        Path to mol_A-debug.pdb with CONECT records
+    output_pdb : str
+        Path to output merged PDB file
+
+    Returns
+    -------
+    output_pdb : str
+        Path to the merged PDB file
+    """
+    # Read atom lines from openmm PDB
+    with open(openmm_pdb, "r") as f:
+        openmm_lines = f.readlines()
+
+    # Read CONECT records from debug PDB
+    with open(debug_pdb, "r") as f:
+        debug_lines = f.readlines()
+
+    # Extract CONECT and END records
+    conect_lines = [line for line in debug_lines if line.startswith("CONECT")]
+    end_lines = [line for line in debug_lines if line.startswith("END")]
+
+    # Write merged file
+    with open(output_pdb, "w") as f:
+        # Write atom lines from openmm PDB
+        for line in openmm_lines:
+            if line.startswith(("ATOM", "HETATM")):
+                f.write(line)
+        # Write CONECT records from debug PDB
+        for line in conect_lines:
+            f.write(line)
+        # Write END record
+        for line in end_lines:
+            f.write(line)
+
+    return output_pdb
+
+
+def create_openmm_system(xml_file, pdb_file, residueTemplates=None):
     """
     Create OpenMM System from force field XML and PDB topology files.
 
@@ -71,6 +135,8 @@ def create_openmm_system(xml_file, pdb_file):
         Path to OpenMM force field XML file
     pdb_file : str
         Path to PDB file with topology
+    residueTemplates : str, optional
+        Which residue templates to use ('all', 'first', or None for default)
 
     Returns
     -------
@@ -88,9 +154,22 @@ def create_openmm_system(xml_file, pdb_file):
     pdb = app.PDBFile(pdb_file)
 
     # Create system with no cutoff for gas-phase calculations
-    system = forcefield.createSystem(
-        pdb.topology, nonbondedMethod=app.NoCutoff, constraints=None, rigidWater=False
-    )
+    try:
+        system = forcefield.createSystem(
+            pdb.topology,
+            nonbondedMethod=app.NoCutoff,
+            constraints=None,
+            rigidWater=False,
+            residueTemplates=residueTemplates,
+        )
+    except Exception as e:
+        # If residueTemplates doesn't work, try without it
+        system = forcefield.createSystem(
+            pdb.topology,
+            nonbondedMethod=app.NoCutoff,
+            constraints=None,
+            rigidWater=False,
+        )
 
     return system, pdb.topology, pdb.positions
 
@@ -131,7 +210,194 @@ def calculate_energy(system, positions):
     return energy
 
 
-def calculate_dimer_interaction_energy(qcel_mol, xml_file, pdb_file_dimer):
+def add_conect_from_xml(pdb_file, xml_file, output_pdb):
+    """
+    Add CONECT records to PDB based on bonds defined in XML force field.
+
+    Parameters
+    ----------
+    pdb_file : str
+        Input PDB file without CONECT records
+    xml_file : str
+        OpenMM XML force field with bond definitions
+    output_pdb : str
+        Output PDB file with CONECT records
+
+    Returns
+    -------
+    output_pdb : str
+        Path to output PDB file
+    """
+    import xml.etree.ElementTree as ET
+
+    # Parse XML to get bond information
+    tree = ET.parse(xml_file)
+    root = tree.getroot()
+
+    # Find bonds in residue template
+    bonds = []
+    for residue in root.findall(".//Residue[@name='MOL']"):
+        for bond in residue.findall("Bond"):
+            from_idx = int(bond.get("from"))
+            to_idx = int(bond.get("to"))
+            bonds.append((from_idx, to_idx))
+
+    # Read PDB file
+    with open(pdb_file, "r") as f:
+        pdb_lines = f.readlines()
+
+    # Write output with CONECT records
+    with open(output_pdb, "w") as f:
+        # Write atom records
+        for line in pdb_lines:
+            if line.startswith(("ATOM", "HETATM")):
+                f.write(line)
+
+        # Write CONECT records based on XML bonds
+        for from_idx, to_idx in bonds:
+            # PDB uses 1-based indexing
+            f.write(f"CONECT{from_idx + 1:5d}{to_idx + 1:5d}\n")
+
+        f.write("END\n")
+
+    return output_pdb
+
+
+def reorder_qcel_mol_to_match_pdb(qcel_mol, pdb_file, xml_file):
+    """
+    Reorder qcel_mol atoms to match PDB file atom ordering using topology matching.
+
+    This function uses graph isomorphism to match atoms based on their connectivity,
+    not just their element type. This is critical for molecules where atoms of the
+    same element have different bonding patterns (e.g., different carbons).
+
+    Parameters
+    ----------
+    qcel_mol : qcelemental.models.Molecule
+        QCElemental molecule to reorder
+    pdb_file : str
+        PDB file with reference atom ordering
+    xml_file : str
+        XML force field file with bond topology
+
+    Returns
+    -------
+    reordered_geom : ndarray
+        Geometry reordered to match PDB
+    """
+    import networkx as nx
+    from MDAnalysis import Universe
+    import tempfile
+
+    # Create graph from qcel_mol using MDAnalysis bond guessing
+    with tempfile.NamedTemporaryFile(suffix=".xyz", delete=True) as tmp:
+        qcel_mol.to_file(tmp.name, dtype="xyz")
+        u_qcel = Universe(tmp.name, format="xyz", to_guess=["bonds"])
+
+    G_qcel = nx.Graph()
+    for i, symbol in enumerate(qcel_mol.symbols):
+        G_qcel.add_node(i, symbol=symbol)
+    for bond in u_qcel.bonds:
+        i, j = bond.indices
+        G_qcel.add_edge(i, j)
+
+    # Create graph from PDB + XML bonds
+    pdb = app.PDBFile(pdb_file)
+    pdb_atoms = list(pdb.topology.atoms())
+    pdb_symbols = [atom.element.symbol for atom in pdb_atoms]
+
+    G_pdb = nx.Graph()
+    for i, symbol in enumerate(pdb_symbols):
+        G_pdb.add_node(i, symbol=symbol)
+
+    # Get bonds from XML
+    import xml.etree.ElementTree as ET
+
+    tree = ET.parse(xml_file)
+    root = tree.getroot()
+    for residue_el in root.find("Residues").findall("Residue"):
+        for bond_el in residue_el.findall("Bond"):
+            i = int(bond_el.get("from"))
+            j = int(bond_el.get("to"))
+            G_pdb.add_edge(i, j)
+
+    # Use graph isomorphism to find mapping
+    def node_match(n1, n2):
+        return n1["symbol"] == n2["symbol"]
+
+    GM = nx.isomorphism.GraphMatcher(G_pdb, G_qcel, node_match=node_match)
+    if not GM.is_isomorphic():
+        raise ValueError("Molecular graphs are not isomorphic!")
+
+    # Get mapping: pdb_idx -> qcel_idx
+    mapping = GM.mapping
+
+    # Create reordering: for each PDB position, get corresponding qcel geometry
+    import numpy as np
+
+    reorder_map = [mapping[i] for i in range(len(pdb_symbols))]
+    reordered_geom = qcel_mol.geometry[reorder_map]
+
+    return reordered_geom
+
+
+def create_dimer_system(qcel_mol, xml_file, monomer_pdb):
+    """
+    Create OpenMM System for a dimer using Modeller to combine monomers.
+
+    Parameters
+    ----------
+    qcel_mol : qcelemental.models.Molecule
+        QCElemental molecule with 2 fragments (dimer)
+    xml_file : str
+        Path to OpenMM force field XML file
+    monomer_pdb : str
+        Path to monomer PDB with correct atom types
+
+    Returns
+    -------
+    system : openmm.System
+        OpenMM System object for dimer
+    topology : openmm.app.Topology
+        Topology object for dimer
+    """
+    import tempfile
+    from openmm.app import Modeller
+
+    # Create monomer PDB with correct CONECT records from XML
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".pdb", delete=False) as tmp:
+        monomer_with_conect = tmp.name
+    add_conect_from_xml(monomer_pdb, xml_file, monomer_with_conect)
+
+    try:
+        # Load force field
+        forcefield = app.ForceField(xml_file)
+
+        # Load monomer PDB to get template topology
+        monomer_pdb_obj = app.PDBFile(monomer_with_conect)
+
+        # Create modeller with first monomer
+        modeller = Modeller(monomer_pdb_obj.topology, monomer_pdb_obj.positions)
+
+        # Add second monomer
+        modeller.add(monomer_pdb_obj.topology, monomer_pdb_obj.positions)
+
+        # Create system from combined topology
+        system = forcefield.createSystem(
+            modeller.topology,
+            nonbondedMethod=app.NoCutoff,
+            constraints=None,
+            rigidWater=False,
+        )
+
+        return system, modeller.topology
+    finally:
+        # Clean up temporary file
+        if os.path.exists(monomer_with_conect):
+            os.unlink(monomer_with_conect)
+
+
+def calculate_dimer_interaction_energy(qcel_mol, xml_file, monomer_pdb):
     """
     Calculate dimer interaction energy using OpenMM force field.
 
@@ -143,8 +409,8 @@ def calculate_dimer_interaction_energy(qcel_mol, xml_file, pdb_file_dimer):
         QCElemental molecule with 2 fragments (dimer)
     xml_file : str
         Path to OpenMM force field XML file
-    pdb_file_dimer : str
-        Path to PDB file with dimer topology
+    monomer_pdb : str
+        Path to PDB file with monomer topology and atom types
 
     Returns
     -------
@@ -159,40 +425,45 @@ def calculate_dimer_interaction_energy(qcel_mol, xml_file, pdb_file_dimer):
     geom_hash : str
         MD5 hash (first 8 chars) of geometry for verification
     """
+    import tempfile
+    import hashlib
+
     # Verify we have a dimer
     if len(qcel_mol.fragments) != 2:
         raise ValueError(f"Expected 2 fragments (dimer), got {len(qcel_mol.fragments)}")
 
-    # Create system for dimer
-    system_dimer, topology_dimer, positions_dimer = create_openmm_system(
-        xml_file, pdb_file_dimer
-    )
+    # Get monomer fragments
+    mol_mon1 = qcel_mol.get_fragment(0)
+    mol_mon2 = qcel_mol.get_fragment(1)
 
-    # Update dimer positions from qcel_mol geometry
+    # Create dimer system using monomer PDB (has PDB atom ordering)
+    system_dimer, topology_dimer = create_dimer_system(qcel_mol, xml_file, monomer_pdb)
+
+    # Reorder qcel_mol geometry to match PDB ordering using topology-aware matching
+    import numpy as np
+
     bohr_to_nm = qcel.constants.conversion_factor("bohr", "nm")
-    positions_dimer_from_qcel = qcel_mol.geometry * bohr_to_nm
+
+    reordered_geom_mon1 = reorder_qcel_mol_to_match_pdb(mol_mon1, monomer_pdb, xml_file)
+    reordered_geom_mon2 = reorder_qcel_mol_to_match_pdb(mol_mon2, monomer_pdb, xml_file)
+
+    # Concatenate to form dimer geometry in PDB ordering
+    reordered_dimer_geom = np.vstack([reordered_geom_mon1, reordered_geom_mon2])
+
+    positions_dimer_from_qcel = reordered_dimer_geom * bohr_to_nm
     positions_dimer_omm = [
         openmm.Vec3(x, y, z) * unit.nanometers for x, y, z in positions_dimer_from_qcel
     ]
 
     # Debug: Print geometry hash to verify it changes between dimers
-    import hashlib
-
     geom_hash = hashlib.md5(qcel_mol.geometry.tobytes()).hexdigest()[:8]
 
     # Calculate dimer energy with updated geometry
     e_dimer = calculate_energy(system_dimer, positions_dimer_omm)
 
-    # Extract monomer geometries from QCElemental molecule
-    # Positions need to be converted from Bohr to nanometers
-    bohr_to_nm = qcel.constants.conversion_factor("bohr", "nm")
-
-    # Get monomer 1 (fragment 0)
-    mol_mon1 = qcel_mol.get_fragment(0)
+    # For monomer energies, use ORIGINAL (unreordered) geometries
+    # because the temporary PDB files we create have qcel atom ordering
     positions_mon1 = mol_mon1.geometry * bohr_to_nm
-
-    # Get monomer 2 (fragment 1)
-    mol_mon2 = qcel_mol.get_fragment(1)
     positions_mon2 = mol_mon2.geometry * bohr_to_nm
 
     # Create PDB files for monomers (temporary)
@@ -252,7 +523,7 @@ def qcel_molecule_to_openmm_for_energy(qcel_mol, **kwargs):
     return xmlmd
 
 
-def run_ff_dimer(v='apprx'):
+def run_ff_dimer(v="apprx"):
     """
     Calculate OpenMM force field dimer interaction energies for crystal systems.
 
@@ -273,18 +544,23 @@ def run_ff_dimer(v='apprx'):
             if not os.path.exists(f"{c_path}/mol_A.openmm.pdb"):
                 print(f"Skipping crystal {c}, missing PDB file")
                 continue
-            df_c = df[df["crystal apprx"] == c]
+
+            # Use original OpenMM PDB - connectivity will be inferred from XML
+            pdb_file_to_use = f"{c_path}/mol_A.openmm.pdb"
+            print(f"Using PDB: {pdb_file_to_use}")
+
+            df_c = df[df[f"crystal {v}"] == c]
             print(f"Processing crystal: {c}, {len(df_c)} dimers")
             df_c = df_c.sort_values(by=mms_col, ascending=True)
             ies, e_dimers, e_mon1s, e_mon2s = [], [], [], []
             dimer_idx = 0
             for n, r in df_c.iterrows():
-                mol = r["mol apprx"]
+                mol = r[f"mol {v}"]
                 interaction_energy, e_dimer, e_mon1, e_mon2, geom_hash = (
                     calculate_dimer_interaction_energy(
                         mol,
                         xml_file=f"{c_path}/mol_A.openmm.xml",
-                        pdb_file_dimer=f"{c_path}/mol_A.openmm.pdb",
+                        monomer_pdb=pdb_file_to_use,
                     )
                 )
                 ies.append(interaction_energy)
@@ -298,7 +574,6 @@ def run_ff_dimer(v='apprx'):
                     f"E_dimer={e_dimer:12.6f}, E_mon1={e_mon1:12.6f}, "
                     f"E_mon2={e_mon2:12.6f}, MMS={r[mms_col]:.3f}"
                     f"E_SAPT0={r['Non-Additive MB Energy (kJ/mol) sapt0-dz-aug']:12.6f}"
-
                 )
                 dimer_idx += 1
 
@@ -321,13 +596,35 @@ def run_ff_dimer(v='apprx'):
         except Exception as e:
             print(f"Error processing crystal {c}: {e}")
             continue
+    if v == "apprx":
+        print(
+            df[
+                [
+                    f"crystal {v}",
+                    "OPLS Interaction Energy (kJ/mol)",
+                    "Non-Additive MB Energy (kJ/mol) sapt0-dz-aug",
+                ]
+            ]
+        )
+    # else:
+    #     print(
+    #         df[
+    #             [
+    #                 f"crystal {v}",
+    #                 "OPLS Interaction Energy (kJ/mol)",
+    #                 "Non-Additive MB Energy (kJ/mol) CCSD(T)/CBS",
+    #             ]
+    #         ]
+    #     )
+
     df.to_pickle(f"./crystals_ap2_ap3_des_results_mol_{v}.pkl")
     return
 
 
 def main():
     # generate_paramaters()
-    run_ff_dimer()
+    # run_ff_dimer(v='apprx')
+    run_ff_dimer(v='bm')
     return
 
 
