@@ -146,6 +146,7 @@ def ap3_d_elst_classical_energies(
         ds_qcel_molecules=ds_qcel_molecules,
         ds_energy_labels=ds_energy_labels,
         ds_datapoint_storage_n_objects=1,
+        as_atomic_batch_size=1,
         use_precomputed_classical=True,
     )
     if finetune:
