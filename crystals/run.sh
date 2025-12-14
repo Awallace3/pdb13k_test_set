@@ -1,4 +1,0 @@
-# python3 ./errors.py --APDC_plot --reference_analysis "CCSD(T)/CBS/CP"
-# python3 ./main.py > crystal.log & di
-# scancel 2686522 2686511 2686512 2686513 2686515 2686516 2686519 2686520 2684921 2684922 2684923 2684924 2684925 2684926 2684927 2684928 2684857 2684858
-python3 ./los2_sft.py -M ap2  #--inference
