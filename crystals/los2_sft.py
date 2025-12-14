@@ -146,6 +146,7 @@ def ap3_d_elst_classical_energies(
         ds_qcel_molecules=ds_qcel_molecules,
         ds_energy_labels=ds_energy_labels,
         ds_datapoint_storage_n_objects=1,
+        ds_atomic_batch_size=1,
     )
     if finetune:
         # ap3.freeze_parameters_except_readouts()
