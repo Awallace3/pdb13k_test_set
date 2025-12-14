@@ -1,4 +1,4 @@
-load dat.xyz
+load tmp.xyz
 
 color grey, elem c
 hide spheres,*
