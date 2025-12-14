@@ -191,10 +191,10 @@ def los2_training_sapt(M="ap2", n_epochs=50, lr=5e-4):
     for idx, row in df.iterrows():
         sapt_energy = np.array(
             [
-                row["SAPT2+3(CCD)DMP2 ELST ENERGY atqz"],
-                row["SAPT2+3(CCD)DMP2 EXCH ENERGY atqz"],
-                row["SAPT2+3(CCD)DMP2 IND ENERGY atqz"],
-                row["SAPT2+3(CCD)DMP2 DISP ENERGY atqz"],
+                row["SAPT2+3(CCD)DMP2 ELST ENERGY atz"],
+                row["SAPT2+3(CCD)DMP2 EXCH ENERGY atz"],
+                row["SAPT2+3(CCD)DMP2 IND ENERGY atz"],
+                row["SAPT2+3(CCD)DMP2 DISP ENERGY atz"],
             ]
         )
         finetune_labels.append(sapt_energy * ha_to_kcalmol)
