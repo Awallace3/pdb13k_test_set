@@ -2,7 +2,6 @@ import pandas as pd
 import qcelemental as qcel
 import subprocess
 from subprocess import check_output
-import numpy as np
 import os
 import openmm
 from openmm import app
@@ -157,6 +156,8 @@ def calculate_dimer_interaction_energy(qcel_mol, xml_file, pdb_file_dimer):
         Monomer 1 energy in kJ/mol
     e_mon2 : float
         Monomer 2 energy in kJ/mol
+    geom_hash : str
+        MD5 hash (first 8 chars) of geometry for verification
     """
     # Verify we have a dimer
     if len(qcel_mol.fragments) != 2:
@@ -167,8 +168,20 @@ def calculate_dimer_interaction_energy(qcel_mol, xml_file, pdb_file_dimer):
         xml_file, pdb_file_dimer
     )
 
-    # Calculate dimer energy
-    e_dimer = calculate_energy(system_dimer, positions_dimer)
+    # Update dimer positions from qcel_mol geometry
+    bohr_to_nm = qcel.constants.conversion_factor("bohr", "nm")
+    positions_dimer_from_qcel = qcel_mol.geometry * bohr_to_nm
+    positions_dimer_omm = [
+        openmm.Vec3(x, y, z) * unit.nanometers for x, y, z in positions_dimer_from_qcel
+    ]
+
+    # Debug: Print geometry hash to verify it changes between dimers
+    import hashlib
+
+    geom_hash = hashlib.md5(qcel_mol.geometry.tobytes()).hexdigest()[:8]
+
+    # Calculate dimer energy with updated geometry
+    e_dimer = calculate_energy(system_dimer, positions_dimer_omm)
 
     # Extract monomer geometries from QCElemental molecule
     # Positions need to be converted from Bohr to nanometers
@@ -220,7 +233,7 @@ def calculate_dimer_interaction_energy(qcel_mol, xml_file, pdb_file_dimer):
     # Calculate interaction energy
     interaction_energy = e_dimer - (e_mon1 + e_mon2)
 
-    return interaction_energy, e_dimer, e_mon1, e_mon2
+    return interaction_energy, e_dimer, e_mon1, e_mon2, geom_hash
 
 
 def qcel_molecule_to_openmm_for_energy(qcel_mol, **kwargs):
@@ -239,7 +252,7 @@ def qcel_molecule_to_openmm_for_energy(qcel_mol, **kwargs):
     return xmlmd
 
 
-def run_ff_dimer():
+def run_ff_dimer(v='apprx'):
     """
     Calculate OpenMM force field dimer interaction energies for crystal systems.
 
@@ -248,44 +261,67 @@ def run_ff_dimer():
     2. Uses OpenMM to calculate interaction energies with the OPLS force field
     3. Prints the interaction energy components (E_dimer, E_mon1, E_mon2, E_int)
     """
-    df = pd.read_pickle("./crystals_ap2_ap3_results_mol_apprx.pkl")
+    df = pd.read_pickle(f"./crystals_ap2_ap3_des_results_mol_{v}.pkl")
+    # from pprint import pprint as pp
+    # pp(df.columns.tolist())
     mms_col = "Minimum Monomer Separations (A) sapt0-dz-aug"
 
     # Process ice crystal for now
     for c in crystal_names_all:
-        c_path = f"ff_params/{c}"
-        if not os.path.exists(c_path + f"/mol_A.openmm_tmp.pdb"):
-            continue
-        df_c = df[df["crystal apprx"] == c]
-        print(f"Processing crystal: {c}, {len(df_c)} dimers")
-        df_c = df_c.sort_values(by=mms_col, ascending=True)
-        ies, e_dimers, e_mon1s, e_mon2s = [], [], [], []
-        for n, r in df_c.iterrows():
-            mol = r["mol apprx"]
-            interaction_energy, e_dimer, e_mon1, e_mon2 = (
-                calculate_dimer_interaction_energy(
-                    mol,
-                    xml_file=f"{c_path}/mol_A.openmm.xml",
-                    pdb_file_dimer=f"{c_path}/mol_A.openmm_tmp.pdb",
+        try:
+            c_path = f"ff_params/{c}"
+            if not os.path.exists(f"{c_path}/mol_A.openmm.pdb"):
+                print(f"Skipping crystal {c}, missing PDB file")
+                continue
+            df_c = df[df["crystal apprx"] == c]
+            print(f"Processing crystal: {c}, {len(df_c)} dimers")
+            df_c = df_c.sort_values(by=mms_col, ascending=True)
+            ies, e_dimers, e_mon1s, e_mon2s = [], [], [], []
+            dimer_idx = 0
+            for n, r in df_c.iterrows():
+                mol = r["mol apprx"]
+                interaction_energy, e_dimer, e_mon1, e_mon2, geom_hash = (
+                    calculate_dimer_interaction_energy(
+                        mol,
+                        xml_file=f"{c_path}/mol_A.openmm.xml",
+                        pdb_file_dimer=f"{c_path}/mol_A.openmm.pdb",
+                    )
                 )
-            )
-            ies.append(interaction_energy)
-            e_dimers.append(e_dimer)
-            e_mon1s.append(e_mon1)
-            e_mon2s.append(e_mon2)
+                ies.append(interaction_energy)
+                e_dimers.append(e_dimer)
+                e_mon1s.append(e_mon1)
+                e_mon2s.append(e_mon2)
 
-            # print(f"\nEnergy Results (kJ/mol):")
-            # print(f"  E_dimer:      {e_dimer:12.6f}")
-            # print(f"  E_monomer1:   {e_mon1:12.6f}")
-            # print(f"  E_monomer2:   {e_mon2:12.6f}")
-            print(f"  E_interaction:{interaction_energy:12.6f}")
-            # print("\nReference SAPT0 Results (kJ/mol):")
-            # print(r1['Non-Additive MB Energy (kJ/mol) sapt0-dz-aug'])
-        df.loc[df_c.index, "OPLS Interaction Energy (kJ/mol)"] = ies
-        df.loc[df_c.index, "OPLS E_dimer (kJ/mol)"] = e_dimers
-        df.loc[df_c.index, "OPLS E_mon1 (kJ/mol)"] = e_mon1s
-        df.loc[df_c.index, "OPLS E_mon2 (kJ/mol)"] = e_mon2s
-    df.to_pickle("./crystals_ap2_ap3_results_mol_apprx_opls.pkl")
+                print(
+                    f"  Dimer {dimer_idx} [geom:{geom_hash}]: "
+                    f"E_int={interaction_energy:12.6f}, "
+                    f"E_dimer={e_dimer:12.6f}, E_mon1={e_mon1:12.6f}, "
+                    f"E_mon2={e_mon2:12.6f}, MMS={r[mms_col]:.3f}"
+                    f"E_SAPT0={r['Non-Additive MB Energy (kJ/mol) sapt0-dz-aug']:12.6f}"
+
+                )
+                dimer_idx += 1
+
+            # Verify energies are unique
+            unique_e_int = len(set(ies))
+            unique_e_dimer = len(set(e_dimers))
+            print(f"\n  Summary: {len(ies)} dimers processed")
+            print(f"  Unique interaction energies: {unique_e_int}/{len(ies)}")
+            print(f"  Unique dimer energies: {unique_e_dimer}/{len(ies)}")
+            if unique_e_int < len(ies):
+                print("  WARNING: Some interaction energies are identical!")
+            if unique_e_dimer < len(ies):
+                print("  WARNING: Some dimer energies are identical!")
+            print()
+
+            df.loc[df_c.index, "OPLS Interaction Energy (kJ/mol)"] = ies
+            df.loc[df_c.index, "OPLS E_dimer (kJ/mol)"] = e_dimers
+            df.loc[df_c.index, "OPLS E_mon1 (kJ/mol)"] = e_mon1s
+            df.loc[df_c.index, "OPLS E_mon2 (kJ/mol)"] = e_mon2s
+        except Exception as e:
+            print(f"Error processing crystal {c}: {e}")
+            continue
+    df.to_pickle(f"./crystals_ap2_ap3_des_results_mol_{v}.pkl")
     return
 
 
