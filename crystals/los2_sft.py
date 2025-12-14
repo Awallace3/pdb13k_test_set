@@ -24,6 +24,8 @@ def ap2_energies(
     sft_n_epochs=50,
     sft_lr=5e-4,
     transfer_learning=True,
+    output_model_path=None,
+    input_model_path=None,
 ):
     if len(finetune_mols) > 0 and len(finetune_labels) > 0:
         print("Finetuning to crystal...")
@@ -39,9 +41,13 @@ def ap2_energies(
 
     if os.path.exists(data_dir):
         shutil.rmtree(data_dir)
-    pre_trained_model_path = f"./sft_models/ap2_los2_{len(finetune_mols)}.pt"
-    if not os.path.exists(pre_trained_model_path):
-        pre_trained_model_path = f"{qcml_model_dir}/ap2-fused_ensemble/ap2_1.pt"
+
+    if input_model_path is not None:
+        pre_trained_model_path = input_model_path
+    else:
+        pre_trained_model_path = f"./sft_models/ap2_los2_{len(finetune_mols)}.pt"
+        if not os.path.exists(pre_trained_model_path):
+            pre_trained_model_path = f"{qcml_model_dir}/ap2-fused_ensemble/ap2_1.pt"
 
     ap2 = apnet_pt.AtomPairwiseModels.apnet2_fused.APNet2_AM_Model(
         ds_root=data_dir,
@@ -59,6 +65,8 @@ def ap2_energies(
         ap2.compile_model()
     if finetune:
         # ap2.freeze_parameters_except_readouts()
+        if output_model_path is None:
+            output_model_path = f"./sft_models/ap2_los2_{len(finetune_mols)}.pt"
         ap2.train(
             n_epochs=sft_n_epochs,
             lr=sft_lr,
@@ -66,7 +74,7 @@ def ap2_energies(
             skip_compile=True,
             transfer_learning=transfer_learning,
             dataloader_num_workers=8,
-            model_path=f"./sft_models/ap2_los2_{len(finetune_mols)}.pt",
+            model_path=output_model_path,
         )
     return ap2
 
@@ -78,6 +86,8 @@ def ap3_d_elst_classical_energies(
     sft_n_epochs=50,
     sft_lr=5e-4,
     transfer_learning=True,
+    output_model_path=None,
+    input_model_path=None,
 ):
     if len(finetune_mols) > 0 and len(finetune_labels) > 0:
         print("Finetuning to crystal...")
@@ -95,11 +105,15 @@ def ap3_d_elst_classical_energies(
     am_path = f"{path_to_qcml}/../models/ap3_ensemble/1/am_3.pt"
     at_hf_vw_path = f"{path_to_qcml}/../models/ap3_ensemble/1/am_h+1_3.pt"
     at_elst_path = f"{path_to_qcml}/../models/ap3_ensemble/1/am_elst_h+1_3.pt"
-    ap3_path = f"./sft_models/ap3_los2_{len(finetune_mols)}.pt"
-    if not os.path.exists(ap3_path):
-        ap3_path = f"{path_to_qcml}/../models/ap3_ensemble/0/ap3_.pt"
-        # cp ap3_path to ./sft_models/ap3_los2_{len(finetune_mols)}.pt
-        shutil.copyfile(ap3_path, f"./sft_models/ap3_los2_{len(finetune_mols)}.pt")
+
+    if input_model_path is not None:
+        ap3_path = input_model_path
+    else:
+        ap3_path = f"./sft_models/ap3_los2_{len(finetune_mols)}.pt"
+        if not os.path.exists(ap3_path):
+            ap3_path = f"{path_to_qcml}/../models/ap3_ensemble/0/ap3_.pt"
+            # cp ap3_path to ./sft_models/ap3_los2_{len(finetune_mols)}.pt
+            shutil.copyfile(ap3_path, f"./sft_models/ap3_los2_{len(finetune_mols)}.pt")
 
     atom_type_hf_vw_model = apnet_pt.AtomPairwiseModels.mtp_mtp.AtomTypeParamModel(
         ds_root=None,
@@ -134,13 +148,15 @@ def ap3_d_elst_classical_energies(
     )
     if finetune:
         # ap3.freeze_parameters_except_readouts()
+        if output_model_path is None:
+            output_model_path = f"./sft_models/ap3_los2_{len(finetune_mols)}.pt"
         ap3.train(
             n_epochs=sft_n_epochs,
             lr=sft_lr,
             split_percent=0.90,
             dataloader_num_workers=8,
             transfer_learning=transfer_learning,
-            model_path=f"./sft_models/ap3_los2_{len(finetune_mols)}.pt",
+            model_path=output_model_path,
         )
     return ap3
 
@@ -169,7 +185,9 @@ def finetune_sizes():
     return
 
 
-def los2_training_sapt(M="ap2", n_epochs=50, lr=5e-4):
+def los2_training_sapt(
+    M="ap2", n_epochs=50, lr=5e-4, sapt_method="SAPT2+3(CCD)DMP2", sapt_basis="atz"
+):
     df = pd.read_pickle("los2_corrected.pkl")
     # df = df.head(5)
     if "qcel_molecule" not in df.columns:
@@ -196,14 +214,19 @@ def los2_training_sapt(M="ap2", n_epochs=50, lr=5e-4):
     for idx, row in df.iterrows():
         sapt_energy = np.array(
             [
-                row["SAPT2+3(CCD)DMP2 ELST ENERGY atz"],
-                row["SAPT2+3(CCD)DMP2 EXCH ENERGY atz"],
-                row["SAPT2+3(CCD)DMP2 IND ENERGY atz"],
-                row["SAPT2+3(CCD)DMP2 DISP ENERGY atz"],
+                row[f"{sapt_method} ELST ENERGY {sapt_basis}"],
+                row[f"{sapt_method} EXCH ENERGY {sapt_basis}"],
+                row[f"{sapt_method} IND ENERGY {sapt_basis}"],
+                row[f"{sapt_method} DISP ENERGY {sapt_basis}"],
             ]
         )
         finetune_labels.append(sapt_energy * ha_to_kcalmol)
     finetune_labels = finetune_labels
+    # Create model name suffix from sapt_method and sapt_basis
+    sapt_suffix = f"{sapt_method.replace('+', 'p').replace('(', '').replace(')', '')}_{sapt_basis}"
+    model_path_ap2 = f"./sft_models/ap2_los2_{sapt_suffix}.pt"
+    model_path_ap3 = f"./sft_models/ap3_los2_{sapt_suffix}.pt"
+
     if M.lower() == "ap2":
         ap2_energies(
             compile=False,
@@ -213,10 +236,9 @@ def los2_training_sapt(M="ap2", n_epochs=50, lr=5e-4):
             sft_n_epochs=n_epochs,
             sft_lr=lr,
             transfer_learning=False,
+            output_model_path=model_path_ap2,
         )
-        shutil.copyfile(
-            f"./sft_models/ap2_los2_{len(df)}.pt", "./sft_models/ap2_los2_sapt.pt"
-        )
+        print(f"Saved AP2 model to: {model_path_ap2}")
     elif M.lower() == "ap3":
         ap3_d_elst_classical_energies(
             finetune_mols=finetune_mols,
@@ -225,12 +247,15 @@ def los2_training_sapt(M="ap2", n_epochs=50, lr=5e-4):
             sft_n_epochs=n_epochs,
             sft_lr=lr,
             transfer_learning=False,
+            output_model_path=model_path_ap3,
         )
-        shutil.copyfile(
-            f"./sft_models/ap3_los2_{len(df)}.pt", "./sft_models/ap3_los2_sapt.pt"
-        )
+        print(f"Saved AP3 model to: {model_path_ap3}")
 
+    # Transfer learning from SAPT model to Benchmark
     finetune_labels = df["Benchmark"].to_list()
+    model_path_ap2_tl = model_path_ap2.replace(".pt", "_tl.pt")
+    model_path_ap3_tl = model_path_ap3.replace(".pt", "_tl.pt")
+
     if M.lower() == "ap2":
         ap2_energies(
             compile=False,
@@ -240,7 +265,10 @@ def los2_training_sapt(M="ap2", n_epochs=50, lr=5e-4):
             sft_n_epochs=n_epochs,
             sft_lr=lr,
             transfer_learning=True,
+            input_model_path=model_path_ap2,
+            output_model_path=model_path_ap2_tl,
         )
+        print(f"Saved AP2 transfer learning model to: {model_path_ap2_tl}")
     elif M.lower() == "ap3":
         ap3_d_elst_classical_energies(
             finetune_mols=finetune_mols,
@@ -249,7 +277,10 @@ def los2_training_sapt(M="ap2", n_epochs=50, lr=5e-4):
             sft_n_epochs=n_epochs,
             sft_lr=lr,
             transfer_learning=True,
+            input_model_path=model_path_ap3,
+            output_model_path=model_path_ap3_tl,
         )
+        print(f"Saved AP3 transfer learning model to: {model_path_ap3_tl}")
     return
 
 
@@ -400,6 +431,7 @@ def main():
         help="Path to input pickle file with qcel_mol column",
     )
     args = parser.parse_args()
+    pp(args)
     sapt_method, sapt_basis = args.sapt_target.split()
     if args.inference:
         if args.input_pkl is None:
@@ -436,11 +468,15 @@ def main():
         problem_ids = []
         for idx, pred in enumerate(predictions):
             if (
-                abs(pred[0] - df[f"{sapt_method} ELST ENERGY {sapt_basis}"].iloc[idx] * ha_to_kcalmol)
+                abs(
+                    pred[0]
+                    - df[f"{sapt_method} ELST ENERGY {sapt_basis}"].iloc[idx]
+                    * ha_to_kcalmol
+                )
                 > 400
             ):
                 print(
-                    f"Prediction {idx}:\n{qcel_molecules[idx].to_string('xyz')}\n{pred}\n{df['SAPT0 ELST ENERGY atz'].iloc[idx] * ha_to_kcalmol:.4f}, {df['SAPT0 EXCH ENERGY atz'].iloc[idx] * ha_to_kcalmol:.4f}, {df['SAPT0 IND ENERGY atz'].iloc[idx] * ha_to_kcalmol:.4f} {df['SAPT0 DISP ENERGY atz'].iloc[idx] * ha_to_kcalmol:.4f}"
+                    f"Prediction {idx}:\n{qcel_molecules[idx].to_string('xyz')}\n{pred}\n{df[f'{sapt_method} ELST ENERGY {sapt_basis}'].iloc[idx] * ha_to_kcalmol:.4f}, {df[f'{sapt_method} EXCH ENERGY {sapt_basis}'].iloc[idx] * ha_to_kcalmol:.4f}, {df[f'{sapt_method} IND ENERGY {sapt_basis}'].iloc[idx] * ha_to_kcalmol:.4f} {df[f'{sapt_method} DISP ENERGY {sapt_basis}'].iloc[idx] * ha_to_kcalmol:.4f}"
                 )
                 problem_ids.append(idx)
                 r = df.iloc[idx]
@@ -466,43 +502,60 @@ def main():
                 print(df.at[idx, "qcel_molecule"].to_string("xyz"))
         print(f"Problem IDs: {problem_ids}")
         ap_total = np.sum(
-            np.array([[pred[0], pred[1], pred[2], pred[3]] for pred in predictions]), axis=1
+            np.array([[pred[0], pred[1], pred[2], pred[3]] for pred in predictions]),
+            axis=1,
         )
-        ap_mae_total = np.mean(np.abs(ap_total - df["SAPT0 TOTAL ENERGY atz"] * ha_to_kcalmol))
+        ap_mae_total = np.mean(
+            np.abs(
+                ap_total
+                - df[f"{sapt_method} TOTAL ENERGY {sapt_basis}"] * ha_to_kcalmol
+            )
+        )
         ap_mae_elst = np.mean(
             np.abs(
                 np.array([pred[0] for pred in predictions])
-                - np.array(df["SAPT0 ELST ENERGY atz"]) * ha_to_kcalmol
+                - np.array(df[f"{sapt_method} ELST ENERGY {sapt_basis}"])
+                * ha_to_kcalmol
             )
         )
         ap_mae_exch = np.mean(
             np.abs(
                 np.array([pred[1] for pred in predictions])
-                - np.array(df["SAPT0 EXCH ENERGY atz"]) * ha_to_kcalmol
+                - np.array(df[f"{sapt_method} EXCH ENERGY {sapt_basis}"])
+                * ha_to_kcalmol
             )
         )
         ap_mae_ind = np.mean(
             np.abs(
                 np.array([pred[2] for pred in predictions])
-                - np.array(df["SAPT0 IND ENERGY atz"]) * ha_to_kcalmol
+                - np.array(df[f"{sapt_method} IND ENERGY {sapt_basis}"]) * ha_to_kcalmol
             )
         )
         ap_mae_disp = np.mean(
             np.abs(
                 np.array([pred[3] for pred in predictions])
-                - np.array(df["SAPT0 DISP ENERGY atz"]) * ha_to_kcalmol
+                - np.array(df[f"{sapt_method} DISP ENERGY {sapt_basis}"])
+                * ha_to_kcalmol
             )
         )
-        print(f"AP {args.M.upper()} SAPT0 MAE TOTAL: {ap_mae_total:.4f} kcal/mol")
-        print(f"AP {args.M.upper()} SAPT0 MAE ELST: {ap_mae_elst:.4f} kcal/mol")
-        print(f"AP {args.M.upper()} SAPT0 MAE EXCH: {ap_mae_exch:.4f} kcal/mol")
-        print(f"AP {args.M.upper()} SAPT0 MAE IND: {ap_mae_ind:.4f} kcal/mol")
-        print(f"AP {args.M.upper()} SAPT0 MAE DISP: {ap_mae_disp:.4f} kcal/mol")
+        print(
+            f"AP {args.M.upper()} {sapt_method} MAE TOTAL: {ap_mae_total:.4f} kcal/mol"
+        )
+        print(f"AP {args.M.upper()} {sapt_method} MAE ELST: {ap_mae_elst:.4f} kcal/mol")
+        print(f"AP {args.M.upper()} {sapt_method} MAE EXCH: {ap_mae_exch:.4f} kcal/mol")
+        print(f"AP {args.M.upper()} {sapt_method} MAE IND: {ap_mae_ind:.4f} kcal/mol")
+        print(f"AP {args.M.upper()} {sapt_method} MAE DISP: {ap_mae_disp:.4f} kcal/mol")
         # df.to_pickle("los2_corrected.pkl")
 
         # Save predictions
     else:
-        los2_training_sapt(args.M, n_epochs=args.epochs, lr=args.lr)
+        los2_training_sapt(
+            args.M,
+            n_epochs=args.epochs,
+            lr=args.lr,
+            sapt_method=sapt_method,
+            sapt_basis=sapt_basis,
+        )
 
     return
 
