@@ -8,6 +8,7 @@ import qcelemental as qcel
 import apnet_pt
 import os
 import shutil
+import argparse
 
 
 qcml_model_dir = os.path.expanduser("~/gits/qcmlforge/models")
@@ -164,7 +165,7 @@ def finetune_sizes():
     return
 
 
-def los2_training_sapt(n_epochs=50, lr=5e-4):
+def los2_training_sapt(M="ap2", n_epochs=50, lr=5e-4):
     df = pd.read_pickle("combined_df_4569.pkl")
     # df = df.head(5)
     df["qcel_molecule"] = df.apply(
@@ -198,50 +199,76 @@ def los2_training_sapt(n_epochs=50, lr=5e-4):
         )
         finetune_labels.append(sapt_energy * ha_to_kcalmol)
     finetune_labels = finetune_labels
-    ap2_energies(
-        compile=False,
-        finetune_mols=finetune_mols,
-        finetune_labels=finetune_labels,
-        data_dir="data_los2_sapt_ap2",
-        sft_n_epochs=n_epochs,
-        sft_lr=lr,
-        transfer_learning=False,
-    )
-    ap3_d_elst_classical_energies(
-        finetune_mols=finetune_mols,
-        finetune_labels=finetune_labels,
-        data_dir="data_los2_sapt_ap3",
-        sft_n_epochs=n_epochs,
-        sft_lr=lr,
-        transfer_learning=False,
-    )
-    # cp models to ./sft_models/ap2_los2_sapt.pt and ap3_los2_sapt.pt
-    shutil.copyfile(f"./sft_models/ap2_los2_{len(df)}.pt", "./sft_models/ap2_los2_sapt.pt")
-    shutil.copyfile(f"./sft_models/ap3_los2_{len(df)}.pt", "./sft_models/ap3_los2_sapt.pt")
-    # Now use the benchmark energies to finetune the models further
+    if M.lower() == "ap2":
+        ap2_energies(
+            compile=False,
+            finetune_mols=finetune_mols,
+            finetune_labels=finetune_labels,
+            data_dir="data_los2_sapt_ap2",
+            sft_n_epochs=n_epochs,
+            sft_lr=lr,
+            transfer_learning=False,
+        )
+        shutil.copyfile(f"./sft_models/ap2_los2_{len(df)}.pt", "./sft_models/ap2_los2_sapt.pt")
+    elif M.lower() == "ap3":
+        ap3_d_elst_classical_energies(
+            finetune_mols=finetune_mols,
+            finetune_labels=finetune_labels,
+            data_dir="data_los2_sapt_ap3",
+            sft_n_epochs=n_epochs,
+            sft_lr=lr,
+            transfer_learning=False,
+        )
+        shutil.copyfile(f"./sft_models/ap3_los2_{len(df)}.pt", "./sft_models/ap3_los2_sapt.pt")
+
     finetune_labels = df["Benchmark"].to_list()
-    ap2_energies(
-        compile=False,
-        finetune_mols=finetune_mols,
-        finetune_labels=finetune_labels,
-        data_dir="data_los2_sapt_ap2_benchmark",
-        sft_n_epochs=n_epochs,
-        sft_lr=lr,
-        transfer_learning=True,
-    )
-    ap3_d_elst_classical_energies(
-        finetune_mols=finetune_mols,
-        finetune_labels=finetune_labels,
-        data_dir="data_los2_sapt_ap3_benchmark",
-        sft_n_epochs=n_epochs,
-        sft_lr=lr,
-        transfer_learning=True,
-    )
+    if M.lower() == "ap2":
+        ap2_energies(
+            compile=False,
+            finetune_mols=finetune_mols,
+            finetune_labels=finetune_labels,
+            data_dir="data_los2_sapt_ap2_benchmark",
+            sft_n_epochs=n_epochs,
+            sft_lr=lr,
+            transfer_learning=True,
+        )
+    elif M.lower() == "ap3":
+        ap3_d_elst_classical_energies(
+            finetune_mols=finetune_mols,
+            finetune_labels=finetune_labels,
+            data_dir="data_los2_sapt_ap3_benchmark",
+            sft_n_epochs=n_epochs,
+            sft_lr=lr,
+            transfer_learning=True,
+        )
     return
 
 
 def main():
-    los2_training_sapt(n_epochs=100, lr=5e-5)
+    parser = argparse.ArgumentParser(
+        description="Finetune AP2 or AP3 models with DES370k dataset"
+    )
+    parser.add_argument(
+        "-M",
+        type=str,
+        required=True,
+        choices=["ap2", "ap3", "AP2", "AP3"],
+        help="Model type to finetune: ap2 or ap3",
+    )
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=50,
+        help="N epochs int",
+    )
+    parser.add_argument(
+        "--lr",
+        type=float,
+        default=5e-4,
+        help="N epochs int",
+    )
+    args = parser.parse_args()
+    los2_training_sapt(args.M, n_epochs=args.epochs, lr=args.lr)
     return
 
 
