@@ -344,11 +344,11 @@ def merge_dftd4_results(v="apprx"):
 
 def main():
     # df_d4 = dftd4_df_c6s(generate=True, v="apprx", dftd4_type="d4_i")
-    # df_d4 = dftd4_df_energies_supermolecular(v="apprx")
-    # df_merged = merge_dftd4_results('apprx')
+    df_d4 = dftd4_df_energies_supermolecular(v="apprx")
+    df_merged = merge_dftd4_results('apprx')
 
     # print("BM")
-    df_d4 = dftd4_df_c6s(generate=True, v="bm", dftd4_type="d4_i")
+    # df_d4 = dftd4_df_c6s(generate=True, v="bm", dftd4_type="d4_i")
     df_d4 = dftd4_df_energies_supermolecular(v="bm")
     df_merged = merge_dftd4_results('bm')
 

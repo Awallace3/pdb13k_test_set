@@ -1670,8 +1670,8 @@ def plot_switchover_errors_reverse(uma_cutoff=6.0):
 
     # Define separation distance range
     increment = 0.25
-    # sep_distances = np.arange(1.0, 15.0 + 0.05, increment)
-    sep_distances = np.arange(20.05, 1.0, -increment)
+    sep_distances = np.arange(1.0, 20.0 + 0.05, increment)
+    # sep_distances = np.arange(20.05, 1.0, -increment)
 
     # Process each crystal
     for idx, crystal in enumerate(all_crystals):
@@ -1751,27 +1751,27 @@ def plot_switchover_errors_reverse(uma_cutoff=6.0):
 
                 for d in sep_distances:
                     # Hybrid: use ML method above d, reference method below d
-                    ref_below = df_c[df_c[mms_col] > d]["ref_cle"].sum()
-                    ap2_above = df_c[df_c[mms_col] <= d]["ap2_cle"].sum()
-                    ap3_above = df_c[df_c[mms_col] <= d]["ap3_cle"].sum()
-                    uma_s_above = df_c[df_c[mms_col] <= d]["uma-s-1p1_cle"].sum()
-                    uma_m_above = df_c[df_c[mms_col] <= d]["uma-m-1p1_cle"].sum()
-                    ap3_d4_above = df_c[df_c[mms_col] <= d]["ap3_d4_cle"].sum()
-                    uma_s_ap3_lr_above = df_c[df_c[mms_col] <= d]["uma-s-1p1+ap3_lr_cle"].sum()
-                    uma_m_ap3_lr_above = df_c[df_c[mms_col] <= d]["uma-m-1p1+ap3_lr_cle"].sum()
+                    ref_total = df_c[df_c[mms_col] >= d]["ref_cle"].sum()
+                    ap2_above = df_c[df_c[mms_col] >= d]["ap2_cle"].sum()
+                    ap3_above = df_c[df_c[mms_col] >= d]["ap3_cle"].sum()
+                    uma_s_above = df_c[df_c[mms_col] >= d]["uma-s-1p1_cle"].sum()
+                    uma_m_above = df_c[df_c[mms_col] >= d]["uma-m-1p1_cle"].sum()
+                    ap3_d4_above = df_c[df_c[mms_col] >= d]["ap3_d4_cle"].sum()
+                    uma_s_ap3_lr_above = df_c[df_c[mms_col] >= d]["uma-s-1p1+ap3_lr_cle"].sum()
+                    uma_m_ap3_lr_above = df_c[df_c[mms_col] >= d]["uma-m-1p1+ap3_lr_cle"].sum()
 
                     # Reference total
-                    ref_total = df_c["ref_cle"].sum()
+                    # ref_total = df_c["ref_cle"].sum()
 
                     # Error = hybrid - reference
-                    ap2_errors.append(ap2_above + ref_below - ref_total)
-                    ap3_errors.append(ap3_above + ref_below - ref_total)
-                    uma_s_errors.append(uma_s_above + ref_below - ref_total)
-                    uma_m_errors.append(uma_m_above + ref_below - ref_total)
-                    ap3_d4_errors.append(ap3_d4_above + ref_below - ref_total)
-                    uma_s_ap3_lr_errors.append(uma_s_ap3_lr_above + ref_below - ref_total)
-                    uma_m_ap3_lr_errors.append(uma_m_ap3_lr_above + ref_below - ref_total)
-                    zeros.append(ref_below-ref_total)
+                    ap2_errors.append(ap2_above - ref_total)
+                    ap3_errors.append(ap3_above - ref_total)
+                    uma_s_errors.append(uma_s_above - ref_total)
+                    uma_m_errors.append(uma_m_above - ref_total)
+                    ap3_d4_errors.append(ap3_d4_above - ref_total)
+                    uma_s_ap3_lr_errors.append(uma_s_ap3_lr_above - ref_total)
+                    uma_m_ap3_lr_errors.append(uma_m_ap3_lr_above - ref_total)
+                    zeros.append(ref_total)
 
                 # Plot
                 ax_apprx.plot(
@@ -1924,28 +1924,27 @@ def plot_switchover_errors_reverse(uma_cutoff=6.0):
                 zeros = []
 
                 for d in sep_distances:
-                    # Hybrid: use ML method above d, reference method below d
-                    ref_below = df_c[df_c[mms_col] > d]["ref_cle"].sum()
-                    ap2_above = df_c[df_c[mms_col] <= d]["ap2_cle"].sum()
-                    ap3_above = df_c[df_c[mms_col] <= d]["ap3_cle"].sum()
-                    uma_s_above = df_c[df_c[mms_col] <= d]["uma-s-1p1_cle"].sum()
-                    uma_m_above = df_c[df_c[mms_col] <= d]["uma-m-1p1_cle"].sum()
-                    ap3_d4_above = df_c[df_c[mms_col] <= d]["ap3_d4_cle"].sum()
-                    uma_s_ap3_lr_above = df_c[df_c[mms_col] <= d]["uma-s-1p1+ap3_lr_cle"].sum()
-                    uma_m_ap3_lr_above = df_c[df_c[mms_col] <= d]["uma-m-1p1+ap3_lr_cle"].sum()
+                    ref_total = df_c[df_c[mms_col] >= d]["ref_cle"].sum()
+                    ap2_above = df_c[df_c[mms_col] >= d]["ap2_cle"].sum()
+                    ap3_above = df_c[df_c[mms_col] >= d]["ap3_cle"].sum()
+                    uma_s_above = df_c[df_c[mms_col] >= d]["uma-s-1p1_cle"].sum()
+                    uma_m_above = df_c[df_c[mms_col] >= d]["uma-m-1p1_cle"].sum()
+                    ap3_d4_above = df_c[df_c[mms_col] >= d]["ap3_d4_cle"].sum()
+                    uma_s_ap3_lr_above = df_c[df_c[mms_col] >= d]["uma-s-1p1+ap3_lr_cle"].sum()
+                    uma_m_ap3_lr_above = df_c[df_c[mms_col] >= d]["uma-m-1p1+ap3_lr_cle"].sum()
 
                     # Reference total
-                    ref_total = df_c["ref_cle"].sum()
+                    # ref_total = df_c["ref_cle"].sum()
 
                     # Error = hybrid - reference
-                    ap2_errors.append(ap2_above + ref_below - ref_total)
-                    ap3_errors.append(ap3_above + ref_below - ref_total)
-                    uma_s_errors.append(uma_s_above + ref_below - ref_total)
-                    uma_m_errors.append(uma_m_above + ref_below - ref_total)
-                    ap3_d4_errors.append(ap3_d4_above + ref_below - ref_total)
-                    uma_s_ap3_lr_errors.append(uma_s_ap3_lr_above + ref_below - ref_total)
-                    uma_m_ap3_lr_errors.append(uma_m_ap3_lr_above + ref_below - ref_total)
-                    zeros.append(ref_below-ref_total)
+                    ap2_errors.append(ap2_above - ref_total)
+                    ap3_errors.append(ap3_above - ref_total)
+                    uma_s_errors.append(uma_s_above - ref_total)
+                    uma_m_errors.append(uma_m_above - ref_total)
+                    ap3_d4_errors.append(ap3_d4_above - ref_total)
+                    uma_s_ap3_lr_errors.append(uma_s_ap3_lr_above - ref_total)
+                    uma_m_ap3_lr_errors.append(uma_m_ap3_lr_above - ref_total)
+                    zeros.append(ref_total)
 
                 # Plot
                 ax_bm.plot(
@@ -4485,9 +4484,10 @@ def main():
     #     ap2_ap3_df_energies_des370k_tl(v='bm', N=tl_N)
     #     ap2_ap3_df_energies_des370k_tl(v='apprx', N=tl_N)
     uma_cutoff = 3.8
-    plot_switchover_errors(uma_cutoff)
     plot_switchover_errors_reverse(uma_cutoff)
     return
+    plot_switchover_errors(uma_cutoff)
+    # return
     plot_crystal_lattice_energies_with_N(0, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff)
     plot_crystal_lattice_energies_with_N(1, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff)
     plot_crystal_lattice_energies_with_N(5, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff)
