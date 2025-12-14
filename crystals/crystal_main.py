@@ -1111,6 +1111,275 @@ def plot_all_systems():
             print(f"  Mean: {df2[col].mean():.4f} kJ/mol")
 
 
+def ap2_ap3_df_energies_sapt_models(generate=False, v='bm'):
+    """
+    Compute AP2/AP3 predictions using SAPT0/adz and SAPT2+3(CCD)DMP2/atz models
+    (both base and transfer learning versions), and save results to dataframe.
+    
+    Parameters
+    ----------
+    generate : bool, default=False
+        If True, regenerate predictions. If False, load from existing pickle.
+    v : str, default='bm'
+        Version to use: 'bm' for benchmark or 'apprx' for approximate
+    """
+    mol_str = "mol " + v
+    pkl_fn = f"crystals_ap2_ap3_sapt_results_{mol_str.replace(' ', '_')}.pkl"
+    
+    if not os.path.exists(pkl_fn) or generate:
+        # Load base dataframe
+        df = pd.read_pickle(f"./crystals_ap2_ap3_results_{mol_str.replace(' ', '_')}.pkl")
+        df = df.dropna(subset=[mol_str])
+        mols = df[mol_str].tolist()
+        
+        # Model configurations
+        models = {
+            'SAPT0_adz': {
+                'ap2': './sft_models/ap2_los2_SAPT0_adz.pt',
+                'ap3': './sft_models/ap3_los2_SAPT0_adz.pt',
+            },
+            'SAPT0_adz_tl': {
+                'ap2': './sft_models/ap2_los2_SAPT0_adz_tl.pt',
+                'ap3': './sft_models/ap3_los2_SAPT0_adz_tl.pt',
+            },
+            'SAPT2p3CCDDMP2_atz': {
+                'ap2': './sft_models/ap2_los2_SAPT2p3CCDDMP2_atz.pt',
+                'ap3': './sft_models/ap3_los2_SAPT2p3CCDDMP2_atz.pt',
+            },
+            'SAPT2p3CCDDMP2_atz_tl': {
+                'ap2': './sft_models/ap2_los2_SAPT2p3CCDDMP2_atz_tl.pt',
+                'ap3': './sft_models/ap3_los2_SAPT2p3CCDDMP2_atz_tl.pt',
+            },
+        }
+        
+        # Process each model configuration
+        for model_name, model_paths in models.items():
+            print(f"\n{'='*60}")
+            print(f"Processing {model_name}")
+            print(f"{'='*60}")
+            
+            # AP2 predictions
+            print(f"AP2 {model_name} start")
+            pred_ap2 = ap2_energies(
+                mols,
+                pretrained_ap2_path=model_paths['ap2'],
+                data_dir=f"data_{model_name}",
+                compile=False,
+            )
+            pred_ap2 *= kcalmol_to_kjmol
+            df[f"AP2-{model_name} TOTAL"] = np.sum(pred_ap2[:, 0:4], axis=1)
+            df[f"AP2-{model_name} ELST"] = pred_ap2[:, 0]
+            df[f"AP2-{model_name} EXCH"] = pred_ap2[:, 1]
+            df[f"AP2-{model_name} INDU"] = pred_ap2[:, 2]
+            df[f"AP2-{model_name} DISP"] = pred_ap2[:, 3]
+            
+            # AP3 predictions
+            print(f"AP3 {model_name} start")
+            pred_ap3, pair_elst, pair_ind = ap3_d_elst_classical_energies(
+                mols,
+                pretrained_ap3_path=model_paths['ap3'],
+                data_dir=f"data_{model_name}",
+            )
+            pred_ap3 *= kcalmol_to_kjmol
+            elst_energies = [np.sum(e) * kcalmol_to_kjmol for e in pair_elst]
+            ind_energies = [np.sum(e) * kcalmol_to_kjmol for e in pair_ind]
+            
+            df[f"ap3_d_elst-{model_name}"] = elst_energies
+            df[f"ap3_classical_ind_energy-{model_name}"] = ind_energies
+            df[f"AP3-{model_name} TOTAL"] = np.sum(pred_ap3[:, 0:4], axis=1)
+            df[f"AP3-{model_name} ELST"] = pred_ap3[:, 0]
+            df[f"AP3-{model_name} EXCH"] = pred_ap3[:, 1]
+            df[f"AP3-{model_name} INDU"] = pred_ap3[:, 2]
+            df[f"AP3-{model_name} DISP"] = pred_ap3[:, 3]
+            
+            # Calculate LE contributions
+            if v == 'bm':
+                num_rep_col = "Num. Rep. (#) CCSD(T)/CBS"
+                nmer_col = "N-mer Name bm"
+            else:
+                num_rep_col = "Num. Rep. (#) sapt0-dz-aug"
+                nmer_col = "N-mer Name apprx"
+            
+            df[f"ap3-{model_name}_le_contribution"] = df.apply(
+                lambda r: r[f"AP3-{model_name} TOTAL"]
+                * r[num_rep_col]
+                / int(r[nmer_col][0])
+                if pd.notnull(r[nmer_col])
+                else 0,
+                axis=1,
+            )
+            df[f"ap2-{model_name}_le_contribution"] = df.apply(
+                lambda r: r[f"AP2-{model_name} TOTAL"]
+                * r[num_rep_col]
+                / int(r[nmer_col][0])
+                if pd.notnull(r[nmer_col])
+                else 0,
+                axis=1,
+            )
+            
+            # Save after each model
+            df.to_pickle(pkl_fn)
+            print(f"Saved progress to {pkl_fn}")
+        
+        print(f"\n{'='*60}")
+        print("All models processed successfully!")
+        print(f"{'='*60}")
+    else:
+        df = pd.read_pickle(pkl_fn)
+        print(f"Loaded existing results from {pkl_fn}")
+    
+    return df
+
+
+def plot_crystal_lattice_energies_sapt_models(v='bm', N_values=[0, 1, 5, 10, 20]):
+    """
+    Visualize crystal lattice energy errors for SAPT-trained models.
+    Similar to plot_crystal_lattice_energies_with_N but for SAPT0/adz and 
+    SAPT2+3(CCD)DMP2/atz models.
+    
+    Parameters
+    ----------
+    v : str, default='bm'
+        Version to use: 'bm' for benchmark or 'apprx' for approximate
+    N_values : list, default=[0, 1, 5, 10, 20]
+        N-body truncation values to plot
+    """
+    from cdsg_plot import error_statistics
+    
+    # Load dataframe with SAPT model predictions
+    mol_str = "mol " + v
+    pkl_fn = f"crystals_ap2_ap3_sapt_results_{mol_str.replace(' ', '_')}.pkl"
+    
+    if not os.path.exists(pkl_fn):
+        print(f"Error: {pkl_fn} not found. Run ap2_ap3_df_energies_sapt_models first.")
+        return
+    
+    df = pd.read_pickle(pkl_fn)
+    
+    # Reference columns based on version
+    if v == 'bm':
+        ref_col = "Non-Additive MB Energy (kJ/mol) CCSD(T)/CBS"
+        num_rep_col = "Num. Rep. (#) CCSD(T)/CBS"
+        nmer_col = "N-mer Name bm"
+        crystal_col = "crystal bm"
+        ref_label = "CCSD(T)/CBS"
+    else:
+        ref_col = "Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"
+        num_rep_col = "Num. Rep. (#) sapt0-dz-aug"
+        nmer_col = "N-mer Name apprx"
+        crystal_col = "crystal apprx"
+        ref_label = "SAPT0/aDZ"
+    
+    # Model names
+    model_names = [
+        'SAPT0_adz',
+        'SAPT0_adz_tl',
+        'SAPT2p3CCDDMP2_atz',
+        'SAPT2p3CCDDMP2_atz_tl',
+    ]
+    
+    # For each N value, create crystal-level error dataframes
+    for N in N_values:
+        print(f"\n{'='*60}")
+        print(f"Processing N={N}")
+        print(f"{'='*60}")
+        
+        crystal_data = {}
+        
+        for crystal in df[crystal_col].dropna().unique():
+            df_c = df[df[crystal_col] == crystal].copy()
+            
+            # Apply N-body truncation
+            if N > 0:
+                df_c = df_c[df_c[nmer_col].str[0].astype(int) <= N]
+            
+            # Reference CLE
+            ref_cle = df_c.apply(
+                lambda r: r[ref_col] * r[num_rep_col] / int(r[nmer_col][0])
+                if pd.notnull(r[nmer_col])
+                else 0,
+                axis=1,
+            ).sum()
+            
+            crystal_data[crystal] = {'ref_cle': ref_cle}
+            
+            # Calculate CLE for each model
+            for model_name in model_names:
+                for method in ['AP2', 'AP3']:
+                    col_name = f"{method}-{model_name} TOTAL"
+                    if col_name in df_c.columns:
+                        method_cle = df_c.apply(
+                            lambda r: r[col_name] * r[num_rep_col] / int(r[nmer_col][0])
+                            if pd.notnull(r[nmer_col]) and pd.notnull(r[col_name])
+                            else 0,
+                            axis=1,
+                        ).sum()
+                        
+                        error = method_cle - ref_cle
+                        crystal_data[crystal][f"{method}-{model_name} error"] = error
+        
+        # Convert to DataFrame
+        df_crystal = pd.DataFrame(crystal_data).T
+        
+        # Print statistics
+        print(f"\nCrystal Lattice Energy Errors (N={N}):")
+        error_cols = [col for col in df_crystal.columns if 'error' in col]
+        print(df_crystal[error_cols].describe())
+        
+        # Create violin plot
+        dfs = [{
+            "df": df_crystal,
+            "basis": "",
+            "label": f"{ref_label} (N={N})",
+            "ylim": [[-30, 30]],
+        }]
+        
+        # Prepare labels for plotting
+        plot_labels = {}
+        for model_name in model_names:
+            for method in ['AP2', 'AP3']:
+                col = f"{method}-{model_name} error"
+                if col in df_crystal.columns:
+                    # Create readable label
+                    if 'SAPT0' in model_name:
+                        base_label = "SAPT0/aDZ"
+                    else:
+                        base_label = "SAPT2+3/aTZ"
+                    
+                    if '_tl' in model_name:
+                        label = f"{method} {base_label} TL"
+                    else:
+                        label = f"{method} {base_label}"
+                    
+                    plot_labels[label] = col
+        
+        # Create plot
+        output_fn = f"./x23_plots/sapt_models_cle_errors_{v}_N{N}.png"
+        error_statistics.violin_plot_table_multi_SAPT_components(
+            dfs,
+            df_labels_and_columns_total=plot_labels,
+            output_filename=output_fn,
+            grid_heights=[0.3, 1.0],
+            grid_widths=[1],
+            legend_loc="upper left",
+            annotations_texty=0.3,
+            figure_size=(8, 2.5),
+            add_title=False,
+            name_violin=False,
+            ylabel=r"Error (kJ$\cdot$mol$^{-1}$)",
+        )
+        print(f"Saved plot to {output_fn}")
+        
+        # Save crystal-level errors
+        csv_fn = f"./x23_plots/sapt_models_cle_errors_{v}_N{N}.csv"
+        df_crystal[error_cols].to_csv(csv_fn)
+        print(f"Saved crystal errors to {csv_fn}")
+    
+    print(f"\n{'='*60}")
+    print("Visualization complete!")
+    print(f"{'='*60}")
+
+
 def plot_switchover_errors(uma_cutoff=6.0):
     """
     For each crystal, plot summed CLE energy errors from all points above X.
@@ -4535,6 +4804,8 @@ def main():
     #     ap2_ap3_df_energies_des370k_tl(v='bm', N=tl_N)
     #     ap2_ap3_df_energies_des370k_tl(v='apprx', N=tl_N)
     uma_cutoff = 3.8
+    plot_crystal_lattice_energies_sapt_models()
+    return
     # return
     plot_crystal_lattice_energies_with_N(0, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff)
     plot_crystal_lattice_energies_with_N(1, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff)
