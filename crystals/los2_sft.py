@@ -75,6 +75,7 @@ def ap2_energies(
             transfer_learning=transfer_learning,
             dataloader_num_workers=8,
             model_path=output_model_path,
+            pretrain_test_loss=False,
         )
     return ap2
 
