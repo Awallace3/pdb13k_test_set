@@ -145,6 +145,7 @@ def ap3_d_elst_classical_energies(
         ds_qcel_molecules=ds_qcel_molecules,
         ds_energy_labels=ds_energy_labels,
         ds_datapoint_storage_n_objects=1,
+        use_precomputed_classical=True,
     )
     if finetune:
         # ap3.freeze_parameters_except_readouts()
@@ -159,30 +160,6 @@ def ap3_d_elst_classical_energies(
             model_path=output_model_path,
         )
     return ap3
-
-
-def finetune_sizes():
-    df = pd.read_pickle("./data/los2.pkl")
-    pp(df.columns.to_list())
-    # get sample of N=10000 random rows
-    for n in [100, 1000, 10000, 1000000, -1]:
-        if n == -1:
-            finetune_mols = df["qcel_mol"].to_list()
-            finetune_labels = df["ref"].to_list()
-        else:
-            df_sample = df.sample(n=n, random_state=42).reset_index(drop=True)
-            finetune_mols = df_sample["qcel_mol"].to_list()
-            finetune_labels = df_sample["ref"].to_list()
-        ap2_energies(
-            compile=False,
-            finetune_mols=finetune_mols,
-            finetune_labels=finetune_labels,
-        )
-        ap3_d_elst_classical_energies(
-            finetune_mols=finetune_mols,
-            finetune_labels=finetune_labels,
-        )
-    return
 
 
 def los2_training_sapt(
