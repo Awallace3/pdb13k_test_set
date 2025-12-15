@@ -217,3 +217,4 @@ data_los2_sapt_ap3_benchmarkSAPT2p3CCDDMP2_adz
 data_los2_sapt_ap2_benchmarkSAPT2p3CCDDMP2_adz
 *.clean
 output.dat
+*.dat

@@ -3815,6 +3815,9 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                     r["ap3_d_elst"]
                     + r["ap3_classical_ind_energy"]
                     + r["d4_s IE (kJ/mol)"]
+                    # + r['AP3 ELST']
+                    # + r['AP3 INDU']
+                    # + r['AP3 DISP']
                 )
                 uma_ap3_lr.append(val)
             else:
@@ -3838,7 +3841,13 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
     pd.set_option("display.float_format", "{:.4f}".format)
     df_bm["ap3+d4"] = df_bm["AP3 TOTAL"] + df_bm["d4_s IE (kJ/mol)"] - df_bm["AP3 DISP"]
     df_apprx["ap3+d4"] = (
-        df_apprx["AP3 TOTAL"] + df_apprx["d4_s IE (kJ/mol)"] - df_apprx["AP3 DISP"]
+        df_apprx["AP3 TOTAL"]
+        # df_apprx["AP3 EXCH"]
+        # + df_apprx["AP3 INDU"]
+        # + r["ap3_d_elst"]
+        # + r["ap3_classical_ind_energy"]
+        + df_apprx["d4_s IE (kJ/mol)"] - df_apprx["AP3 DISP"]
+
     )
     # Create ap3-des+d4 using AP3-des-tl{tl_N} TOTAL and DISP
     df_bm[f"ap3-des+d4"] = (
@@ -3904,6 +3913,11 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
 
     # Combine and get all unique crystals
     all_crystals = sorted(list(set(crystals_apprx) | set(crystals_bm)))
+    # crystals to skip
+    skip = [
+        'triazine'
+    ]
+    all_crystals = [c for c in all_crystals if c not in skip]
     N_crystals = len(all_crystals)
 
     print(f"Processing {N_crystals} crystals for switchover error plots")
@@ -4485,24 +4499,24 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                     #     linewidth=1.5,
                     #     alpha=0.8,
                     # )
-                    ax_bm.plot(
-                        ml_sep_distances,
-                        ap2_des_2b_energies,
-                        "o-",
-                        label=f"AP2-DES{tl_N}",
-                        markersize=4,
-                        linewidth=1.5,
-                        alpha=0.8,
-                    )
-                    ax_bm.plot(
-                        ml_sep_distances,
-                        ap3_des_2b_energies,
-                        "s-",
-                        label=f"AP3-DES{tl_N}",
-                        markersize=4,
-                        linewidth=1.5,
-                        alpha=0.8,
-                    )
+                    # ax_bm.plot(
+                    #     ml_sep_distances,
+                    #     ap2_des_2b_energies,
+                    #     "o-",
+                    #     label=f"AP2-DES{tl_N}",
+                    #     markersize=4,
+                    #     linewidth=1.5,
+                    #     alpha=0.8,
+                    # )
+                    # ax_bm.plot(
+                    #     ml_sep_distances,
+                    #     ap3_des_2b_energies,
+                    #     "s-",
+                    #     label=f"AP3-DES{tl_N}",
+                    #     markersize=4,
+                    #     linewidth=1.5,
+                    #     alpha=0.8,
+                    # )
                     ax_bm.plot(
                         ml_sep_distances,
                         ap3_d4_2b_energies,
@@ -4512,15 +4526,15 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                         linewidth=1.5,
                         alpha=0.8,
                     )
-                    ax_bm.plot(
-                        ml_sep_distances,
-                        ap3_sapt2p3_2b_energies,
-                        "<-",
-                        label=f"AP3-SAPT2+3",
-                        markersize=4,
-                        linewidth=1.5,
-                        alpha=0.8,
-                    )
+                    # ax_bm.plot(
+                    #     ml_sep_distances,
+                    #     ap3_sapt2p3_2b_energies,
+                    #     "<-",
+                    #     label=f"AP3-SAPT2+3",
+                    #     markersize=4,
+                    #     linewidth=1.5,
+                    #     alpha=0.8,
+                    # )
                     ax_bm.plot(
                         ml_sep_distances,
                         ap3_sapt2p3_d4_2b_energies,
@@ -4540,15 +4554,15 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                         linewidth=1.5,
                         alpha=0.8,
                     )
-                    ax_bm.plot(
-                        ml_sep_distances,
-                        uma_s_2b_energies,
-                        "^-",
-                        label="UMA-s",
-                        markersize=4,
-                        linewidth=1.5,
-                        alpha=0.8,
-                    )
+                    # ax_bm.plot(
+                    #     ml_sep_distances,
+                    #     uma_s_2b_energies,
+                    #     "^-",
+                    #     label="UMA-s",
+                    #     markersize=4,
+                    #     linewidth=1.5,
+                    #     alpha=0.8,
+                    # )
                     ax_bm.plot(
                         ml_sep_distances,
                         uma_m_2b_energies,
@@ -4558,20 +4572,20 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                         linewidth=1.5,
                         alpha=0.8,
                     )
-                    ax_bm.plot(
-                        ml_sep_distances,
-                        uma_s_ap3lr_2b_energies,
-                        "v-",
-                        label="UMA-s+AP3-LR",
-                        markersize=4,
-                        linewidth=1.5,
-                        alpha=0.8,
-                    )
+                    # ax_bm.plot(
+                    #     ml_sep_distances,
+                    #     uma_s_ap3lr_2b_energies,
+                    #     "v-",
+                    #     label="UMA-s+AP3-LR",
+                    #     markersize=4,
+                    #     linewidth=1.5,
+                    #     alpha=0.8,
+                    # )
                     ax_bm.plot(
                         ml_sep_distances,
                         uma_m_ap3lr_2b_energies,
                         "v-",
-                        label="UMA-m+AP3-LR",
+                        label="UMA-m+AP3-LR+D4(S)",
                         markersize=4,
                         linewidth=1.5,
                         alpha=0.8,
@@ -4703,12 +4717,12 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
             "AP2 vs SAPT0 error": ap2_full_cle_errors_sapt0_aDZ,
             "AP3 vs SAPT0 error": ap3_full_cle_errors_sapt0_aDZ,
             "AP3-D4 vs SAPT0 error": ap3_d4_full_cle_errors_sapt0_aDZ,
-            f"AP2-DES-tl{tl_N} vs SAPT0 error": ap2_des_full_cle_errors_sapt0_aDZ,
-            f"AP3-DES-tl{tl_N} vs SAPT0 error": ap3_des_full_cle_errors_sapt0_aDZ,
+            # f"AP2-DES-tl{tl_N} vs SAPT0 error": ap2_des_full_cle_errors_sapt0_aDZ,
+            # f"AP3-DES-tl{tl_N} vs SAPT0 error": ap3_des_full_cle_errors_sapt0_aDZ,
             # f"AP3-DES-tl{tl_N}+D4 vs SAPT0 error": ap3_des_d4_full_cle_errors_sapt0_aDZ,
-            "UMA-s vs SAPT0 error": uma_s_full_cle_errors_sapt0_aDZ,
+            # "UMA-s vs SAPT0 error": uma_s_full_cle_errors_sapt0_aDZ,
             "UMA-m vs SAPT0 error": uma_m_full_cle_errors_sapt0_aDZ,
-            "UMA-s+AP3-LR vs SAPT0 error": uma_s_ap3lr_full_cle_errors_sapt0_aDZ,
+            # "UMA-s+AP3-LR vs SAPT0 error": uma_s_ap3lr_full_cle_errors_sapt0_aDZ,
             "UMA-m+AP3-LR vs SAPT0 error": uma_m_ap3lr_full_cle_errors_sapt0_aDZ,
             "OPLS vs SAPT0 error": opls_full_cle_errors_sapt0_aDZ,
         }
@@ -4732,9 +4746,9 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
         # f"AP2-DES-tl{tl_N}": f"AP2-DES-tl{tl_N} vs SAPT0 error",
         # f"AP3-DES-tl{tl_N}": f"AP3-DES-tl{tl_N} vs SAPT0 error",
         # f"AP3-DES-tl{tl_N}+D4": f"AP3-DES-tl{tl_N}+D4 vs SAPT0 error",
-        "UMA-s": "UMA-s vs SAPT0 error",
+        # "UMA-s": "UMA-s vs SAPT0 error",
         "UMA-m": "UMA-m vs SAPT0 error",
-        "UMA-s+AP3-LR": "UMA-s+AP3-LR vs SAPT0 error",
+        # "UMA-s+AP3-LR": "UMA-s+AP3-LR vs SAPT0 error",
         "UMA-m+AP3-LR": "UMA-m+AP3-LR vs SAPT0 error",
         "OPLS": "OPLS vs SAPT0 error",
     }
@@ -4755,15 +4769,15 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
             "AP2 vs CCSD(T)/CBS error": ap2_full_cle_errors_ccsd_t_CBS,
             "AP3 vs CCSD(T)/CBS error": ap3_full_cle_errors_ccsd_t_CBS,
             "AP3+D4(S) vs CCSD(T)/CBS error": ap3_d4_full_cle_errors_ccsd_t_CBS,
-            f"AP2-DES-tl{tl_N} vs CCSD(T)/CBS error": ap2_des_full_cle_errors_ccsd_t_CBS,
-            f"AP3-DES-tl{tl_N} vs CCSD(T)/CBS error": ap3_des_full_cle_errors_ccsd_t_CBS,
+            # f"AP2-DES-tl{tl_N} vs CCSD(T)/CBS error": ap2_des_full_cle_errors_ccsd_t_CBS,
+            # f"AP3-DES-tl{tl_N} vs CCSD(T)/CBS error": ap3_des_full_cle_errors_ccsd_t_CBS,
             # f"AP3-DES-tl{tl_N}+D4 vs CCSD(T)/CBS error": ap3_des_d4_full_cle_errors_ccsd_t_CBS,
-            "UMA-s vs CCSD(T)/CBS error": uma_s_full_cle_errors_ccsd_t_CBS,
+            # "UMA-s vs CCSD(T)/CBS error": uma_s_full_cle_errors_ccsd_t_CBS,
             "UMA-m vs CCSD(T)/CBS error": uma_m_full_cle_errors_ccsd_t_CBS,
-            "UMA-s+AP3-LR vs CCSD(T)/CBS error": uma_s_ap3lr_full_cle_errors_ccsd_t_CBS,
+            # "UMA-s+AP3-LR vs CCSD(T)/CBS error": uma_s_ap3lr_full_cle_errors_ccsd_t_CBS,
             "UMA-m+AP3-LR vs CCSD(T)/CBS error": uma_m_ap3lr_full_cle_errors_ccsd_t_CBS,
             "OPLS vs CCSD(T)/CBS error": opls_full_cle_errors_ccsd_t_CBS,
-            "AP3(SAPT2+3) vs CCSD(T)/CBS error": ap3_sapt2p3_full_cle_errors_ccsd_t_CBS,
+            # "AP3(SAPT2+3) vs CCSD(T)/CBS error": ap3_sapt2p3_full_cle_errors_ccsd_t_CBS,
             "AP3(SAPT2+3)+D4(I) vs CCSD(T)/CBS error": ap3_sapt2p3_d4_full_cle_errors_ccsd_t_CBS,
         }
     )
@@ -4785,14 +4799,14 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
         # f"AP2-DES-tl{tl_N}": f"AP2-DES-tl{tl_N} vs CCSD(T)/CBS error",
         # f"AP3-DES-tl{tl_N}": f"AP3-DES-tl{tl_N} vs CCSD(T)/CBS error",
         # f"AP3-DES-tl{tl_N}+D4": f"AP3-DES-tl{tl_N}+D4 vs CCSD(T)/CBS error",
-        "AP3+D4": "AP3+D4 vs CCSD(T)/CBS error",
-        "UMA-s": "UMA-s vs CCSD(T)/CBS error",
+        "AP3+D4(S)": "AP3+D4(S) vs CCSD(T)/CBS error",
+        # "UMA-s": "UMA-s vs CCSD(T)/CBS error",
         "UMA-m": "UMA-m vs CCSD(T)/CBS error",
-        "UMA-s+AP3-LR": "UMA-s+AP3-LR vs CCSD(T)/CBS error",
-        "UMA-m+AP3-LR": "UMA-m+AP3-LR vs CCSD(T)/CBS error",
+        # "UMA-s+AP3-LR": "UMA-s+AP3-LR vs CCSD(T)/CBS error",
+        "UMA-m\\\\+AP3-LR+D4(S)": "UMA-m+AP3-LR vs CCSD(T)/CBS error",
         "OPLS": "OPLS vs CCSD(T)/CBS error",
-        "AP3-SAPT2+3": "AP3-SAPT2+3 vs CCSD(T)/CBS error",
-        "AP3-SAPT2+3+D4": "AP3-SAPT2+3+D4 vs CCSD(T)/CBS error",
+        # "AP3(SAPT2+3)": "AP3(SAPT2+3) vs CCSD(T)/CBS error",
+        "AP3(SFT)+D4(I)": "AP3(SAPT2+3)+D4(I) vs CCSD(T)/CBS error",
     }
 
     # Create violin plot for df1
@@ -5165,7 +5179,7 @@ def main():
     # return
     # return
     plot_crystal_lattice_energies_with_N(0, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff)
-    plot_crystal_lattice_energies_with_N(1, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff)
+    # plot_crystal_lattice_energies_with_N(1, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff)
     plot_crystal_lattice_energies_with_N(5, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff)
     plot_crystal_lattice_energies_with_N(
         10, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff
