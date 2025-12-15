@@ -64,8 +64,8 @@ def ap2_energies(mols, compile=False, finetune_mols=[], finetune_labels=[], pret
         finetune = False
         ignore_database_null = True
 
-    if os.path.exists("data_dir"):
-        shutil.rmtree("data_dir")
+    if os.path.exists(data_dir):
+        shutil.rmtree(data_dir)
     if pretrained_ap2_path is None:
         pretrained_ap2_path = f"{qcml_model_dir}/ap2-fused_ensemble/ap2_1.pt"
 
@@ -134,8 +134,8 @@ def ap3_d_elst_classical_energies(mols, finetune_mols=[], finetune_labels=[], pr
         model_type="AtomTypeParamNN",
         pre_trained_model_path=at_elst_path,
     )
-    if os.path.exists("data_dir"):
-        shutil.rmtree("data_dir")
+    if os.path.exists(data_dir):
+        shutil.rmtree(data_dir)
 
     ap3 = apnet_pt.AtomPairwiseModels.apnet3_fused.APNet3_AtomType_Model(
         ds_root=data_dir,
