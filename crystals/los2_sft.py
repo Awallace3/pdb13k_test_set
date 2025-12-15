@@ -204,29 +204,29 @@ def los2_training_sapt(
     model_path_ap2 = f"./sft_models/ap2_los2_{sapt_suffix}.pt"
     model_path_ap3 = f"./sft_models/ap3_los2_{sapt_suffix}.pt"
 
-    # if M.lower() == "ap2":
-    #     ap2_energies(
-    #         compile=False,
-    #         finetune_mols=finetune_mols,
-    #         finetune_labels=finetune_labels,
-    #         data_dir="data_los2_sapt_ap2" + sapt_suffix,
-    #         sft_n_epochs=n_epochs,
-    #         sft_lr=lr,
-    #         transfer_learning=False,
-    #         output_model_path=model_path_ap2,
-    #     )
-    #     print(f"Saved AP2 model to: {model_path_ap2}")
-    # elif M.lower() == "ap3":
-    #     ap3_d_elst_classical_energies(
-    #         finetune_mols=finetune_mols,
-    #         finetune_labels=finetune_labels,
-    #         data_dir="data_los2_sapt_ap3" + sapt_suffix,
-    #         sft_n_epochs=n_epochs,
-    #         sft_lr=lr,
-    #         transfer_learning=False,
-    #         output_model_path=model_path_ap3,
-    #     )
-    #     print(f"Saved AP3 model to: {model_path_ap3}")
+    if M.lower() == "ap2":
+        ap2_energies(
+            compile=False,
+            finetune_mols=finetune_mols,
+            finetune_labels=finetune_labels,
+            data_dir="data_los2_sapt_ap2" + sapt_suffix,
+            sft_n_epochs=n_epochs,
+            sft_lr=lr,
+            transfer_learning=False,
+            output_model_path=model_path_ap2,
+        )
+        print(f"Saved AP2 model to: {model_path_ap2}")
+    elif M.lower() == "ap3":
+        ap3_d_elst_classical_energies(
+            finetune_mols=finetune_mols,
+            finetune_labels=finetune_labels,
+            data_dir="data_los2_sapt_ap3" + sapt_suffix,
+            sft_n_epochs=n_epochs,
+            sft_lr=lr,
+            transfer_learning=False,
+            output_model_path=model_path_ap3,
+        )
+        print(f"Saved AP3 model to: {model_path_ap3}")
 
     # Transfer learning from SAPT model to Benchmark
     finetune_labels = df["Benchmark"].to_list()
