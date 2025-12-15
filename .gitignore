@@ -211,10 +211,9 @@ data_los2_sapt_ap2SAPT0_adz
 data_los2_sapt_ap3SAPT0_adz
 data_los2_sapt_ap3_benchmarkSAPT0_adz
 data_los2_sapt_ap2_benchmarkSAPT0_adz
-<<<<<<< HEAD
 data_los2_sapt_ap2_benchmarkSAPT2p3CCDDMP2_atz
 data_los2_sapt_ap3_benchmarkSAPT2p3CCDDMP2_atz
-=======
 data_los2_sapt_ap3_benchmarkSAPT2p3CCDDMP2_adz
 data_los2_sapt_ap2_benchmarkSAPT2p3CCDDMP2_adz
->>>>>>> 6fe1a31da815b6f2b911494f5b2d9b9136a619ce
+*.clean
+output.dat
