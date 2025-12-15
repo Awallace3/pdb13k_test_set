@@ -1344,7 +1344,7 @@ def plot_crystal_lattice_energies_sapt_models(v='bm', N_values=[0, 1, 5, 10, 20]
                     if 'SAPT0' in model_name:
                         base_label = "SAPT0/aDZ"
                     else:
-                        base_label = "SAPT2+3/aTZ"
+                        base_label = "SAPT2+3(CCD)DMP2/aTZ"
                     
                     if '_tl' in model_name:
                         label = f"{method} {base_label} TL"
@@ -4804,9 +4804,9 @@ def main():
     #     ap2_ap3_df_energies_des370k_tl(v='bm', N=tl_N)
     #     ap2_ap3_df_energies_des370k_tl(v='apprx', N=tl_N)
     uma_cutoff = 3.8
-    # ap2_ap3_df_energies_sapt_models(generate=True)
-    # plot_crystal_lattice_energies_sapt_models()
-    # return
+    ap2_ap3_df_energies_sapt_models(generate=True)
+    plot_crystal_lattice_energies_sapt_models()
+    return
     # return
     plot_crystal_lattice_energies_with_N(0, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff)
     plot_crystal_lattice_energies_with_N(1, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff)
