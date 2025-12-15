@@ -405,7 +405,7 @@ def main():
         "--input-pkl",
         type=str,
         # default="./combined_df_4569.pkl",
-        default="./los2_corrected.pkl",
+        default='./los2_co2_nh3_merged.pkl',
         help="Path to input pickle file with qcel_mol column",
     )
     args = parser.parse_args()

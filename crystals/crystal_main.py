@@ -5160,8 +5160,8 @@ def main():
     #     ap2_ap3_df_energies_des370k_tl(v='bm', N=tl_N)
     #     ap2_ap3_df_energies_des370k_tl(v='apprx', N=tl_N)
     uma_cutoff = 3.8
-    # ap2_ap3_df_energies_sapt_models(generate=True)
-    # plot_crystal_lattice_energies_sapt_models()
+    ap2_ap3_df_energies_sapt_models(generate=True)
+    plot_crystal_lattice_energies_sapt_models()
     # return
     # return
     plot_crystal_lattice_energies_with_N(0, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff)
