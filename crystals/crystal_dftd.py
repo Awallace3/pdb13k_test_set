@@ -310,6 +310,107 @@ def dftd4_df_energies_supermolecular(v="apprx"):
     return df
 
 
+def dftd4_df_energies_intermolecular(v="apprx"):
+    print(f"DFTD4 Energies intermolecular for {v}")
+    # v = "bm"
+    dftd4_type = "d4_i"
+    mol_str = "mol " + v
+    pkl_fn = f"crystals_c6s_d4_i_{mol_str.replace(' ', '_')}.pkl"
+    df = pd.read_pickle(pkl_fn)
+    params = np.array([1.0, 0.829861, 0.706055, 1.123903], dtype=np.float64)
+    # params = np.array([1.0, 1.61679827, 0.44959224, 3.35743605], dtype=np.float64)
+    def interaction_energy(mol, c6s, c6s_A, c6s_B):
+        geom, pD, cD, ma, mb, charges = tools.mol_to_pos_carts_ma_mb(
+            mol, units_angstroms=False
+        )
+        pA, cA = pD[ma], cD[ma, :]
+        pB, cB = pD[mb], cD[mb, :]
+        eAB = pydispersion.calculate_dispersion_energy(
+            pD,
+            cD,
+            c6s,
+            params=params,
+        )
+        eA = pydispersion.calculate_dispersion_energy(
+            pA,
+            cA,
+            c6s_A,
+            params=params,
+        )
+        eB = pydispersion.calculate_dispersion_energy(
+            pB,
+            cB,
+            c6s_B,
+            params=params,
+        )
+        int_energy = eAB - (eA + eB)
+        return int_energy, eAB, eA, eB
+
+    t1 = time()
+    df = df.dropna(subset=[mol_str])
+    if v == "apprx":
+        mms_col = "Minimum Monomer Separations (A) sapt0-dz-aug"
+    else:
+        mms_col = "Minimum Monomer Separations (A) CCSD(T)/CBS"
+    for n, c in enumerate(crystal_names_all):
+        # Get indices for this crystal
+        crystal_mask = df[f"crystal {v}"] == c
+        crystal_indices = df[crystal_mask].index
+
+        if len(crystal_indices) == 0:
+            continue
+
+        # Get sorted crystal dataframe
+        df_c_a = df.loc[crystal_indices].copy()
+        df_c_a.sort_values(by=mms_col, inplace=True)
+        print(f"\nProcessing crystal: {n} {c} with {len(df_c_a)} entries")
+        dftd4_energies = []
+        cnt = 0
+        for i, row in df_c_a.iterrows():
+            print(f"{cnt:4d} / {len(df_c_a):4d}, {time() - t1:.2f} seconds", end="\r")
+            cnt += 1
+            mol = row[mol_str]
+            c6s = row["C6s"]
+            c6s_A = row["C6_A"]
+            c6s_B = row["C6_B"]
+            int_energy, eAB, eA, eB = interaction_energy(mol, c6s, c6s_A, c6s_B)
+            dftd4_energies.append(
+                {
+                    "index": i,
+                    "int_energy": int_energy * ha_to_kjmol,
+                    "eAB": eAB * ha_to_kjmol,
+                    "eA": eA * ha_to_kjmol,
+                    "eB": eB * ha_to_kjmol,
+                }
+            )
+        df.loc[df_c_a.index, f"{dftd4_type} IE (kJ/mol)"] = [
+            ue["int_energy"] for ue in dftd4_energies
+        ]
+        df.loc[df_c_a.index, f"{dftd4_type} dimer (kJ/mol)"] = [
+            ue["eAB"] for ue in dftd4_energies
+        ]
+        df.loc[df_c_a.index, f"{dftd4_type} monomer A (kJ/mol)"] = [
+            ue["eA"] for ue in dftd4_energies
+        ]
+        df.loc[df_c_a.index, f"{dftd4_type} monomer B (kJ/mol)"] = [
+            ue["eB"] for ue in dftd4_energies
+        ]
+        print(f"Completed crystal in {time() - t1:.2f} seconds")
+
+    # LE
+    df[f"{dftd4_type}_le_contribution"] = df.apply(
+        lambda r: r[f"{dftd4_type} IE (kJ/mol)"]
+        * r["Num. Rep. (#) sapt0-dz-aug"]
+        / int(r[f"N-mer Name {v}"][0])
+        if pd.notnull(r[f"{dftd4_type} IE (kJ/mol)"])
+        and pd.notnull(r[f"N-mer Name {v}"])
+        else 0,
+        axis=1,
+    )
+    df.to_pickle(pkl_fn)
+    return df
+
+
 def merge_dftd4_results(v="apprx"):
     df = pd.read_pickle(f"./crystals_ap2_ap3_des_results_mol_{v}.pkl")
     pkl_fn_d4_i = f"crystals_c6s_d4_i_mol_{v}.pkl"
