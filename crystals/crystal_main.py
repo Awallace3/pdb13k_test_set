@@ -3789,8 +3789,6 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
         df_bm["AP3-SAPT2p3CCDDMP2_atz TOTAL"] = None
         df_bm["AP3-SAPT2p3CCDDMP2_atz DISP"] = None
 
-    # df_bm["d4_s IE (kJ/mol)"] *= kcalmol_to_kjmol
-    # df_apprx["d4_s IE (kJ/mol)"] *= kcalmol_to_kjmol
     df_bm["ap3+d4"] = df_bm["AP3 TOTAL"]
     df_apprx["ap3+d4"] = df_apprx["AP3 TOTAL"]
 
@@ -3845,12 +3843,12 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
     # Create ap3-des+d4 using AP3-des-tl{tl_N} TOTAL and DISP
     df_bm[f"ap3-des+d4"] = (
         df_bm[f"AP3-des-tl{tl_N} TOTAL"]
-        + df_bm["d4_s IE (kJ/mol)"]
+        + df_bm["d4_i IE (kJ/mol)"]
         - df_bm[f"AP3-des-tl{tl_N} DISP"]
     )
     df_apprx[f"ap3-des+d4"] = (
         df_apprx[f"AP3-des-tl{tl_N} TOTAL"]
-        + df_apprx["d4_s IE (kJ/mol)"]
+        + df_apprx["d4_i IE (kJ/mol)"]
         - df_apprx[f"AP3-des-tl{tl_N} DISP"]
     )
     # Create AP3+D4(SAPT2+3) using SAPT2+3(CCD)DMP2/aTZ energies
@@ -3860,7 +3858,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
     ):
         df_bm["ap3_sapt2p3+d4"] = (
             df_bm["AP3-SAPT2p3CCDDMP2_atz TOTAL"]
-            + df_bm["d4_s IE (kJ/mol)"]
+            + df_bm["d4_i IE (kJ/mol)"]
             - df_bm["AP3-SAPT2p3CCDDMP2_atz DISP"]
         )
         print("Created AP3+D4(SAPT2+3) column for df_bm")
@@ -3877,7 +3875,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                 f"AP3-des-tl{tl_N} TOTAL",
                 f"ap3-des+d4",
                 f"AP3-des-tl{tl_N} DISP",
-                "d4_s IE (kJ/mol)",
+                "d4_i IE (kJ/mol)",
                 f"ap3-des+d4",
             ]
         ].head()
@@ -3894,7 +3892,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                 f"AP3-des-tl{tl_N} TOTAL",
                 f"ap3-des+d4",
                 f"AP3-des-tl{tl_N} DISP",
-                "d4_s IE (kJ/mol)",
+                "d4_i IE (kJ/mol)",
                 f"ap3-des+d4",
             ]
         ].head()
@@ -4145,7 +4143,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                         ml_sep_distances,
                         ap3_d4_2b_energies,
                         "s-",
-                        label="AP3+D4",
+                        label="AP3+D4(S)",
                         markersize=4,
                         linewidth=1.5,
                         alpha=0.8,
@@ -4509,7 +4507,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                         ml_sep_distances,
                         ap3_d4_2b_energies,
                         "v-",
-                        label=f"AP3+D4",
+                        label=f"AP3+D4(S)",
                         markersize=4,
                         linewidth=1.5,
                         alpha=0.8,
@@ -4527,7 +4525,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
                         ml_sep_distances,
                         ap3_sapt2p3_d4_2b_energies,
                         ">-",
-                        label=f"AP3+D4(SAPT2+3)",
+                        label=f"AP3(SAPT2)+D4(I)",
                         markersize=4,
                         linewidth=1.5,
                         alpha=0.8,
@@ -4756,7 +4754,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
         {
             "AP2 vs CCSD(T)/CBS error": ap2_full_cle_errors_ccsd_t_CBS,
             "AP3 vs CCSD(T)/CBS error": ap3_full_cle_errors_ccsd_t_CBS,
-            "AP3+D4 vs CCSD(T)/CBS error": ap3_d4_full_cle_errors_ccsd_t_CBS,
+            "AP3+D4(S) vs CCSD(T)/CBS error": ap3_d4_full_cle_errors_ccsd_t_CBS,
             f"AP2-DES-tl{tl_N} vs CCSD(T)/CBS error": ap2_des_full_cle_errors_ccsd_t_CBS,
             f"AP3-DES-tl{tl_N} vs CCSD(T)/CBS error": ap3_des_full_cle_errors_ccsd_t_CBS,
             # f"AP3-DES-tl{tl_N}+D4 vs CCSD(T)/CBS error": ap3_des_d4_full_cle_errors_ccsd_t_CBS,
@@ -4765,8 +4763,8 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
             "UMA-s+AP3-LR vs CCSD(T)/CBS error": uma_s_ap3lr_full_cle_errors_ccsd_t_CBS,
             "UMA-m+AP3-LR vs CCSD(T)/CBS error": uma_m_ap3lr_full_cle_errors_ccsd_t_CBS,
             "OPLS vs CCSD(T)/CBS error": opls_full_cle_errors_ccsd_t_CBS,
-            "AP3-SAPT2+3 vs CCSD(T)/CBS error": ap3_sapt2p3_full_cle_errors_ccsd_t_CBS,
-            "AP3-SAPT2+3+D4 vs CCSD(T)/CBS error": ap3_sapt2p3_d4_full_cle_errors_ccsd_t_CBS,
+            "AP3(SAPT2+3) vs CCSD(T)/CBS error": ap3_sapt2p3_full_cle_errors_ccsd_t_CBS,
+            "AP3(SAPT2+3)+D4(I) vs CCSD(T)/CBS error": ap3_sapt2p3_d4_full_cle_errors_ccsd_t_CBS,
         }
     )
 

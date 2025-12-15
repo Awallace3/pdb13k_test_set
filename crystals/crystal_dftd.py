@@ -317,34 +317,22 @@ def dftd4_df_energies_intermolecular(v="apprx"):
     mol_str = "mol " + v
     pkl_fn = f"crystals_c6s_d4_i_{mol_str.replace(' ', '_')}.pkl"
     df = pd.read_pickle(pkl_fn)
-    params = np.array([1.0, 0.829861, 0.706055, 1.123903], dtype=np.float64)
-    # params = np.array([1.0, 1.61679827, 0.44959224, 3.35743605], dtype=np.float64)
-    def interaction_energy(mol, c6s, c6s_A, c6s_B):
+    params = np.array([1.0, 0.89529649, -0.82043591, 0.03264695], dtype=np.float64)
+    def interaction_energy(mol, c6s, monAs, monBs):
         geom, pD, cD, ma, mb, charges = tools.mol_to_pos_carts_ma_mb(
             mol, units_angstroms=False
         )
-        pA, cA = pD[ma], cD[ma, :]
-        pB, cB = pD[mb], cD[mb, :]
-        eAB = pydispersion.calculate_dispersion_energy(
+        E_int = pydispersion.calculate_dispersion_energy(
             pD,
             cD,
             c6s,
+            method="I",
+            damping_function="BJ",
+            monAs=monAs,
+            monBs=monBs,
             params=params,
         )
-        eA = pydispersion.calculate_dispersion_energy(
-            pA,
-            cA,
-            c6s_A,
-            params=params,
-        )
-        eB = pydispersion.calculate_dispersion_energy(
-            pB,
-            cB,
-            c6s_B,
-            params=params,
-        )
-        int_energy = eAB - (eA + eB)
-        return int_energy, eAB, eA, eB
+        return E_int
 
     t1 = time()
     df = df.dropna(subset=[mol_str])
@@ -371,29 +359,17 @@ def dftd4_df_energies_intermolecular(v="apprx"):
             cnt += 1
             mol = row[mol_str]
             c6s = row["C6s"]
-            c6s_A = row["C6_A"]
-            c6s_B = row["C6_B"]
-            int_energy, eAB, eA, eB = interaction_energy(mol, c6s, c6s_A, c6s_B)
+            monAs = row["monAs"]
+            monBs = row["monBs"]
+            int_energy = interaction_energy(mol, c6s, monAs, monBs)
             dftd4_energies.append(
                 {
                     "index": i,
                     "int_energy": int_energy * ha_to_kjmol,
-                    "eAB": eAB * ha_to_kjmol,
-                    "eA": eA * ha_to_kjmol,
-                    "eB": eB * ha_to_kjmol,
                 }
             )
         df.loc[df_c_a.index, f"{dftd4_type} IE (kJ/mol)"] = [
             ue["int_energy"] for ue in dftd4_energies
-        ]
-        df.loc[df_c_a.index, f"{dftd4_type} dimer (kJ/mol)"] = [
-            ue["eAB"] for ue in dftd4_energies
-        ]
-        df.loc[df_c_a.index, f"{dftd4_type} monomer A (kJ/mol)"] = [
-            ue["eA"] for ue in dftd4_energies
-        ]
-        df.loc[df_c_a.index, f"{dftd4_type} monomer B (kJ/mol)"] = [
-            ue["eB"] for ue in dftd4_energies
         ]
         print(f"Completed crystal in {time() - t1:.2f} seconds")
 
@@ -407,6 +383,9 @@ def dftd4_df_energies_intermolecular(v="apprx"):
         else 0,
         axis=1,
     )
+    # Compare the disp energies between supermolecular and intermolecular and AP3 DISP
+    print(df[[f'crystal {v}',f'd4_s IE (kJ/mol)', f'{dftd4_type} IE (kJ/mol)', 'AP3 DISP']])
+    # return
     df.to_pickle(pkl_fn)
     return df
 
@@ -417,13 +396,14 @@ def merge_dftd4_results(v="apprx"):
     df_d4_i = pd.read_pickle(pkl_fn_d4_i)
     # merge by index
     df.drop(
-        ['d4_s IE (kJ/mol)', 'd4_s dimer (kJ/mol)', 'd4_s monomer A (kJ/mol)', 'd4_s monomer B (kJ/mol)', 'd4_s_le_contribution'],
+        ['d4_i IE (kJ/mol)', 'd4_s IE (kJ/mol)', 'd4_s dimer (kJ/mol)', 'd4_s monomer A (kJ/mol)', 'd4_s monomer B (kJ/mol)', 'd4_s_le_contribution'],
         axis=1,
         inplace=True,
     )
     df = df.join(
         df_d4_i[
             [
+                "d4_i IE (kJ/mol)",
                 "d4_s IE (kJ/mol)",
                 "d4_s dimer (kJ/mol)",
                 "d4_s monomer A (kJ/mol)",
@@ -445,12 +425,14 @@ def merge_dftd4_results(v="apprx"):
 
 def main():
     # df_d4 = dftd4_df_c6s(generate=True, v="apprx", dftd4_type="d4_i")
-    df_d4 = dftd4_df_energies_supermolecular(v="apprx")
+    # df_d4 = dftd4_df_energies_supermolecular(v="apprx")
+    # df_d4 = dftd4_df_energies_intermolecular(v="apprx")
     df_merged = merge_dftd4_results('apprx')
 
     # print("BM")
     # df_d4 = dftd4_df_c6s(generate=True, v="bm", dftd4_type="d4_i")
-    df_d4 = dftd4_df_energies_supermolecular(v="bm")
+    # df_d4 = dftd4_df_energies_supermolecular(v="bm")
+    # df_d4 = dftd4_df_energies_intermolecular(v="bm")
     df_merged = merge_dftd4_results('bm')
 
 
