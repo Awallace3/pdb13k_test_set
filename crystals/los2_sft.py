@@ -70,12 +70,13 @@ def ap2_energies(
         ap2.train(
             n_epochs=sft_n_epochs,
             lr=sft_lr,
-            split_percent=0.90,
+            split_percent=0.95,
             skip_compile=True,
             transfer_learning=transfer_learning,
             dataloader_num_workers=8,
             model_path=output_model_path,
             pretrain_test_loss=False,
+            random_seed=33,
         )
     return ap2
 
@@ -110,11 +111,7 @@ def ap3_d_elst_classical_energies(
     if input_model_path is not None:
         ap3_path = input_model_path
     else:
-        ap3_path = f"./sft_models/ap3_los2_{len(finetune_mols)}.pt"
-        if not os.path.exists(ap3_path):
-            ap3_path = f"{path_to_qcml}/../models/ap3_ensemble/0/ap3_.pt"
-            # cp ap3_path to ./sft_models/ap3_los2_{len(finetune_mols)}.pt
-            shutil.copyfile(ap3_path, f"./sft_models/ap3_los2_{len(finetune_mols)}.pt")
+        ap3_path = f"{path_to_qcml}/../models/ap3_ensemble/0/ap3_.pt"
 
     atom_type_hf_vw_model = apnet_pt.AtomPairwiseModels.mtp_mtp.AtomTypeParamModel(
         ds_root=None,
@@ -156,10 +153,11 @@ def ap3_d_elst_classical_energies(
         ap3.train(
             n_epochs=sft_n_epochs,
             lr=sft_lr,
-            split_percent=0.90,
+            split_percent=0.95,
             dataloader_num_workers=8,
             transfer_learning=transfer_learning,
             model_path=output_model_path,
+            random_seed=33,
         )
     return ap3
 
@@ -245,6 +243,7 @@ def los2_training_sapt(
             sft_lr=lr,
             transfer_learning=True,
             input_model_path=model_path_ap2,
+            # input_model_path=model_path_ap2_tl,
             output_model_path=model_path_ap2_tl,
         )
         print(f"Saved AP2 transfer learning model to: {model_path_ap2_tl}")
