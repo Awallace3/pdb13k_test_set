@@ -396,13 +396,14 @@ def merge_dftd4_results(v="apprx"):
     df_d4_i = pd.read_pickle(pkl_fn_d4_i)
     # merge by index
     df.drop(
-        ['d4_s IE (kJ/mol)', 'd4_s dimer (kJ/mol)', 'd4_s monomer A (kJ/mol)', 'd4_s monomer B (kJ/mol)', 'd4_s_le_contribution'],
+        ['d4_i IE (kJ/mol)', 'd4_s IE (kJ/mol)', 'd4_s dimer (kJ/mol)', 'd4_s monomer A (kJ/mol)', 'd4_s monomer B (kJ/mol)', 'd4_s_le_contribution'],
         axis=1,
         inplace=True,
     )
     df = df.join(
         df_d4_i[
             [
+                "d4_i IE (kJ/mol)",
                 "d4_s IE (kJ/mol)",
                 "d4_s dimer (kJ/mol)",
                 "d4_s monomer A (kJ/mol)",
@@ -425,13 +426,13 @@ def merge_dftd4_results(v="apprx"):
 def main():
     # df_d4 = dftd4_df_c6s(generate=True, v="apprx", dftd4_type="d4_i")
     # df_d4 = dftd4_df_energies_supermolecular(v="apprx")
-    df_d4 = dftd4_df_energies_intermolecular(v="apprx")
+    # df_d4 = dftd4_df_energies_intermolecular(v="apprx")
     df_merged = merge_dftd4_results('apprx')
 
     # print("BM")
     # df_d4 = dftd4_df_c6s(generate=True, v="bm", dftd4_type="d4_i")
     # df_d4 = dftd4_df_energies_supermolecular(v="bm")
-    df_d4 = dftd4_df_energies_intermolecular(v="bm")
+    # df_d4 = dftd4_df_energies_intermolecular(v="bm")
     df_merged = merge_dftd4_results('bm')
 
 

@@ -169,3 +169,395 @@ SAPT0: Exch-Disp20 N^5              :      1.300u      0.150s      0.073w      1
 SAPT0: Exch-Disp20 N^4              :      2.650u      0.217s      0.144w      1 calls
 
 **************************************************************************************
+
+Host: cos-4a16505.cos.gatech.edu
+
+Timers On : Mon Dec 15 13:54:23 2025
+Timers Off: Mon Dec 15 13:56:04 2025
+
+Wall Time:      100.70 seconds
+
+                                                       Time (seconds)
+Module                                       User      System        Wall        Calls
+DFH: sparsity prep                  :     13.967u      0.900s      4.827w      9 calls
+Libint2ERI::Libint2ERI              :     98.567u     10.133s     23.267w    273 calls
+DFH: initialize()                   :    112.967u      9.767s      7.978w      9 calls
+DFH: AO Construction                :     44.333u      0.833s      2.262w      9 calls
+DFH: AO-Met. Contraction            :     25.967u      3.067s      1.688w      9 calls
+HF: Form core H                     :      5.167u      0.467s      0.303w      9 calls
+HF: Form S/X                        :      0.950u      0.033s      0.049w      9 calls
+HF: Guess                           :     20.033u      2.700s      1.136w      9 calls
+SAD Guess                           :     19.300u      2.567s      1.093w      9 calls
+HF: Form G                          :     46.617u      1.617s      2.415w     94 calls
+JK: D                               :      0.050u      0.000s      0.006w     94 calls
+JK: USO2AO                          :      0.583u      0.083s      0.036w     94 calls
+JK: JK                              :     44.633u      1.467s      2.301w     94 calls
+DFH: compute_JK()                   :     44.150u      1.433s      2.284w     94 calls
+DFH: Grabbing AOs                   :      0.000u      0.000s      0.000w     94 calls
+DFH: compute_J                      :     15.800u      0.100s      0.795w     94 calls
+DFH: compute_K                      :     19.483u      0.183s      0.997w     94 calls
+JK: AO2USO                          :      0.767u      0.000s      0.055w     94 calls
+HF: Form F                          :      0.100u      0.000s      0.006w     94 calls
+HF: Form D                          :      0.083u      0.000s      0.007w     94 calls
+HF: DIIS                            :     15.900u      2.217s      0.905w     85 calls
+HF: Form C                          :      6.750u      0.733s      0.371w     85 calls
+ccenergy                            :    266.533u     44.283s     21.720w      3 calls
+F build                             :     21.767u      3.450s      1.262w     33 calls
+Wmbej build                         :     31.567u      3.883s      1.770w     33 calls
+C->Wmbej                            :      1.417u      0.233s      0.081w     33 calls
+F->Wmbej                            :     18.650u      2.050s      1.036w     33 calls
+E->Wmbej                            :      4.083u      0.767s      0.243w     33 calls
+X->Wmbej                            :      5.350u      0.500s      0.292w     33 calls
+Z                                   :      2.450u      0.300s      0.138w     33 calls
+T2 Build                            :     73.217u     13.150s      4.313w     33 calls
+BT2                                 :     30.950u      6.350s      1.866w     33 calls
+ABCD:new                            :     30.900u      6.350s      1.866w     33 calls
+ABCD:S                              :      4.700u      0.800s      0.275w     33 calls
+ABCD:A                              :      4.867u      0.817s      0.286w     33 calls
+ABCD:axpy                           :     18.617u      4.250s      1.142w     33 calls
+FT2                                 :      4.000u      0.733s      0.239w     33 calls
+WmbejT2                             :      8.583u      1.450s      0.502w     33 calls
+CT2                                 :     14.150u      2.383s      0.826w     33 calls
+cctriples                           :     38.833u      4.183s      2.686w      3 calls
+ET_RHF                              :     29.300u      2.750s      1.616w      3 calls
+DFMP2 Singles                       :      0.050u      0.017s      0.003w      6 calls
+DFMP2 Aia                           :    102.317u      5.883s     20.107w      6 calls
+DFMP2 (A|mn)                        :     47.217u      0.000s      2.364w      6 calls
+DFMP2 (A|mn)C_mi                    :      3.233u      0.083s      0.166w      6 calls
+DFMP2 (A|mi)C_na                    :      0.317u      0.000s      0.018w      6 calls
+DFMP2 Aia Write                     :      1.350u      0.383s      0.085w      6 calls
+DFMP2 Bia                           :     14.350u      1.433s      0.791w      6 calls
+DFMP2 Metric                        :     11.117u      0.867s      0.600w      6 calls
+DFMP2 Aia Read                      :      0.467u      0.083s      0.027w      6 calls
+DFMP2 (ia|A)(A|Q)                   :      0.583u      0.017s      0.031w      6 calls
+DFMP2 Bia Write                     :      1.350u      0.333s      0.085w      6 calls
+DFMP2 Energy                        :      3.667u      0.400s      0.206w      6 calls
+DFMP2 Bia Read                      :      0.400u      0.083s      0.023w     12 calls
+
+--------------------------------------------------------------------------------------
+DFH: sparsity prep                  :     13.967u      0.900s      4.827w      9 calls
+| Libint2ERI::Libint2ERI            :     11.133u      0.850s      3.253w      9 calls
+DFH: initialize()                   :    112.967u      9.767s      7.978w      9 calls
+| Libint2ERI::Libint2ERI            :     32.483u      4.650s      3.240w    117 calls
+| DFH: AO Construction              :     44.333u      0.833s      2.262w      9 calls
+| DFH: AO-Met. Contraction          :     25.967u      3.067s      1.688w      9 calls
+HF: Form core H                     :      5.167u      0.467s      0.303w      9 calls
+HF: Form S/X                        :      0.950u      0.033s      0.049w      9 calls
+HF: Guess                           :     20.033u      2.700s      1.136w      9 calls
+| SAD Guess                         :     19.300u      2.567s      1.093w      9 calls
+HF: Form G                          :     46.617u      1.617s      2.415w     94 calls
+| JK: D                             :      0.050u      0.000s      0.006w     94 calls
+| JK: USO2AO                        :      0.583u      0.083s      0.036w     94 calls
+| JK: JK                            :     44.633u      1.467s      2.301w     94 calls
+| | DFH: compute_JK()               :     44.150u      1.433s      2.284w     94 calls
+| | | DFH: Grabbing AOs             :      0.000u      0.000s      0.000w     94 calls
+| | | DFH: compute_J                :     15.800u      0.100s      0.795w     94 calls
+| | | DFH: compute_K                :     19.483u      0.183s      0.997w     94 calls
+| JK: AO2USO                        :      0.767u      0.000s      0.055w     94 calls
+HF: Form F                          :      0.100u      0.000s      0.006w     94 calls
+HF: Form D                          :      0.083u      0.000s      0.007w     94 calls
+HF: DIIS                            :     15.900u      2.217s      0.905w     85 calls
+HF: Form C                          :      6.750u      0.733s      0.371w     85 calls
+Libint2ERI::Libint2ERI              :      9.083u      1.250s      0.575w      3 calls
+ccenergy                            :    266.533u     44.283s     21.720w      3 calls
+| F build                           :     21.767u      3.450s      1.262w     33 calls
+| Wmbej build                       :     31.567u      3.883s      1.770w     33 calls
+| | C->Wmbej                        :      1.417u      0.233s      0.081w     33 calls
+| | F->Wmbej                        :     18.650u      2.050s      1.036w     33 calls
+| | E->Wmbej                        :      4.083u      0.767s      0.243w     33 calls
+| | X->Wmbej                        :      5.350u      0.500s      0.292w     33 calls
+| Z                                 :      2.450u      0.300s      0.138w     33 calls
+| T2 Build                          :     73.217u     13.150s      4.313w     33 calls
+| | BT2                             :     30.950u      6.350s      1.866w     33 calls
+| | | ABCD:new                      :     30.900u      6.350s      1.866w     33 calls
+| | | | ABCD:S                      :      4.700u      0.800s      0.275w     33 calls
+| | | | ABCD:A                      :      4.867u      0.817s      0.286w     33 calls
+| | | | ABCD:axpy                   :     18.617u      4.250s      1.142w     33 calls
+| | FT2                             :      4.000u      0.733s      0.239w     33 calls
+| | WmbejT2                         :      8.583u      1.450s      0.502w     33 calls
+| | CT2                             :     14.150u      2.383s      0.826w     33 calls
+cctriples                           :     38.833u      4.183s      2.686w      3 calls
+| ET_RHF                            :     29.300u      2.750s      1.616w      3 calls
+DFMP2 Singles                       :      0.050u      0.017s      0.003w      6 calls
+DFMP2 Aia                           :    102.317u      5.883s     20.107w      6 calls
+| Libint2ERI::Libint2ERI            :     45.400u      3.333s     16.174w     72 calls
+| DFMP2 (A|mn)                      :     47.217u      0.000s      2.364w      6 calls
+| DFMP2 (A|mn)C_mi                  :      3.233u      0.083s      0.166w      6 calls
+| DFMP2 (A|mi)C_na                  :      0.317u      0.000s      0.018w      6 calls
+| DFMP2 Aia Write                   :      1.350u      0.383s      0.085w      6 calls
+DFMP2 Bia                           :     14.350u      1.433s      0.791w      6 calls
+| DFMP2 Metric                      :     11.117u      0.867s      0.600w      6 calls
+| | Libint2ERI::Libint2ERI          :      0.467u      0.050s      0.026w     72 calls
+| DFMP2 Aia Read                    :      0.467u      0.083s      0.027w      6 calls
+| DFMP2 (ia|A)(A|Q)                 :      0.583u      0.017s      0.031w      6 calls
+| DFMP2 Bia Write                   :      1.350u      0.333s      0.085w      6 calls
+DFMP2 Energy                        :      3.667u      0.400s      0.206w      6 calls
+| DFMP2 Bia Read                    :      0.400u      0.083s      0.023w     12 calls
+
+**************************************************************************************
+
+Host: cos-4a16505.cos.gatech.edu
+
+Timers On : Mon Dec 15 14:02:00 2025
+Timers Off: Mon Dec 15 14:03:39 2025
+
+Wall Time:       99.72 seconds
+
+                                                       Time (seconds)
+Module                                       User      System        Wall        Calls
+DFH: sparsity prep                  :     14.550u      1.167s      4.850w      9 calls
+Libint2ERI::Libint2ERI              :     99.283u     10.233s     23.328w    273 calls
+DFH: initialize()                   :    113.850u      9.117s      8.079w      9 calls
+DFH: AO Construction                :     44.000u      0.867s      2.245w      9 calls
+DFH: AO-Met. Contraction            :     26.767u      2.817s      1.793w      9 calls
+HF: Form core H                     :      5.167u      0.383s      0.299w      9 calls
+HF: Form S/X                        :      0.867u      0.083s      0.048w      9 calls
+HF: Guess                           :     20.033u      2.733s      1.139w      9 calls
+SAD Guess                           :     19.250u      2.650s      1.096w      9 calls
+HF: Form G                          :     46.767u      2.000s      2.433w     94 calls
+JK: D                               :      0.050u      0.033s      0.006w     94 calls
+JK: USO2AO                          :      0.567u      0.050s      0.037w     94 calls
+JK: JK                              :     44.833u      1.800s      2.317w     94 calls
+DFH: compute_JK()                   :     44.317u      1.717s      2.300w     94 calls
+DFH: Grabbing AOs                   :      0.033u      0.000s      0.000w     94 calls
+DFH: compute_J                      :     15.567u      0.283s      0.792w     94 calls
+DFH: compute_K                      :     19.717u      0.117s      1.009w     94 calls
+JK: AO2USO                          :      0.767u      0.050s      0.057w     94 calls
+HF: Form F                          :      0.083u      0.017s      0.006w     94 calls
+HF: Form D                          :      0.017u      0.000s      0.007w     94 calls
+HF: DIIS                            :     15.983u      2.050s      0.907w     85 calls
+HF: Form C                          :      6.800u      0.550s      0.369w     85 calls
+ccenergy                            :    264.467u     45.400s     19.994w      3 calls
+F build                             :     20.783u      3.533s      1.220w     33 calls
+Wmbej build                         :     31.133u      4.117s      1.766w     33 calls
+C->Wmbej                            :      1.250u      0.300s      0.076w     33 calls
+F->Wmbej                            :     18.883u      2.050s      1.047w     33 calls
+E->Wmbej                            :      3.950u      0.767s      0.241w     33 calls
+X->Wmbej                            :      4.950u      0.633s      0.281w     33 calls
+Z                                   :      2.450u      0.383s      0.140w     33 calls
+T2 Build                            :     73.767u     13.233s      4.349w     33 calls
+BT2                                 :     31.383u      6.467s      1.892w     33 calls
+ABCD:new                            :     31.350u      6.467s      1.892w     33 calls
+ABCD:S                              :      4.983u      0.883s      0.298w     33 calls
+ABCD:A                              :      4.800u      0.933s      0.291w     33 calls
+ABCD:axpy                           :     18.767u      4.017s      1.140w     33 calls
+FT2                                 :      4.067u      0.733s      0.239w     33 calls
+WmbejT2                             :      8.767u      1.367s      0.508w     33 calls
+CT2                                 :     14.000u      2.400s      0.823w     33 calls
+cctriples                           :     38.633u      4.050s      2.464w      3 calls
+ET_RHF                              :     29.850u      2.550s      1.627w      3 calls
+DFMP2 Singles                       :      0.083u      0.017s      0.003w      6 calls
+DFMP2 Aia                           :    102.167u      5.800s     20.131w      6 calls
+DFMP2 (A|mn)                        :     47.067u      0.033s      2.357w      6 calls
+DFMP2 (A|mn)C_mi                    :      3.167u      0.067s      0.164w      6 calls
+DFMP2 (A|mi)C_na                    :      0.317u      0.033s      0.018w      6 calls
+DFMP2 Aia Write                     :      1.400u      0.317s      0.085w      6 calls
+DFMP2 Bia                           :     14.933u      1.550s      0.826w      6 calls
+DFMP2 Metric                        :     11.283u      0.900s      0.607w      6 calls
+DFMP2 Aia Read                      :      0.433u      0.117s      0.027w      6 calls
+DFMP2 (ia|A)(A|Q)                   :      0.583u      0.017s      0.031w      6 calls
+DFMP2 Bia Write                     :      1.483u      0.350s      0.090w      6 calls
+DFMP2 Energy                        :      3.800u      0.433s      0.215w      6 calls
+DFMP2 Bia Read                      :      0.383u      0.083s      0.023w     12 calls
+
+--------------------------------------------------------------------------------------
+DFH: sparsity prep                  :     14.550u      1.167s      4.850w      9 calls
+| Libint2ERI::Libint2ERI            :     11.633u      1.133s      3.261w      9 calls
+DFH: initialize()                   :    113.850u      9.117s      8.079w      9 calls
+| Libint2ERI::Libint2ERI            :     32.817u      4.300s      3.253w    117 calls
+| DFH: AO Construction              :     44.000u      0.867s      2.245w      9 calls
+| DFH: AO-Met. Contraction          :     26.767u      2.817s      1.793w      9 calls
+HF: Form core H                     :      5.167u      0.383s      0.299w      9 calls
+HF: Form S/X                        :      0.867u      0.083s      0.048w      9 calls
+HF: Guess                           :     20.033u      2.733s      1.139w      9 calls
+| SAD Guess                         :     19.250u      2.650s      1.096w      9 calls
+HF: Form G                          :     46.767u      2.000s      2.433w     94 calls
+| JK: D                             :      0.050u      0.033s      0.006w     94 calls
+| JK: USO2AO                        :      0.567u      0.050s      0.037w     94 calls
+| JK: JK                            :     44.833u      1.800s      2.317w     94 calls
+| | DFH: compute_JK()               :     44.317u      1.717s      2.300w     94 calls
+| | | DFH: Grabbing AOs             :      0.033u      0.000s      0.000w     94 calls
+| | | DFH: compute_J                :     15.567u      0.283s      0.792w     94 calls
+| | | DFH: compute_K                :     19.717u      0.117s      1.009w     94 calls
+| JK: AO2USO                        :      0.767u      0.050s      0.057w     94 calls
+HF: Form F                          :      0.083u      0.017s      0.006w     94 calls
+HF: Form D                          :      0.017u      0.000s      0.007w     94 calls
+HF: DIIS                            :     15.983u      2.050s      0.907w     85 calls
+HF: Form C                          :      6.800u      0.550s      0.369w     85 calls
+Libint2ERI::Libint2ERI              :      8.817u      1.500s      0.573w      3 calls
+ccenergy                            :    264.467u     45.400s     19.994w      3 calls
+| F build                           :     20.783u      3.533s      1.220w     33 calls
+| Wmbej build                       :     31.133u      4.117s      1.766w     33 calls
+| | C->Wmbej                        :      1.250u      0.300s      0.076w     33 calls
+| | F->Wmbej                        :     18.883u      2.050s      1.047w     33 calls
+| | E->Wmbej                        :      3.950u      0.767s      0.241w     33 calls
+| | X->Wmbej                        :      4.950u      0.633s      0.281w     33 calls
+| Z                                 :      2.450u      0.383s      0.140w     33 calls
+| T2 Build                          :     73.767u     13.233s      4.349w     33 calls
+| | BT2                             :     31.383u      6.467s      1.892w     33 calls
+| | | ABCD:new                      :     31.350u      6.467s      1.892w     33 calls
+| | | | ABCD:S                      :      4.983u      0.883s      0.298w     33 calls
+| | | | ABCD:A                      :      4.800u      0.933s      0.291w     33 calls
+| | | | ABCD:axpy                   :     18.767u      4.017s      1.140w     33 calls
+| | FT2                             :      4.067u      0.733s      0.239w     33 calls
+| | WmbejT2                         :      8.767u      1.367s      0.508w     33 calls
+| | CT2                             :     14.000u      2.400s      0.823w     33 calls
+cctriples                           :     38.633u      4.050s      2.464w      3 calls
+| ET_RHF                            :     29.850u      2.550s      1.627w      3 calls
+DFMP2 Singles                       :      0.083u      0.017s      0.003w      6 calls
+DFMP2 Aia                           :    102.167u      5.800s     20.131w      6 calls
+| Libint2ERI::Libint2ERI            :     45.550u      3.233s     16.216w     72 calls
+| DFMP2 (A|mn)                      :     47.067u      0.033s      2.357w      6 calls
+| DFMP2 (A|mn)C_mi                  :      3.167u      0.067s      0.164w      6 calls
+| DFMP2 (A|mi)C_na                  :      0.317u      0.033s      0.018w      6 calls
+| DFMP2 Aia Write                   :      1.400u      0.317s      0.085w      6 calls
+DFMP2 Bia                           :     14.933u      1.550s      0.826w      6 calls
+| DFMP2 Metric                      :     11.283u      0.900s      0.607w      6 calls
+| | Libint2ERI::Libint2ERI          :      0.467u      0.067s      0.026w     72 calls
+| DFMP2 Aia Read                    :      0.433u      0.117s      0.027w      6 calls
+| DFMP2 (ia|A)(A|Q)                 :      0.583u      0.017s      0.031w      6 calls
+| DFMP2 Bia Write                   :      1.483u      0.350s      0.090w      6 calls
+DFMP2 Energy                        :      3.800u      0.433s      0.215w      6 calls
+| DFMP2 Bia Read                    :      0.383u      0.083s      0.023w     12 calls
+
+**************************************************************************************
+
+Host: cos-4a16505.cos.gatech.edu
+
+Timers On : Mon Dec 15 15:03:30 2025
+Timers Off: Mon Dec 15 15:03:31 2025
+
+Wall Time:        0.70 seconds
+
+                                                       Time (seconds)
+Module                                       User      System        Wall        Calls
+
+--------------------------------------------------------------------------------------
+
+**************************************************************************************
+
+Host: cos-4a16505.cos.gatech.edu
+
+Timers On : Mon Dec 15 15:04:00 2025
+Timers Off: Mon Dec 15 15:55:08 2025
+
+Wall Time:     3067.96 seconds
+
+                                                       Time (seconds)
+Module                                       User      System        Wall        Calls
+DFH: sparsity prep                  :    459.617u     41.867s    122.568w    423 calls
+Libint2ERI::Libint2ERI              :   3176.917u    348.667s    606.538w  12831 calls
+DFH: initialize()                   :   3663.833u    311.617s    234.278w    423 calls
+DFH: AO Construction                :   1434.633u     33.800s     73.467w    423 calls
+DFH: AO-Met. Contraction            :    852.467u    104.317s     51.316w    423 calls
+HF: Form core H                     :    192.117u     18.583s     11.166w    423 calls
+HF: Form S/X                        :     46.550u      4.800s      2.569w    423 calls
+HF: Guess                           :    710.517u     89.433s     40.000w    423 calls
+SAD Guess                           :    679.050u     84.767s     38.214w    423 calls
+HF: Form G                          :   1383.233u     52.650s     71.810w   4453 calls
+JK: D                               :      3.117u      0.367s      0.277w   4453 calls
+JK: USO2AO                          :     15.750u      1.867s      0.998w   4453 calls
+JK: JK                              :   1321.817u     47.600s     68.266w   4453 calls
+DFH: compute_JK()                   :   1306.817u     45.683s     67.661w   4453 calls
+DFH: Grabbing AOs                   :      0.917u      0.150s      0.015w   4453 calls
+DFH: compute_J                      :    524.067u      8.183s     26.696w   4453 calls
+DFH: compute_K                      :    553.767u      6.183s     28.398w   4453 calls
+JK: AO2USO                          :     20.683u      1.100s      1.494w   4453 calls
+HF: Form F                          :      5.900u      0.533s      0.338w   4453 calls
+HF: Form D                          :      3.517u      0.533s      0.310w   4453 calls
+HF: DIIS                            :    780.667u    114.717s     44.936w   4030 calls
+HF: Form C                          :    363.900u     37.467s     20.076w   4030 calls
+ccenergy                            :   9548.583u   1652.883s    765.167w    141 calls
+F build                             :    517.933u     85.083s     30.856w   1600 calls
+Wmbej build                         :    820.533u    119.883s     47.025w   1600 calls
+C->Wmbej                            :     34.700u      7.733s      2.114w   1600 calls
+F->Wmbej                            :    489.267u     67.600s     27.868w   1600 calls
+E->Wmbej                            :    113.517u     19.483s      6.641w   1600 calls
+X->Wmbej                            :    129.067u     16.483s      7.304w   1600 calls
+Z                                   :     58.683u     10.267s      3.439w   1600 calls
+T2 Build                            :   2043.433u    378.017s    121.065w   1600 calls
+BT2                                 :    965.250u    203.567s     58.393w   1600 calls
+ABCD:new                            :    964.333u    203.383s     58.380w   1600 calls
+ABCD:S                              :    140.517u     24.917s      8.277w   1600 calls
+ABCD:A                              :    133.600u     23.400s      7.880w   1600 calls
+ABCD:axpy                           :    614.600u    142.150s     37.837w   1600 calls
+FT2                                 :    101.700u     17.550s      5.951w   1600 calls
+WmbejT2                             :    213.067u     35.583s     12.491w   1600 calls
+CT2                                 :    355.300u     59.367s     20.775w   1600 calls
+cctriples                           :   1023.350u    130.917s     73.592w    141 calls
+ET_RHF                              :    599.083u     57.767s     33.161w    141 calls
+DFMP2 Singles                       :      2.017u      0.283s      0.120w    282 calls
+DFMP2 Aia                           :   3481.583u    227.983s    560.033w    282 calls
+DFMP2 (A|mn)                        :   1589.350u      0.750s     79.610w    282 calls
+DFMP2 (A|mn)C_mi                    :     75.633u      1.450s      3.892w    282 calls
+DFMP2 (A|mi)C_na                    :      9.183u      0.250s      0.503w    282 calls
+DFMP2 Aia Write                     :     35.683u      9.350s      2.218w    282 calls
+DFMP2 Bia                           :    469.833u     48.917s     27.044w    282 calls
+DFMP2 Metric                        :    367.750u     29.883s     20.081w    282 calls
+DFMP2 Aia Read                      :     13.300u      3.500s      0.839w    282 calls
+DFMP2 (ia|A)(A|Q)                   :     15.150u      0.367s      0.836w    282 calls
+DFMP2 Bia Write                     :     37.200u      9.350s      2.300w    282 calls
+DFMP2 Energy                        :     97.367u     13.050s      5.615w    282 calls
+DFMP2 Bia Read                      :      9.933u      2.350s      0.614w    564 calls
+
+--------------------------------------------------------------------------------------
+DFH: sparsity prep                  :    459.617u     41.867s    122.568w    423 calls
+| Libint2ERI::Libint2ERI            :    360.183u     36.783s     82.334w    423 calls
+DFH: initialize()                   :   3663.833u    311.617s    234.278w    423 calls
+| Libint2ERI::Libint2ERI            :   1000.300u    139.383s     82.202w   5499 calls
+| DFH: AO Construction              :   1434.633u     33.800s     73.467w    423 calls
+| DFH: AO-Met. Contraction          :    852.467u    104.317s     51.316w    423 calls
+HF: Form core H                     :    192.117u     18.583s     11.166w    423 calls
+HF: Form S/X                        :     46.550u      4.800s      2.569w    423 calls
+HF: Guess                           :    710.517u     89.433s     40.000w    423 calls
+| SAD Guess                         :    679.050u     84.767s     38.214w    423 calls
+HF: Form G                          :   1383.233u     52.650s     71.810w   4453 calls
+| JK: D                             :      3.117u      0.367s      0.277w   4453 calls
+| JK: USO2AO                        :     15.750u      1.867s      0.998w   4453 calls
+| JK: JK                            :   1321.817u     47.600s     68.266w   4453 calls
+| | DFH: compute_JK()               :   1306.817u     45.683s     67.661w   4453 calls
+| | | DFH: Grabbing AOs             :      0.917u      0.150s      0.015w   4453 calls
+| | | DFH: compute_J                :    524.067u      8.183s     26.696w   4453 calls
+| | | DFH: compute_K                :    553.767u      6.183s     28.398w   4453 calls
+| JK: AO2USO                        :     20.683u      1.100s      1.494w   4453 calls
+HF: Form F                          :      5.900u      0.533s      0.338w   4453 calls
+HF: Form D                          :      3.517u      0.533s      0.310w   4453 calls
+HF: DIIS                            :    780.667u    114.717s     44.936w   4030 calls
+HF: Form C                          :    363.900u     37.467s     20.076w   4030 calls
+Libint2ERI::Libint2ERI              :    203.267u     28.883s     12.481w    141 calls
+ccenergy                            :   9548.583u   1652.883s    765.167w    141 calls
+| F build                           :    517.933u     85.083s     30.856w   1600 calls
+| Wmbej build                       :    820.533u    119.883s     47.025w   1600 calls
+| | C->Wmbej                        :     34.700u      7.733s      2.114w   1600 calls
+| | F->Wmbej                        :    489.267u     67.600s     27.868w   1600 calls
+| | E->Wmbej                        :    113.517u     19.483s      6.641w   1600 calls
+| | X->Wmbej                        :    129.067u     16.483s      7.304w   1600 calls
+| Z                                 :     58.683u     10.267s      3.439w   1600 calls
+| T2 Build                          :   2043.433u    378.017s    121.065w   1600 calls
+| | BT2                             :    965.250u    203.567s     58.393w   1600 calls
+| | | ABCD:new                      :    964.333u    203.383s     58.380w   1600 calls
+| | | | ABCD:S                      :    140.517u     24.917s      8.277w   1600 calls
+| | | | ABCD:A                      :    133.600u     23.400s      7.880w   1600 calls
+| | | | ABCD:axpy                   :    614.600u    142.150s     37.837w   1600 calls
+| | FT2                             :    101.700u     17.550s      5.951w   1600 calls
+| | WmbejT2                         :    213.067u     35.583s     12.491w   1600 calls
+| | CT2                             :    355.300u     59.367s     20.775w   1600 calls
+cctriples                           :   1023.350u    130.917s     73.592w    141 calls
+| ET_RHF                            :    599.083u     57.767s     33.161w    141 calls
+DFMP2 Singles                       :      2.017u      0.283s      0.120w    282 calls
+DFMP2 Aia                           :   3481.583u    227.983s    560.033w    282 calls
+| Libint2ERI::Libint2ERI            :   1595.583u    140.950s    428.425w   3384 calls
+| DFMP2 (A|mn)                      :   1589.350u      0.750s     79.610w    282 calls
+| DFMP2 (A|mn)C_mi                  :     75.633u      1.450s      3.892w    282 calls
+| DFMP2 (A|mi)C_na                  :      9.183u      0.250s      0.503w    282 calls
+| DFMP2 Aia Write                   :     35.683u      9.350s      2.218w    282 calls
+DFMP2 Bia                           :    469.833u     48.917s     27.044w    282 calls
+| DFMP2 Metric                      :    367.750u     29.883s     20.081w    282 calls
+| | Libint2ERI::Libint2ERI          :     17.583u      2.667s      1.096w   3384 calls
+| DFMP2 Aia Read                    :     13.300u      3.500s      0.839w    282 calls
+| DFMP2 (ia|A)(A|Q)                 :     15.150u      0.367s      0.836w    282 calls
+| DFMP2 Bia Write                   :     37.200u      9.350s      2.300w    282 calls
+DFMP2 Energy                        :     97.367u     13.050s      5.615w    282 calls
+| DFMP2 Bia Read                    :      9.933u      2.350s      0.614w    564 calls
+
+**************************************************************************************
