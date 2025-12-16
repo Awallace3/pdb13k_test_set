@@ -63,10 +63,10 @@ crystal_names_all = [
 def sevennet_df_energies_sft(generate=False, v="apprx", sevennet_type="mpa"):
     calc = SevenNetCalculator(
         # model="./checkpoint_sevennet_mf_ompa.pth",
-        model='7net-omni',
+        model="7net-omni",
         modal=sevennet_type,
         enable_cueq=False,
-        enable_flash=False
+        enable_flash=False,
     )
 
     # v = "bm"
@@ -137,7 +137,20 @@ def sevennet_df_energies_sft(generate=False, v="apprx", sevennet_type="mpa"):
             sevennet_energies = []
             cnt = 0
             for i, row in df_c_a.iterrows():
-                print(f"{cnt:4d} / {len(df_c_a):4d}, {time() - t1:.2f} seconds", end="\r")
+                if row[mms_col] > 6.0:
+                    sevennet_energies.append(
+                        {
+                            "index": i,
+                            "int_energy": 0,
+                            "eAB": 0,
+                            "eA": 0,
+                            "eB": 0,
+                        }
+                    )
+                    continue
+                print(
+                    f"{cnt:4d} / {len(df_c_a):4d}, {time() - t1:.2f} seconds", end="\r"
+                )
                 cnt += 1
                 mol = row[mol_str]
                 int_energy, eAB, eA, eB = interaction_energy(mol)
@@ -151,8 +164,12 @@ def sevennet_df_energies_sft(generate=False, v="apprx", sevennet_type="mpa"):
                     }
                 )
                 pp(sevennet_energies[-1])
-                print(row[target_col])
-                # print 
+                print(row[target_col], "at", row[mms_col])
+                if row[mms_col] > 6.0:
+                    assert abs(sevennet_energies[-1]["int_energy"]) < 1e-8, (
+                        f"failed at {row[mms_col]}, {sevennet_energies[-1]['int_energy']}"
+                    )
+                # print
             df.loc[df_c_a.index, f"{sevennet_type} IE (kJ/mol)"] = [
                 ue["int_energy"] for ue in sevennet_energies
             ]
@@ -189,7 +206,9 @@ def main():
     # df_sevennet = sevennet_df_energies_sft(generate=True, v="bm", sevennet_type="sevennet-s-1p1")
     # print(df_sevennet.head())
 
-    df_sevennet = sevennet_df_energies_sft(generate=True, v="apprx", sevennet_type="omol25_low")
+    df_sevennet = sevennet_df_energies_sft(
+        generate=True, v="apprx", sevennet_type="omol25_low"
+    )
     print(df_sevennet.head())
     # sevennet-m-1p1 took ~23K s on apprx and ~48K on bm
 
