@@ -1982,23 +1982,27 @@ def plot_from_intermediates(N=1, intermediates_file=None, sft=False):
         }
     )
 
+    if N==0:
+        ylim = [-20, 20]
+    else:
+        ylim = [-10, 10]
     dfs2 = [
         {
             "df": error_df2,
             "basis": "",
-            "label": "CCSD(T)/CBS Reference",
-            "ylim": [[-10, 10]],
+            "label": f"QM={N},CCSD(T)/CBS Reference",
+            "ylim": [ylim],
         }
     ]
 
     df2_labels = {
         "AP2": "AP2 vs CCSD(T)/CBS error",
-        "AP3": "AP3 vs CCSD(T)/CBS error",
+        # "AP3": "AP3 vs CCSD(T)/CBS error",
         "AP3+D4(S)": "AP3+D4(S) vs CCSD(T)/CBS error",
         "UMA-m": "UMA-m vs CCSD(T)/CBS error",
         "UMA-m\\\\+AP3-LR+D4(S)": "UMA-m+AP3-LR vs CCSD(T)/CBS error",
         "OPLS": "OPLS vs CCSD(T)/CBS error",
-        "AP3(SFT)+D4(I)": "AP3(SAPT2+3)+D4(I) vs CCSD(T)/CBS error",
+        # "AP3(SFT)+D4(I)": "AP3(SAPT2+3)+D4(I) vs CCSD(T)/CBS error",
     }
 
     print("\nCreating violin plot for benchmark comparison...")
@@ -2341,22 +2345,19 @@ def main():
     #     v="bm",
     #     crystals=["acetic_acid", "CO2", "pyrazine", "benzene"],
     # )
-    for i in range(0, 10):
-        plot_from_intermediates_slides(
-            N=i,
-            sft=False,
-            v="bm",
-            crystals=["acetic_acid", "CO2", "pyrazine", "benzene"],
-        )
-    # print("\nPlotting with N=0...")
-    # plot_from_intermediates(N=0, sft=False)
-    #
-    # print("\nPlotting with N=1...")
-    # plot_from_intermediates(N=1, sft=False)
-    #
-    # print("\nPlotting with N=5...")
-    # plot_from_intermediates(N=5, sft=False)
-    #
+    # for i in range(0, 10):
+    #     plot_from_intermediates_slides(
+    #         N=i,
+    #         sft=False,
+    #         v="bm",
+    #         crystals=["acetic_acid", "CO2", "pyrazine", "benzene"],
+    #     )
+    print("\nPlotting with N=0...")
+    plot_from_intermediates(N=0, sft=False)
+    print("\nPlotting with N=1...")
+    plot_from_intermediates(N=1, sft=False)
+    print("\nPlotting with N=5...")
+    plot_from_intermediates(N=5, sft=False)
     # print("\nPlotting with N=10...")
     # plot_from_intermediates(N=10, sft=False)
 
