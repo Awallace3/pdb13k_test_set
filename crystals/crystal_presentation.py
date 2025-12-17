@@ -82,7 +82,7 @@ def prepare_crystal_data_intermediates(tl_N=100, uma_cutoff=6.0, sft=False):
     df_apprx["ref"] = df_apprx["Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"]
 
     # Process UMA models
-    for i in ["uma-s-1p1", "uma-m-1p1"]:
+    for i in ["uma-s-1p1", "uma-m-1p1", "omol25_low"]:
         df_uma_bm = pd.read_pickle(f"./crystals_ap2_ap3_results_{i}_mol_bm.pkl")
         df_bm[f"{i} IE (kJ/mol)"] = df_uma_bm[f"{i} IE (kJ/mol)"]
         df_uma_apprx = pd.read_pickle(f"./crystals_ap2_ap3_results_{i}_mol_apprx.pkl")
@@ -217,6 +217,8 @@ def compute_cle_errors_for_N_all_crystals(
         "uma_s_ap3lr_sapt0": [],
         "uma_m_ap3lr_sapt0": [],
         "uma_m_sapt0": [],
+        "omol25_low_sapt0": [],
+        "omol25_low_ap3lr_sapt0": [],
         "ap3_d4_sapt0": [],
         "ap3_des_d4_sapt0": [],
         "opls_sapt0": [],
@@ -227,6 +229,8 @@ def compute_cle_errors_for_N_all_crystals(
         "uma_s_ccsd": [],
         "uma_s_ap3lr_ccsd": [],
         "uma_m_ap3lr_ccsd": [],
+        "omol25_low_ccsd": [],
+        "omol25_low_ap3lr_ccsd": [],
         "uma_m_ccsd": [],
         "ap3_d4_ccsd": [],
         "ap3_des_d4_ccsd": [],
@@ -257,6 +261,8 @@ def compute_cle_errors_for_N_all_crystals(
                     ("uma_m", "uma-m-1p1 IE (kJ/mol)"),
                     ("uma_s_ap3lr", "uma-s-1p1+ap3_lr IE (kJ/mol)"),
                     ("uma_m_ap3lr", "uma-m-1p1+ap3_lr IE (kJ/mol)"),
+                    ("omol25_low", "omol25_low IE (kJ/mol)"),
+                    ("omol25_low_ap3lr", "omol25_low+ap3_lr IE (kJ/mol)"),
                     ("ap3_d4", "ap3+d4"),
                     ("ap3_des_d4", f"ap3-des+d4"),
                     ("opls", "OPLS Interaction Energy (kJ/mol)"),
@@ -292,6 +298,8 @@ def compute_cle_errors_for_N_all_crystals(
                     "uma_s_ap3lr",
                     "uma_m_ap3lr",
                     "uma_m",
+                    "omol25_low",
+                    "omol25_low_ap3lr",
                     "ap2_des",
                     "ap3_des",
                     "opls",
@@ -335,6 +343,8 @@ def compute_cle_errors_for_N_all_crystals(
                     ("uma_m", "uma-m-1p1 IE (kJ/mol)"),
                     ("uma_s_ap3lr", "uma-s-1p1+ap3_lr IE (kJ/mol)"),
                     ("uma_m_ap3lr", "uma-m-1p1+ap3_lr IE (kJ/mol)"),
+                    ("omol25_low", "omol25_low IE (kJ/mol)"),
+                    ("omol25_low_ap3lr", "omol25_low+ap3_lr IE (kJ/mol)"),
                     ("ap3_d4", "ap3+d4"),
                     ("ap3_des_d4", f"ap3-des+d4"),
                     ("ap3_sapt2p3", "AP3-SAPT2p3CCDDMP2_atz TOTAL"),
@@ -372,6 +382,8 @@ def compute_cle_errors_for_N_all_crystals(
                     "uma_s_ap3lr",
                     "uma_m_ap3lr",
                     "uma_m",
+                    "omol25_low",
+                    "omol25_low_ap3lr",
                     "ap2_des",
                     "ap3_des",
                     "opls",
@@ -402,6 +414,8 @@ def compute_cle_errors_for_N_all_crystals(
                         "uma_s",
                         "uma_s_ap3lr",
                         "uma_m_ap3lr",
+                        "omol25_low",
+                        "omol25_low_ap3lr",
                         "uma_m",
                         "ap2_des",
                         "ap3_des",
@@ -443,6 +457,12 @@ def compute_cle_errors_for_N_all_crystals(
         "ap3_sapt2p3_d4_full_cle_errors_sapt0_aDZ": [],  # Not computed for sapt0
         "opls_full_cle_errors_sapt0_aDZ": errors["opls_sapt0"],
         "opls_full_cle_errors_ccsd_t_CBS": errors["opls_ccsd"],
+        "omol25_low_full_cle_errors_sapt0_aDZ": errors["omol25_low_sapt0"],
+        "omol25_low_ap3lr_full_cle_errors_sapt0_aDZ": errors["omol25_low_ap3lr_sapt0"],
+        "omol25_low_full_cle_errors_ccsd_t_CBS": errors["omol25_low_ccsd"],
+        "omol25_low_ap3lr_full_cle_errors_ccsd_t_CBS": errors[
+            "omol25_low_ap3lr_ccsd"
+        ],
     }
 
 
@@ -1578,6 +1598,8 @@ def plot_from_intermediates(N=1, intermediates_file=None, sft=False):
     ap3_sapt2p3_d4_full_cle_errors_ccsd_t_CBS = []
     opls_full_cle_errors_sapt0_aDZ = []
     opls_full_cle_errors_ccsd_t_CBS = []
+    omol25_low_cle_errors_sapt0 = []
+    omol25_low_cle_errors_ccsd_t_CBS = []
 
     # Process each crystal (using same logic as original function but with pre-loaded data)
     for idx, crystal in enumerate(all_crystals):
@@ -1687,7 +1709,7 @@ def plot_from_intermediates(N=1, intermediates_file=None, sft=False):
                         ml_sep_distances,
                         ap3_d4_2b_energies,
                         "s-",
-                        label="AP3+D4(S)",
+                        label="AP3",
                         markersize=4,
                         linewidth=1.5,
                         alpha=0.8,
@@ -1734,6 +1756,9 @@ def plot_from_intermediates(N=1, intermediates_file=None, sft=False):
                     )
                     opls_full_cle_errors_sapt0_aDZ.append(
                         opls_2b_energies[-1] - ref_2b_energies[-1]
+                    )
+                    omol25_low_cle_errors_sapt0.append(
+                        0 - ref_2b_energies[-1]
                     )
 
         # Right plot: bm (vs CCSD(T)/CBS)
@@ -1789,6 +1814,14 @@ def plot_from_intermediates(N=1, intermediates_file=None, sft=False):
                     else 0,
                     axis=1,
                 )
+                df_c["omol25_low_cle"] = df_c.apply(
+                    lambda r: r["omol25_low IE (kJ/mol)"]
+                    * r[num_rep_col]
+                    / int(r[nmer_col][0])
+                    if pd.notnull(r[nmer_col]) and "omol25_low IE (kJ/mol)" in r
+                    else 0,
+                    axis=1,
+                )
                 df_c["ap3_sapt2p3_d4_cle"] = df_c.apply(
                     lambda r: r["ap3_sapt2p3+d4"] * r[num_rep_col] / int(r[nmer_col][0])
                     if pd.notnull(r[nmer_col]) and "ap3_sapt2p3+d4" in r
@@ -1820,6 +1853,7 @@ def plot_from_intermediates(N=1, intermediates_file=None, sft=False):
                 uma_m_ap3lr_2b_energies = []
                 ref_2b_energies = []
                 opls_2b_energies = []
+                omol25_low_energies = []
 
                 df_c = df_c.sort_values(by=mms_col, ascending=True)
                 df_c_N = df_c.iloc[:N]
@@ -1842,6 +1876,9 @@ def plot_from_intermediates(N=1, intermediates_file=None, sft=False):
                     uma_m_ap3lr_above = df_c_above[df_c_above[mms_col] < d][
                         "uma-m-1p1+ap3_lr_cle"
                     ].sum()
+                    omol25_low_above = df_c_above[
+                        df_c_above[mms_col] < d ]["omol25_low_cle"].sum()
+
                     opls_above = df_c_above[df_c_above[mms_col] < d]["opls_cle"].sum()
                     ref_below = df_c[df_c[mms_col] < d]["ref_cle"].sum()
 
@@ -1854,6 +1891,7 @@ def plot_from_intermediates(N=1, intermediates_file=None, sft=False):
                         ap3_d4_2b_energies.append(ap3_d4_above + ref_N)
                         ap3_sapt2p3_d4_2b_energies.append(ap3_sapt2p3_d4_above + ref_N)
                         opls_2b_energies.append(opls_above + ref_N)
+                        omol25_low_energies.append(omol25_low_above + ref_N)
                     ref_2b_energies.append(ref_below)
 
                 # Plot
@@ -1862,7 +1900,7 @@ def plot_from_intermediates(N=1, intermediates_file=None, sft=False):
                         ml_sep_distances,
                         ap3_d4_2b_energies,
                         "v-",
-                        label="AP3+D4(S)",
+                        label="AP3",
                         markersize=4,
                         linewidth=1.5,
                         alpha=0.8,
@@ -1899,11 +1937,20 @@ def plot_from_intermediates(N=1, intermediates_file=None, sft=False):
                         ml_sep_distances,
                         uma_m_ap3lr_2b_energies,
                         "v-",
-                        label="UMA-m+AP3-LR+D4(S)",
+                        label="UMA-m+AP3-LR",
                         markersize=4,
                         linewidth=1.5,
                         alpha=0.8,
                     )
+                    # ax_bm.plot(
+                    #     ml_sep_distances,
+                    #     omol25_low_energies,
+                    #     "v-",
+                    #     label="7Net+OMol25-Low",
+                    #     markersize=4,
+                    #     linewidth=1.5,
+                    #     alpha=0.8,
+                    # )
                     ax_bm.plot(
                         sep_distances,
                         ref_2b_energies,
@@ -1946,6 +1993,9 @@ def plot_from_intermediates(N=1, intermediates_file=None, sft=False):
                     ap3_sapt2p3_d4_full_cle_errors_ccsd_t_CBS.append(
                         ap3_sapt2p3_d4_2b_energies[-1] - ref_2b_energies[-1]
                     )
+                    omol25_low_cle_errors_ccsd_t_CBS.append(
+                        omol25_low_energies[-1] - ref_2b_energies[-1]
+                    )
 
         # Style axes
         for ax in [ax_apprx, ax_bm]:
@@ -1973,11 +2023,12 @@ def plot_from_intermediates(N=1, intermediates_file=None, sft=False):
     error_df2 = pd.DataFrame(
         {
             "AP2 vs CCSD(T)/CBS error": ap2_full_cle_errors_ccsd_t_CBS,
-            "AP3 vs CCSD(T)/CBS error": ap3_full_cle_errors_ccsd_t_CBS,
+            # "AP3 vs CCSD(T)/CBS error": ap3_full_cle_errors_ccsd_t_CBS,
             "AP3+D4(S) vs CCSD(T)/CBS error": ap3_d4_full_cle_errors_ccsd_t_CBS,
             "UMA-m vs CCSD(T)/CBS error": uma_m_full_cle_errors_ccsd_t_CBS,
             "UMA-m+AP3-LR vs CCSD(T)/CBS error": uma_m_ap3lr_full_cle_errors_ccsd_t_CBS,
             "OPLS vs CCSD(T)/CBS error": opls_full_cle_errors_ccsd_t_CBS,
+            # "7Net+OMol25-Low vs CCSD(T)/CBS error": omol25_low_cle_errors_ccsd_t_CBS,
             "AP3(SAPT2+3)+D4(I) vs CCSD(T)/CBS error": ap3_sapt2p3_d4_full_cle_errors_ccsd_t_CBS,
         }
     )
@@ -1996,12 +2047,13 @@ def plot_from_intermediates(N=1, intermediates_file=None, sft=False):
     ]
 
     df2_labels = {
-        "AP2": "AP2 vs CCSD(T)/CBS error",
+        "AP-Net2": "AP2 vs CCSD(T)/CBS error",
         # "AP3": "AP3 vs CCSD(T)/CBS error",
-        "AP3+D4(S)": "AP3+D4(S) vs CCSD(T)/CBS error",
+        "AP-Net3": "AP3+D4(S) vs CCSD(T)/CBS error",
         "UMA-m": "UMA-m vs CCSD(T)/CBS error",
-        "UMA-m\\\\+AP3-LR+D4(S)": "UMA-m+AP3-LR vs CCSD(T)/CBS error",
+        "UMA-m\\\\+AP-Net33-LR": "UMA-m+AP3-LR vs CCSD(T)/CBS error",
         "OPLS": "OPLS vs CCSD(T)/CBS error",
+        # "7Net+OMol25-Low": "7Net+OMol25-Low vs CCSD(T)/CBS error",
         # "AP3(SFT)+D4(I)": "AP3(SAPT2+3)+D4(I) vs CCSD(T)/CBS error",
     }
 
@@ -2173,11 +2225,11 @@ def plot_from_intermediates_slides(
         )
 
         methods = {
-            "AP2": "AP2 TOTAL",
-            "AP3": "AP3 TOTAL",
-            "AP3+D4(S)": "ap3+d4",
+            # "AP-Net3": "AP3 TOTAL",
             "UMA-m": "uma-m-1p1 IE (kJ/mol)",
-            "UMA-m+AP3-LR+D4(S)": "uma-m-1p1+ap3_lr IE (kJ/mol)",
+            "UMA-m+AP-Net3-LR": "uma-m-1p1+ap3_lr IE (kJ/mol)",
+            "AP-Net2": "AP2 TOTAL",
+            "AP-Net3": "ap3+d4",
             "OPLS": "OPLS Interaction Energy (kJ/mol)",
         }
 
@@ -2231,11 +2283,11 @@ def plot_from_intermediates_slides(
         if len(ref_energies) > 0 and ref_energies[-1] != 0.0:
             # Define colors and markers for key methods
             plot_config = {
-                "AP2": {"marker": "v", "color": None, "alpha": 0.7},
-                "AP3": {"marker": "v", "color": None, "alpha": 1.0},
-                "AP3+D4(S)": {"marker": "v", "color": None, "alpha": 1.0},
-                "UMA-m": {"marker": "D", "color": None, "alpha": 1.0},
-                "UMA-m+AP3-LR+D4(S)": {"marker": "D", "color": None, "alpha": 1.0},
+                "AP-Net2": {"marker": "v", "color": 'tab:blue', "alpha": 1.0},
+                # "AP-Net3": {"marker": "v", "color": None, "alpha": 1.0},
+                "AP-Net3": {"marker": "v", "color": 'tab:orange', "alpha": 1.0},
+                "UMA-m": {"marker": "D", "color": 'tab:purple', "alpha": 1.0},
+                "UMA-m+AP-Net3-LR": {"marker": "D", "color": 'tab:red', "alpha": 1.0},
                 "AP3(SFT)+D4(I)": {"marker": ">", "color": None, "alpha": 1.0},
                 "OPLS": {"marker": "^", "color": "grey", "alpha": 1.0},
             }
@@ -2345,19 +2397,20 @@ def main():
     #     v="bm",
     #     crystals=["acetic_acid", "CO2", "pyrazine", "benzene"],
     # )
-    # for i in range(0, 10):
-    #     plot_from_intermediates_slides(
-    #         N=i,
-    #         sft=False,
-    #         v="bm",
-    #         crystals=["acetic_acid", "CO2", "pyrazine", "benzene"],
-    #     )
-    print("\nPlotting with N=0...")
-    plot_from_intermediates(N=0, sft=False)
-    print("\nPlotting with N=1...")
-    plot_from_intermediates(N=1, sft=False)
-    print("\nPlotting with N=5...")
-    plot_from_intermediates(N=5, sft=False)
+    for i in range(0, 6):
+        plot_from_intermediates_slides(
+            N=i,
+            sft=False,
+            v="bm",
+            crystals=["acetic_acid", "benzene", "trioxane", "CO2"],
+        )
+    for N in [0, 1, 2, 3, 4, 5, 10]:
+        print(f"\nPlotting with N={N}...")
+        plot_from_intermediates(N=N, sft=False)
+    # print("\nPlotting with N=1...")
+    # plot_from_intermediates(N=1, sft=False)
+    # print("\nPlotting with N=5...")
+    # plot_from_intermediates(N=5, sft=False)
     # print("\nPlotting with N=10...")
     # plot_from_intermediates(N=10, sft=False)
 

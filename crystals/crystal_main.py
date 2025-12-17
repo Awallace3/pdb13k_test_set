@@ -3966,6 +3966,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
         ax_apprx = axes[idx, 0]
         if crystal in crystals_apprx:
             df_c = df_apprx[df_apprx["crystal apprx"] == crystal].copy()
+            df_c.dropna(subset=['crystal apprx'], inplace=True)
 
             # Reference method
             ref_col = "Non-Additive MB Energy (kJ/mol) sapt0-dz-aug"
@@ -4288,6 +4289,7 @@ def plot_crystal_lattice_energies_with_N(N=1, sft=False, tl_N=100, uma_cutoff=6.
         ax_bm = axes[idx, 1]
         if crystal in crystals_bm:
             df_c = df_bm[df_bm["crystal bm"] == crystal].copy()
+            df_c.dropna(subset=['crystal bm'], inplace=True)
 
             # Reference method
             ref_col = "Non-Additive MB Energy (kJ/mol) CCSD(T)/CBS"
@@ -4870,6 +4872,7 @@ def main():
     #     )
     #     print(f"MAE UMA-m+AP3-LR+D4(S) vs CCSD(T)/CBS: {mae_uma_lr_ccsd:.4f} kJ/mol")
     plot_crystal_lattice_energies_with_N(0, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff)
+    return
     plot_crystal_lattice_energies_with_N(1, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff)
     plot_crystal_lattice_energies_with_N(5, sft=False, tl_N=tl_N, uma_cutoff=uma_cutoff)
     plot_crystal_lattice_energies_with_N(

@@ -206,8 +206,11 @@ def main():
     # df_sevennet = sevennet_df_energies_sft(generate=True, v="bm", sevennet_type="sevennet-s-1p1")
     # print(df_sevennet.head())
 
+    # df_sevennet = sevennet_df_energies_sft(
+    #     generate=True, v="apprx", sevennet_type="omol25_low"
+    # )
     df_sevennet = sevennet_df_energies_sft(
-        generate=True, v="apprx", sevennet_type="omol25_low"
+        generate=True, v="bm", sevennet_type="omol25_low"
     )
     print(df_sevennet.head())
     # sevennet-m-1p1 took ~23K s on apprx and ~48K on bm

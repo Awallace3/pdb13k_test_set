@@ -362,6 +362,18 @@ def run_inference(model_type, qcel_molecules, model_path=None):
 
 
 def main():
+    # ap_2 = load_ap2_for_inference()
+    # for p in ap_2.model.named_parameters():
+    #     print(p[0], p[1].numel())
+    # n_params_ap2 = sum(p.numel() for p in ap_2.model.parameters())
+    # print(f"AP2 model has {n_params_ap2} parameters.")
+    # ap_3 = load_ap3_for_inference()
+    # for p in ap_3.model.named_parameters():
+    #     print(p[0], p[1].numel())
+    # n_params_ap3 = sum(p.numel() for p in ap_3.model.parameters())
+    # print(f"AP3 model has {n_params_ap3} parameters.")
+
+
     parser = argparse.ArgumentParser(
         description="Finetune AP2 or AP3 models with DES370k dataset"
     )
